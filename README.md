@@ -1,6 +1,6 @@
 # Markdown Lab 🔄📝
 
-A (soon to be)powerful and modular web scraper that converts web content into well-structured Markdown files.
+A (soon to be) powerful and modular web scraper that converts web content into well-structured Markdown files.
 
 ## Features
 
