@@ -3,3 +3,4 @@ bs4
 pytest
 pytest-mock
 argparse
+markdownify
