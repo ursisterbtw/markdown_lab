@@ -1,7 +1,8 @@
+import argparse
+import logging
+
 import requests
 from bs4 import BeautifulSoup
-import logging
-import argparse
 
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(levelname)s - %(message)s')
