@@ -26,7 +26,7 @@ pip install -r requirements.txt
 
 ## Usage
 
-### Command Line
+### From The Command Line
 
 ```python
 python main.py <url> -o <output_file>
