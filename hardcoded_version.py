@@ -8,11 +8,11 @@ from markdownify import markdownify as md
 
 def clean_text(text):
     """Clean up text content."""
-    # Remove multiple consecutive empty lines
+    # remove multiple consecutive empty lines
     text = re.sub(r"\n\s*\n\s*\n", "\n\n", text)
-    # Remove trailing whitespace
+    # remove trailing whitespace
     text = re.sub(r"\s+$", "", text, flags=re.MULTILINE)
-    # Ensure proper spacing around headers
+    # ensure proper spacing around headers
     text = re.sub(r"(#{1,6})\s*(.+)", r"\1 \2", text)
     return text
 
@@ -24,11 +24,11 @@ def format_markdown(content):
     in_code_block = False
 
     for line in lines:
-        # Skip empty lines at start of file
+        # skip empty lines at start of file
         if not formatted_lines and not line.strip():
             continue
 
-        # Handle code blocks
+        # handle code blocks
         if line.strip().startswith("```"):
             in_code_block = not in_code_block
             formatted_lines.append(line.rstrip())
@@ -38,36 +38,36 @@ def format_markdown(content):
             formatted_lines.append(line.rstrip())
             continue
 
-        # Format headers
+        # format headers
         if line.strip().startswith("#"):
-            # Ensure single space after #
+            # ensure single space after #
             line = re.sub(r"^(#+)\s*", r"\1 ", line)
-            # Add blank line before headers (except at start of file)
+            # add blank line before headers (except at start of file)
             if formatted_lines and formatted_lines[-1].strip():
                 formatted_lines.append("")
             formatted_lines.append(line.strip())
             formatted_lines.append("")
             continue
 
-        # Format lists
+        # format lists
         if re.match(r"^\s*[-*+]\s", line):
             formatted_lines.append(line.rstrip())
             continue
 
-        # Format numbered lists
+        # format numbered lists
         if re.match(r"^\s*\d+\.\s", line):
             formatted_lines.append(line.rstrip())
             continue
 
-        # Regular lines
+        # regular lines
         if line.strip():
             formatted_lines.append(line.strip())
         else:
-            # Only add blank line if previous line wasn't blank
+            # only add blank line if previous line wasn't blank
             if formatted_lines and formatted_lines[-1].strip():
                 formatted_lines.append("")
 
-    # Clean up the final content
+    # clean up the final content
     content = "\n".join(formatted_lines)
     content = clean_text(content)
     return content
@@ -81,28 +81,28 @@ def scrape_to_markdown(url, output_dir="scraped_mds"):
 
         soup = BeautifulSoup(response.content, "html.parser")
 
-        # Remove unwanted elements
+        # remove unwanted elements
         for element in soup.find_all(["script", "style", "nav", "footer"]):
             element.decompose()
 
-        # Convert to markdown
+        # convert to markdown
         markdown_content = md(
             str(soup), heading_style="ATX", bullets="-", code_language="python"
         )
 
-        # Format the content
+        # format the content
         formatted_content = format_markdown(markdown_content)
 
-        # Create output directory
+        # create output directory
         os.makedirs(output_dir, exist_ok=True)
 
-        # Create filename from URL
+        # create filename from URL
         filename = url.split("://")[-1].replace("/", "_")
         if not filename.endswith(".md"):
             filename += ".md"
         filepath = os.path.join(output_dir, filename)
 
-        # Write to file
+        # write to file
         with open(filepath, "w", encoding="utf-8") as f:
             f.write(formatted_content)
 

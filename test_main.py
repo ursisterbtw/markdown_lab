@@ -68,7 +68,7 @@ Paragraph 1
 
 @patch("builtins.open")
 def test_save_markdown(mock_open):
-    # Setup the mock file object
+    # setup the mock file object
     mock_file = MagicMock()
     mock_open.return_value.__enter__.return_value = mock_file
 
@@ -76,11 +76,11 @@ def test_save_markdown(mock_open):
     markdown_content = "# Test Markdown"
     output_file = "test_output.md"
 
-    # Call the method under test
+    # call the method under test
     scraper.save_markdown(markdown_content, output_file)
 
-    # Assert that open was called with the correct file name and mode
+    # assert that open was called with the correct file name and mode
     mock_open.assert_called_once_with(output_file, "w")
 
-    # Assert write was called with the content
+    # assert write was called with the content
     mock_file.write.assert_called_once_with(markdown_content)
