@@ -19,7 +19,7 @@ A (soon to be) powerful and modular web scraper that converts web content into w
 ## Installation
 
 ```bash
-git clone https://github.com/yourusername/markdown_lab.git
+git clone https://github.com/ursisterbtw/markdown_lab.git
 cd markdown_lab
 pip install -r requirements.txt
 ```
