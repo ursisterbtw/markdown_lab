@@ -1,7 +1,7 @@
 # Markdown Lab 🔄📝
 
 A (soon to be) powerful and modular web scraper that converts web content into well-structured Markdown files.
-
+[![Python CI](https://github.com/ursisterbtw/markdown_lab/actions/workflows/CI.yml/badge.svg)](https://github.com/ursisterbtw/markdown_lab/actions/workflows/CI.yml)
 ## Features
 
 - 🌐 Scrapes any accessible website
