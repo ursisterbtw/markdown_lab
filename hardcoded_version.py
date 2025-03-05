@@ -45,8 +45,7 @@ def format_markdown(content):
             # add blank line before headers (except at start of file)
             if formatted_lines and formatted_lines[-1].strip():
                 formatted_lines.append("")
-            formatted_lines.append(line.strip())
-            formatted_lines.append("")
+            formatted_lines.extend((line.strip(), ""))
             continue
 
         # format lists
@@ -69,8 +68,7 @@ def format_markdown(content):
 
     # clean up the final content
     content = "\n".join(formatted_lines)
-    content = clean_text(content)
-    return content
+    return clean_text(content)
 
 
 def scrape_to_markdown(url, output_dir="scraped_mds"):

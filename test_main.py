@@ -1,7 +1,9 @@
-from main import MarkdownScraper
+from unittest.mock import MagicMock, patch
+
 import pytest
 import requests
-from unittest.mock import patch, MagicMock
+
+from main import MarkdownScraper
 
 
 @pytest.fixture
@@ -23,7 +25,9 @@ def test_scrape_website_success(mock_get, scraper):
 @patch("main.requests.Session.get")
 def test_scrape_website_http_error(mock_get, scraper):
     mock_response = MagicMock()
-    mock_response.raise_for_status.side_effect = requests.exceptions.HTTPError("404 Not Found")
+    mock_response.raise_for_status.side_effect = requests.exceptions.HTTPError(
+        "404 Not Found"
+    )
     mock_get.return_value = mock_response
 
     with pytest.raises(requests.exceptions.HTTPError):
