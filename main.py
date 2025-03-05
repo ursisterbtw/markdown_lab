@@ -16,6 +16,7 @@ from urllib.parse import urlparse, urljoin
 
 from chunk_utils import create_semantic_chunks, ContentChunker
 from throttle import RequestThrottler
+from sitemap_utils import SitemapParser, discover_site_urls
 
 # Configure logging with more detailed formatting
 logging.basicConfig(
@@ -57,6 +58,7 @@ class MarkdownScraper:
         self.timeout = timeout
         self.max_retries = max_retries
         self.chunker = ContentChunker(chunk_size, chunk_overlap)
+        self.requests_per_second = requests_per_second
         
     def scrape_website(self, url: str) -> str:
         """
@@ -101,6 +103,10 @@ class MarkdownScraper:
             except Exception as err:
                 logger.error(f"An unexpected error occurred: {err}")
                 raise
+        
+        # This line should never be reached due to the raise statements above,
+        # but adding it to satisfy the linter's "missing return statement" warning
+        raise requests.exceptions.RequestException(f"Failed to retrieve {url} after {self.max_retries} attempts")
 
     def _get_text_from_element(self, element: Optional[Tag]) -> str:
         """Extract clean text from a BeautifulSoup element."""
@@ -242,12 +248,120 @@ class MarkdownScraper:
             output_format: Format to save chunks (json or jsonl)
         """
         self.chunker.save_chunks(chunks, output_dir, output_format)
+        
+    def scrape_by_sitemap(self, 
+                          base_url: str, 
+                          output_dir: str,
+                          min_priority: Optional[float] = None,
+                          include_patterns: Optional[List[str]] = None,
+                          exclude_patterns: Optional[List[str]] = None,
+                          limit: Optional[int] = None,
+                          save_chunks: bool = True,
+                          chunk_dir: Optional[str] = None,
+                          chunk_format: str = "jsonl") -> List[str]:
+        """
+        Scrape multiple pages from a website based on its sitemap.
+        
+        Args:
+            base_url: The base URL of the website
+            output_dir: Directory to save markdown files
+            min_priority: Minimum priority value for URLs (0.0-1.0)
+            include_patterns: List of regex patterns to include
+            exclude_patterns: List of regex patterns to exclude
+            limit: Maximum number of URLs to scrape
+            save_chunks: Whether to save chunks for RAG
+            chunk_dir: Directory to save chunks (defaults to output_dir/chunks)
+            chunk_format: Format to save chunks (json or jsonl)
+            
+        Returns:
+            List of successfully scraped URLs
+        """
+        # Create sitemap parser
+        sitemap_parser = SitemapParser(
+            requests_per_second=self.requests_per_second,
+            max_retries=self.max_retries,
+            timeout=self.timeout
+        )
+        
+        # Parse sitemap and get filtered URLs
+        logger.info(f"Discovering URLs from sitemap for {base_url}")
+        sitemap_parser.parse_sitemap(base_url)
+        filtered_urls = sitemap_parser.filter_urls(
+            min_priority=min_priority,
+            include_patterns=include_patterns,
+            exclude_patterns=exclude_patterns,
+            limit=limit
+        )
+        
+        # If no URLs were found, return empty list
+        if not filtered_urls:
+            logger.warning(f"No URLs found in sitemap for {base_url}")
+            return []
+            
+        logger.info(f"Found {len(filtered_urls)} URLs to scrape from sitemap")
+        
+        # Create output directory
+        output_path = Path(output_dir)
+        output_path.mkdir(parents=True, exist_ok=True)
+        
+        # Set up chunk directory if chunking is enabled
+        if save_chunks:
+            if chunk_dir is None:
+                chunk_dir = str(output_path / "chunks")
+            Path(chunk_dir).mkdir(parents=True, exist_ok=True)
+        
+        # Scrape each URL
+        successfully_scraped = []
+        for i, url_info in enumerate(filtered_urls):
+            url = url_info.loc
+            try:
+                # Create filename from URL
+                parsed_url = urlparse(url)
+                path_parts = parsed_url.path.strip('/').split('/')
+                if not path_parts or path_parts[0] == '':
+                    filename = 'index'
+                else:
+                    filename = '_'.join(path_parts)
+                    
+                # Remove or replace invalid characters
+                filename = re.sub(r'[\\/*?:"<>|]', '_', filename)
+                if not filename.endswith('.md'):
+                    filename += '.md'
+                
+                output_file = str(output_path / filename)
+                
+                # Scrape and convert the page
+                logger.info(f"Scraping URL {i+1}/{len(filtered_urls)}: {url}")
+                html_content = self.scrape_website(url)
+                markdown_content = self.convert_to_markdown(html_content, url)
+                self.save_markdown(markdown_content, output_file)
+                
+                # Create and save chunks if enabled
+                if save_chunks:
+                    chunks = self.create_chunks(markdown_content, url)
+                    # Create URL-specific chunk directory to prevent filename collisions
+                    url_chunk_dir = f"{chunk_dir}/{filename.replace('.md', '')}"
+                    self.save_chunks(chunks, url_chunk_dir, chunk_format)
+                
+                successfully_scraped.append(url)
+                
+            except Exception as e:
+                logger.error(f"Error processing URL {url}: {e}")
+                continue
+        
+        logger.info(f"Successfully scraped {len(successfully_scraped)}/{len(filtered_urls)} URLs")
+        return successfully_scraped
 
 
 def main(url: str, output_file: str, save_chunks: bool = True, 
          chunk_dir: str = "chunks", chunk_format: str = "jsonl",
          chunk_size: int = 1000, chunk_overlap: int = 200,
-         requests_per_second: float = 1.0) -> None:
+         requests_per_second: float = 1.0,
+         use_sitemap: bool = False,
+         min_priority: Optional[float] = None,
+         include_patterns: Optional[List[str]] = None,
+         exclude_patterns: Optional[List[str]] = None,
+         limit: Optional[int] = None) -> None:
     """
     Main entry point for the scraper.
     
@@ -260,6 +374,11 @@ def main(url: str, output_file: str, save_chunks: bool = True,
         chunk_size: Maximum chunk size in characters
         chunk_overlap: Overlap between chunks in characters
         requests_per_second: Maximum number of requests per second
+        use_sitemap: Whether to use sitemap.xml for discovering URLs
+        min_priority: Minimum priority value for sitemap URLs
+        include_patterns: Regex patterns for URLs to include
+        exclude_patterns: Regex patterns for URLs to exclude
+        limit: Maximum number of URLs to scrape from sitemap
     """
     scraper = MarkdownScraper(
         requests_per_second=requests_per_second,
@@ -268,13 +387,40 @@ def main(url: str, output_file: str, save_chunks: bool = True,
     )
     
     try:
-        html_content = scraper.scrape_website(url)
-        markdown_content = scraper.convert_to_markdown(html_content, url)
-        scraper.save_markdown(markdown_content, output_file)
-        
-        if save_chunks:
-            chunks = scraper.create_chunks(markdown_content, url)
-            scraper.save_chunks(chunks, chunk_dir, chunk_format)
+        if use_sitemap:
+            # Parse base URL
+            parsed_url = urlparse(url)
+            base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
+            
+            # Get output directory from output_file
+            output_path = Path(output_file)
+            if output_path.is_file():
+                output_dir = str(output_path.parent)
+            else:
+                output_dir = output_file
+                
+            # Scrape by sitemap
+            logger.info(f"Scraping website using sitemap: {base_url}")
+            scraper.scrape_by_sitemap(
+                base_url=base_url,
+                output_dir=output_dir,
+                min_priority=min_priority,
+                include_patterns=include_patterns,
+                exclude_patterns=exclude_patterns,
+                limit=limit,
+                save_chunks=save_chunks,
+                chunk_dir=chunk_dir,
+                chunk_format=chunk_format
+            )
+        else:
+            # Single URL scrape
+            html_content = scraper.scrape_website(url)
+            markdown_content = scraper.convert_to_markdown(html_content, url)
+            scraper.save_markdown(markdown_content, output_file)
+            
+            if save_chunks:
+                chunks = scraper.create_chunks(markdown_content, url)
+                scraper.save_chunks(chunks, chunk_dir, chunk_format)
             
         logger.info("Process completed successfully.")
     except Exception as e:
@@ -284,7 +430,7 @@ def main(url: str, output_file: str, save_chunks: bool = True,
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Scrape a website and convert it to Markdown with RAG chunking support.")
-    parser.add_argument("url", type=str, help="The URL of the website to scrape")
+    parser.add_argument("url", type=str, help="The URL to scrape")
     parser.add_argument("-o", "--output", type=str, default="output.md", help="The output Markdown file name")
     parser.add_argument("--save-chunks", action="store_true", help="Save content chunks for RAG")
     parser.add_argument("--chunk-dir", type=str, default="chunks", help="Directory to save content chunks")
@@ -292,6 +438,13 @@ if __name__ == "__main__":
     parser.add_argument("--chunk-size", type=int, default=1000, help="Maximum chunk size in characters")
     parser.add_argument("--chunk-overlap", type=int, default=200, help="Overlap between chunks in characters")
     parser.add_argument("--requests-per-second", type=float, default=1.0, help="Maximum requests per second")
+    
+    # Add sitemap-related arguments
+    parser.add_argument("--use-sitemap", action="store_true", help="Use sitemap.xml to discover URLs")
+    parser.add_argument("--min-priority", type=float, help="Minimum priority for sitemap URLs (0.0-1.0)")
+    parser.add_argument("--include", type=str, nargs="+", help="Regex patterns for URLs to include")
+    parser.add_argument("--exclude", type=str, nargs="+", help="Regex patterns for URLs to exclude")
+    parser.add_argument("--limit", type=int, help="Maximum number of URLs to scrape from sitemap")
     
     args = parser.parse_args()
     
@@ -303,5 +456,10 @@ if __name__ == "__main__":
         chunk_format=args.chunk_format,
         chunk_size=args.chunk_size,
         chunk_overlap=args.chunk_overlap,
-        requests_per_second=args.requests_per_second
+        requests_per_second=args.requests_per_second,
+        use_sitemap=args.use_sitemap,
+        min_priority=args.min_priority,
+        include_patterns=args.include,
+        exclude_patterns=args.exclude,
+        limit=args.limit
     )

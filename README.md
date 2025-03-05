@@ -7,6 +7,7 @@ A powerful and modular web scraper that converts web content into well-structure
 ## Features
 
 - 🌐 Scrapes any accessible website with robust error handling and rate limiting
+- 🗺️ Parses sitemap.xml to discover and scrape the most relevant content
 - 📝 Converts HTML to clean Markdown format
 - 🧩 Implements intelligent chunking for RAG (Retrieval-Augmented Generation) systems
 - 🔄 Handles various HTML elements:
@@ -44,15 +45,23 @@ python main.py https://www.example.com -o output.md
 python main.py https://www.example.com -o output.md --save-chunks --chunk-dir my_chunks
 ```
 
-### Advanced Options
+### Scraping with Sitemap
 
 ```bash
-python main.py https://www.example.com -o output.md \
+python main.py https://www.example.com -o output_dir --use-sitemap --save-chunks
+```
+
+### Advanced Sitemap Scraping
+
+```bash
+python main.py https://www.example.com -o output_dir \
+    --use-sitemap \
+    --min-priority 0.5 \
+    --include "blog/*" "products/*" \
+    --exclude "*.pdf" "temp/*" \
+    --limit 50 \
     --save-chunks \
     --chunk-dir my_chunks \
-    --chunk-format jsonl \
-    --chunk-size 1500 \
-    --chunk-overlap 300 \
     --requests-per-second 2.0
 ```
 
@@ -61,13 +70,18 @@ python main.py https://www.example.com -o output.md \
 | Argument | Description | Default |
 |----------|-------------|---------|
 | `url` | The URL to scrape | (required) |
-| `-o, --output` | Output markdown file | `output.md` |
+| `-o, --output` | Output markdown file/directory | `output.md` |
 | `--save-chunks` | Save content chunks for RAG | False |
 | `--chunk-dir` | Directory to save chunks | `chunks` |
 | `--chunk-format` | Format for chunks (`json`, `jsonl`) | `jsonl` |
 | `--chunk-size` | Maximum chunk size (chars) | 1000 |
 | `--chunk-overlap` | Overlap between chunks (chars) | 200 |
 | `--requests-per-second` | Rate limit for requests | 1.0 |
+| `--use-sitemap` | Use sitemap.xml to discover URLs | False |
+| `--min-priority` | Minimum priority for sitemap URLs | None |
+| `--include` | Regex patterns for URLs to include | None |
+| `--exclude` | Regex patterns for URLs to exclude | None |
+| `--limit` | Maximum number of URLs to scrape | None |
 
 ### As a Module
 
@@ -82,38 +96,57 @@ markdown_content = scraper.convert_to_markdown(html_content, "https://example.co
 scraper.save_markdown(markdown_content, "output.md")
 ```
 
-#### With RAG Chunking
+#### With Sitemap Discovery
 
 ```python
 from main import MarkdownScraper
 
-scraper = MarkdownScraper(chunk_size=1500, chunk_overlap=300)
-html_content = scraper.scrape_website("https://example.com")
-markdown_content = scraper.convert_to_markdown(html_content, "https://example.com")
-scraper.save_markdown(markdown_content, "output.md")
-
-# Create and save chunks for RAG
-chunks = scraper.create_chunks(markdown_content, "https://example.com")
-scraper.save_chunks(chunks, "my_chunks", "jsonl")
+scraper = MarkdownScraper(requests_per_second=2.0)
+# Scrape using sitemap discovery
+scraped_urls = scraper.scrape_by_sitemap(
+    base_url="https://example.com",
+    output_dir="output_dir",
+    min_priority=0.5,                  # Only URLs with priority >= 0.5
+    include_patterns=["blog/*"],       # Only blog URLs
+    exclude_patterns=["temp/*"],       # Exclude temporary pages
+    limit=20,                          # Maximum 20 URLs
+    save_chunks=True,                  # Enable chunking
+    chunk_dir="my_chunks",             # Save chunks here
+    chunk_format="jsonl"               # Use JSONL format
+)
+print(f"Successfully scraped {len(scraped_urls)} URLs")
 ```
 
-#### Using the Chunking Utils Directly
+#### Direct Sitemap Access
 
 ```python
-from chunk_utils import create_semantic_chunks, ContentChunker
+from sitemap_utils import SitemapParser, discover_site_urls
 
-# Create chunks from any text content
-chunks = create_semantic_chunks(
-    content="# My Document\n\nThis is some content.",
-    source_url="https://example.com",
-    chunk_size=1000,
-    chunk_overlap=200
+# Quick discovery of URLs from sitemap
+urls = discover_site_urls(
+    base_url="https://example.com",
+    min_priority=0.7,
+    include_patterns=["products/*"],
+    limit=10
 )
 
-# Save chunks to disk
-chunker = ContentChunker()
-chunker.save_chunks(chunks, "my_chunks", "jsonl")
+# Or with more control
+parser = SitemapParser()
+parser.parse_sitemap("https://example.com")
+urls = parser.filter_urls(min_priority=0.5)
+parser.export_urls_to_file(urls, "sitemap_urls.txt")
 ```
+
+## Sitemap Integration Features
+
+The library intelligently discovers and parses XML sitemaps to scrape exactly what you need:
+
+- **Automatic Discovery**: Finds sitemaps through robots.txt or common locations
+- **Sitemap Index Support**: Handles multi-level sitemap index files
+- **Priority-Based Filtering**: Choose URLs based on their priority in the sitemap
+- **Pattern Matching**: Include or exclude URLs with regex patterns
+- **Optimized Scraping**: Only scrape the pages that matter most
+- **Structured Organization**: Creates meaningful filenames based on URL paths
 
 ## RAG Chunking Capabilities
 
@@ -158,6 +191,7 @@ This project is licensed under the MIT License - see the [LICENSE file](LICENSE)
 
 - `main.py`: The main scraper implementation
 - `chunk_utils.py`: Utilities for chunking text for RAG
+- `sitemap_utils.py`: Sitemap parsing and URL discovery
 - `throttle.py`: Rate limiting for web requests
 - `test_*.py`: Unit tests
 
@@ -165,6 +199,7 @@ This project is licensed under the MIT License - see the [LICENSE file](LICENSE)
 
 - [x] Add support for more HTML elements
 - [x] Implement chunking for RAG
+- [x] Add sitemap.xml parsing for systematic scraping
 - [ ] Add support for JavaScript-rendered pages
 - [ ] Implement custom markdown templates
 - [ ] Add concurrent scraping for multiple URLs
