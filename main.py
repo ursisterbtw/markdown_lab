@@ -90,7 +90,7 @@ class MarkdownScraper:
                 end_time = time.time()
                 execution_time = end_time - start_time
                 memory_usage = tracemalloc.get_traced_memory()
-                cpu_usage = process.cpu_percent(interval=None)
+                cpu_usage = process.cpu_percent(interval=0.1)
                 network_latency = response.elapsed.total_seconds()
 
                 logger.info(f"Execution time for scraping {url}: {execution_time:.2f} seconds")
