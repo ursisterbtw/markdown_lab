@@ -1,17 +1,15 @@
 import argparse
 import logging
 import re
-import time
 from pathlib import Path
 from typing import List, Optional
 from urllib.parse import urljoin, urlparse
 
 import requests
 from bs4 import BeautifulSoup, Tag
-
 from chunk_utils import ContentChunker, create_semantic_chunks
 from sitemap_utils import SitemapParser
-from throttle import RequestThrottler
+from throttle import RequestThrottlers
 
 # Configure logging with more detailed formatting
 logging.basicConfig(
@@ -523,68 +521,22 @@ def main(
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Scrape a website and convert it to Markdown with RAG chunking support."
-    )
+    parser = argparse.ArgumentParser(description="Scrape a website and convert it to Markdown with RAG chunking support.")
     parser.add_argument("url", type=str, help="The URL to scrape")
-    parser.add_argument(
-        "-o",
-        "--output",
-        type=str,
-        default="output.md",
-        help="The output Markdown file name",
-    )
-    parser.add_argument(
-        "--save-chunks", action="store_true", help="Save content chunks for RAG"
-    )
-    parser.add_argument(
-        "--chunk-dir",
-        type=str,
-        default="chunks",
-        help="Directory to save content chunks",
-    )
-    parser.add_argument(
-        "--chunk-format",
-        type=str,
-        choices=["json", "jsonl"],
-        default="jsonl",
-        help="Format to save chunks",
-    )
-    parser.add_argument(
-        "--chunk-size", type=int, default=1000, help="Maximum chunk size in characters"
-    )
-    parser.add_argument(
-        "--chunk-overlap",
-        type=int,
-        default=200,
-        help="Overlap between chunks in characters",
-    )
-    parser.add_argument(
-        "--requests-per-second",
-        type=float,
-        default=1.0,
-        help="Maximum requests per second",
-    )
-
-    # Add sitemap-related arguments
-    parser.add_argument(
-        "--use-sitemap", action="store_true", help="Use sitemap.xml to discover URLs"
-    )
-    parser.add_argument(
-        "--min-priority", type=float, help="Minimum priority for sitemap URLs (0.0-1.0)"
-    )
-    parser.add_argument(
-        "--include", type=str, nargs="+", help="Regex patterns for URLs to include"
-    )
-    parser.add_argument(
-        "--exclude", type=str, nargs="+", help="Regex patterns for URLs to exclude"
-    )
-    parser.add_argument(
-        "--limit", type=int, help="Maximum number of URLs to scrape from sitemap"
-    )
+    parser.add_argument("-o", "--output", type=str, default="output.md", help="The output Markdown file name")
+    parser.add_argument("--save-chunks", action="store_true", help="Save content chunks for RAG")
+    parser.add_argument("--chunk-dir", type=str, default="chunks", help="Directory to save content chunks")
+    parser.add_argument("--chunk-format", type=str, choices=["json", "jsonl"], default="jsonl", help="Format to save chunks")
+    parser.add_argument("--chunk-size", type=int, default=1000, help="Maximum chunk size in characters")
+    parser.add_argument("--chunk-overlap", type=int, default=200, help="Overlap between chunks in characters")
+    parser.add_argument("--requests-per-second", type=float, default=1.0, help="Maximum requests per second")
+    parser.add_argument("--use-sitemap", action="store_true", help="Use sitemap.xml to discover URLs")
+    parser.add_argument("--min-priority", type=float, help="Minimum priority for sitemap URLs (0.0-1.0)")
+    parser.add_argument("--include", type=str, nargs="+", help="Regex patterns for URLs to include")
+    parser.add_argument("--exclude", type=str, nargs="+", help="Regex patterns for URLs to exclude")
+    parser.add_argument("--limit", type=int, help="Maximum number of URLs to scrape from sitemap")
 
     args = parser.parse_args()
-
     main(
         url=args.url,
         output_file=args.output,
