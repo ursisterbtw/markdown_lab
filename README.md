@@ -172,7 +172,6 @@ To run benchmarks using `pytest-benchmark`, use the following command:
 
 ```bash
 pytest --benchmark-only
-```
 
 ## Dependencies
 
