@@ -16,6 +16,7 @@ def test_scrape_website_success(mock_get, scraper):
     mock_response = MagicMock()
     mock_response.status_code = 200
     mock_response.text = "<html><head><title>Test</title></head><body></body></html>"
+    mock_response.elapsed.total_seconds.return_value = 0.1
     mock_get.return_value = mock_response
 
     result = scraper.scrape_website("http://example.com")

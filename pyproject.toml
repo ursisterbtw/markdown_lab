@@ -5,3 +5,20 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = []
+
+[tool.pytest.ini_options]
+benchmark_min_rounds = 5
+benchmark_max_time = 1.0
+benchmark_save = true
+benchmark_save_data = true
+benchmark_enable = true
+benchmark_group_by = "group"
+benchmark_sort = "name"
+benchmark_columns = ["min", "max", "mean", "stddev", "median", "iqr", "outliers", "rounds", "iterations"]
+benchmark_timer = "time.perf_counter"
+benchmark_disable_gc = true
+benchmark_warmup = true
+benchmark_skip = false
+benchmark_only = false
+benchmark_max_iterations = 100000
+benchmark_min_time = 0.000005

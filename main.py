@@ -68,7 +68,15 @@ class MarkdownScraper:
         Raises:
             requests.exceptions.RequestException: If the request fails after retries
         """
+        import time
+        import psutil
+        import tracemalloc
+
         logger.info(f"Attempting to scrape the website: {url}")
+
+        start_time = time.time()
+        tracemalloc.start()
+        process = psutil.Process()
 
         for attempt in range(self.max_retries):
             try:
@@ -78,6 +86,19 @@ class MarkdownScraper:
                 logger.info(
                     f"Successfully retrieved the website content (status code: {response.status_code})."
                 )
+
+                end_time = time.time()
+                execution_time = end_time - start_time
+                memory_usage = tracemalloc.get_traced_memory()
+                cpu_usage = process.cpu_percent(interval=None)
+                network_latency = response.elapsed.total_seconds()
+
+                logger.info(f"Execution time for scraping {url}: {execution_time:.2f} seconds")
+                logger.info(f"Memory usage for scraping {url}: {memory_usage[1] / 1024 / 1024:.2f} MB")
+                logger.info(f"CPU usage for scraping {url}: {cpu_usage:.2f}%")
+                logger.info(f"Network latency for scraping {url}: {network_latency:.2f} seconds")
+
+                tracemalloc.stop()
                 return response.text
             except requests.exceptions.HTTPError as http_err:
                 logger.warning(
