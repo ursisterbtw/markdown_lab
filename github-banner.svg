@@ -1,0 +1,349 @@
+<svg width="1280" height="640" viewBox="0 0 1280 640" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background with enhanced gradients -->
+  <defs>
+    <linearGradient id="bg-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0d1117">
+        <animate attributeName="stop-color" values="#0d1117;#1a0d2e;#0d1117" dur="15s" repeatCount="indefinite" />
+      </stop>
+      <stop offset="50%" stop-color="#161b22">
+        <animate attributeName="stop-color" values="#161b22;#24162c;#161b22" dur="10s" repeatCount="indefinite" />
+      </stop>
+      <stop offset="100%" stop-color="#0d1117">
+        <animate attributeName="stop-color" values="#0d1117;#1e0d26;#0d1117" dur="12s" repeatCount="indefinite" />
+      </stop>
+    </linearGradient>
+
+    <!-- Enhanced pulsing animation for nodes -->
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="10" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+
+    <filter id="trippy-glow" x="-100%" y="-100%" width="300%" height="300%">
+      <feGaussianBlur stdDeviation="15" result="blur" />
+      <feColorMatrix in="blur" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -7" result="blurTransparent" />
+      <feComposite in="SourceGraphic" in2="blurTransparent" operator="over" />
+    </filter>
+
+    <!-- Fractal noise texture -->
+    <filter id="noise" x="0%" y="0%" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.01" numOctaves="3" result="noise" />
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="5" xChannelSelector="R" yChannelSelector="G" />
+    </filter>
+
+    <!-- Pattern for background -->
+    <pattern id="grid-pattern" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#30363d" stroke-width="1" opacity="0.3">
+        <animate attributeName="stroke" values="#30363d;#4e3a5a;#30363d" dur="8s" repeatCount="indefinite" />
+      </path>
+    </pattern>
+
+    <!-- Radial pulse gradient -->
+    <radialGradient id="radial-pulse" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
+      <stop offset="0%" stop-color="#ff00ee" stop-opacity="0.4">
+        <animate attributeName="stop-opacity" values="0.4;0.1;0.4" dur="5s" repeatCount="indefinite" />
+      </stop>
+      <stop offset="100%" stop-color="#0099ff" stop-opacity="0">
+        <animate attributeName="stop-color" values="#0099ff;#39d353;#8957e5;#0099ff" dur="10s" repeatCount="indefinite" />
+      </stop>
+    </radialGradient>
+  </defs>
+
+  <!-- Main background -->
+  <rect width="1280" height="640" fill="url(#bg-gradient)" />
+
+  <!-- Radial pulse overlay -->
+  <circle cx="640" cy="320" r="600" fill="url(#radial-pulse)" opacity="0.15">
+    <animate attributeName="r" values="600;650;600" dur="15s" repeatCount="indefinite" />
+  </circle>
+
+  <!-- Grid pattern overlay -->
+  <rect width="1280" height="640" fill="url(#grid-pattern)">
+    <animate attributeName="opacity" values="0.7;0.3;0.7" dur="8s" repeatCount="indefinite" />
+  </rect>
+
+  <!-- Enhanced flowing waves -->
+  <path d="M0,320 Q320,220 640,320 T1280,320" stroke="#58a6ff" stroke-width="2" fill="none" opacity="0.6" filter="url(#noise)">
+    <animate attributeName="d" dur="15s" repeatCount="indefinite"
+      values="M0,320 Q320,220 640,320 T1280,320;
+              M0,320 Q320,420 640,320 T1280,320;
+              M0,320 Q320,220 640,320 T1280,320" />
+    <animate attributeName="stroke" values="#58a6ff;#00eeff;#58a6ff" dur="8s" repeatCount="indefinite" />
+  </path>
+
+  <path d="M0,280 Q320,380 640,280 T1280,280" stroke="#bc8cff" stroke-width="2" fill="none" opacity="0.6" filter="url(#noise)">
+    <animate attributeName="d" dur="12s" repeatCount="indefinite"
+      values="M0,280 Q320,380 640,280 T1280,280;
+              M0,280 Q320,180 640,280 T1280,280;
+              M0,280 Q320,380 640,280 T1280,280" />
+    <animate attributeName="stroke" values="#bc8cff;#ff00cc;#bc8cff" dur="10s" repeatCount="indefinite" />
+  </path>
+
+  <path d="M0,360 Q320,460 640,360 T1280,360" stroke="#79c0ff" stroke-width="2" fill="none" opacity="0.6" filter="url(#noise)">
+    <animate attributeName="d" dur="18s" repeatCount="indefinite"
+      values="M0,360 Q320,460 640,360 T1280,360;
+              M0,360 Q320,260 640,360 T1280,360;
+              M0,360 Q320,460 640,360 T1280,360" />
+    <animate attributeName="stroke" values="#79c0ff;#00ffaa;#79c0ff" dur="15s" repeatCount="indefinite" />
+  </path>
+
+  <!-- Extra psychedelic waves -->
+  <path d="M0,200 Q320,300 640,200 T1280,200" stroke="#ff7b72" stroke-width="2" fill="none" opacity="0.5" filter="url(#noise)">
+    <animate attributeName="d" dur="20s" repeatCount="indefinite"
+      values="M0,200 Q320,300 640,200 T1280,200;
+              M0,200 Q320,100 640,200 T1280,200;
+              M0,200 Q320,300 640,200 T1280,200" />
+    <animate attributeName="stroke" values="#ff7b72;#ffcc00;#ff7b72" dur="12s" repeatCount="indefinite" />
+  </path>
+
+  <path d="M0,440 Q320,340 640,440 T1280,440" stroke="#d2a8ff" stroke-width="2" fill="none" opacity="0.5" filter="url(#noise)">
+    <animate attributeName="d" dur="22s" repeatCount="indefinite"
+      values="M0,440 Q320,340 640,440 T1280,440;
+              M0,440 Q320,540 640,440 T1280,440;
+              M0,440 Q320,340 640,440 T1280,440" />
+    <animate attributeName="stroke" values="#d2a8ff;#7fff00;#d2a8ff" dur="18s" repeatCount="indefinite" />
+  </path>
+
+  <!-- Repository branch structure with animated glow -->
+  <g transform="translate(240,120)">
+    <!-- Main branch line with animation -->
+    <line x1="400" y1="0" x2="400" y2="400" stroke="#8b949e" stroke-width="3">
+      <animate attributeName="stroke" values="#8b949e;#79c0ff;#8b949e" dur="8s" repeatCount="indefinite" />
+    </line>
+
+    <!-- Branch lines with animations -->
+    <line x1="400" y1="80" x2="600" y2="80" stroke="#8b949e" stroke-width="3">
+      <animate attributeName="stroke" values="#8b949e;#bc8cff;#8b949e" dur="7s" repeatCount="indefinite" />
+    </line>
+    <line x1="600" y1="80" x2="600" y2="200" stroke="#8b949e" stroke-width="3">
+      <animate attributeName="stroke" values="#8b949e;#ff7b72;#8b949e" dur="9s" repeatCount="indefinite" />
+    </line>
+    <line x1="600" y1="200" x2="400" y2="280" stroke="#8b949e" stroke-width="3">
+      <animate attributeName="stroke" values="#8b949e;#d2a8ff;#8b949e" dur="10s" repeatCount="indefinite" />
+    </line>
+
+    <line x1="400" y1="140" x2="200" y2="140" stroke="#8b949e" stroke-width="3">
+      <animate attributeName="stroke" values="#8b949e;#39d353;#8b949e" dur="11s" repeatCount="indefinite" />
+    </line>
+    <line x1="200" y1="140" x2="200" y2="260" stroke="#8b949e" stroke-width="3">
+      <animate attributeName="stroke" values="#8b949e;#f0883e;#8b949e" dur="8s" repeatCount="indefinite" />
+    </line>
+    <line x1="200" y1="260" x2="400" y2="340" stroke="#8b949e" stroke-width="3">
+      <animate attributeName="stroke" values="#8b949e;#58a6ff;#8b949e" dur="9s" repeatCount="indefinite" />
+    </line>
+
+    <!-- Enhanced commit nodes -->
+    <circle cx="400" cy="0" r="10" fill="#39d353" filter="url(#trippy-glow)">
+      <animate attributeName="r" values="10;14;10" dur="3s" repeatCount="indefinite" />
+      <animate attributeName="fill" values="#39d353;#00ffaa;#39d353" dur="5s" repeatCount="indefinite" />
+    </circle>
+    <circle cx="400" cy="80" r="10" fill="#f0883e" filter="url(#trippy-glow)">
+      <animate attributeName="r" values="10;14;10" dur="3s" repeatCount="indefinite" begin="0.5s" />
+      <animate attributeName="fill" values="#f0883e;#ffcc00;#f0883e" dur="6s" repeatCount="indefinite" />
+    </circle>
+    <circle cx="600" cy="80" r="10" fill="#8957e5" filter="url(#trippy-glow)">
+      <animate attributeName="r" values="10;14;10" dur="3s" repeatCount="indefinite" begin="1s" />
+      <animate attributeName="fill" values="#8957e5;#bc8cff;#8957e5" dur="7s" repeatCount="indefinite" />
+    </circle>
+    <circle cx="600" cy="200" r="10" fill="#8957e5" filter="url(#trippy-glow)">
+      <animate attributeName="r" values="10;14;10" dur="3s" repeatCount="indefinite" begin="1.5s" />
+      <animate attributeName="fill" values="#8957e5;#ff00cc;#8957e5" dur="5s" repeatCount="indefinite" />
+    </circle>
+    <circle cx="400" cy="140" r="10" fill="#f0883e" filter="url(#trippy-glow)">
+      <animate attributeName="r" values="10;14;10" dur="3s" repeatCount="indefinite" begin="2s" />
+      <animate attributeName="fill" values="#f0883e;#ff3d00;#f0883e" dur="6s" repeatCount="indefinite" />
+    </circle>
+    <circle cx="200" cy="140" r="10" fill="#3fb950" filter="url(#trippy-glow)">
+      <animate attributeName="r" values="10;14;10" dur="3s" repeatCount="indefinite" begin="2.5s" />
+      <animate attributeName="fill" values="#3fb950;#7fff00;#3fb950" dur="4s" repeatCount="indefinite" />
+    </circle>
+    <circle cx="200" cy="260" r="10" fill="#3fb950" filter="url(#trippy-glow)">
+      <animate attributeName="r" values="10;14;10" dur="3s" repeatCount="indefinite" begin="3s" />
+      <animate attributeName="fill" values="#3fb950;#00ffaa;#3fb950" dur="5s" repeatCount="indefinite" />
+    </circle>
+    <circle cx="400" cy="280" r="10" fill="#f0883e" filter="url(#trippy-glow)">
+      <animate attributeName="r" values="10;14;10" dur="3s" repeatCount="indefinite" begin="3.5s" />
+      <animate attributeName="fill" values="#f0883e;#ffcc00;#f0883e" dur="7s" repeatCount="indefinite" />
+    </circle>
+    <circle cx="400" cy="340" r="10" fill="#f0883e" filter="url(#trippy-glow)">
+      <animate attributeName="r" values="10;14;10" dur="3s" repeatCount="indefinite" begin="4s" />
+      <animate attributeName="fill" values="#f0883e;#ff3d00;#f0883e" dur="6s" repeatCount="indefinite" />
+    </circle>
+    <circle cx="400" cy="400" r="10" fill="#39d353" filter="url(#trippy-glow)">
+      <animate attributeName="r" values="10;14;10" dur="3s" repeatCount="indefinite" begin="4.5s" />
+      <animate attributeName="fill" values="#39d353;#00ffaa;#39d353" dur="5s" repeatCount="indefinite" />
+    </circle>
+  </g>
+
+  <!-- Code-like elements with animations -->
+  <g transform="translate(80,80)" opacity="0.7">
+    <rect x="0" y="0" width="200" height="20" rx="3" fill="#8b949e" opacity="0.2">
+      <animate attributeName="width" values="200;220;200" dur="8s" repeatCount="indefinite" />
+      <animate attributeName="fill" values="#8b949e;#bc8cff;#8b949e" dur="10s" repeatCount="indefinite" />
+    </rect>
+    <rect x="0" y="30" width="160" height="20" rx="3" fill="#8b949e" opacity="0.2">
+      <animate attributeName="width" values="160;180;160" dur="7s" repeatCount="indefinite" />
+      <animate attributeName="fill" values="#8b949e;#58a6ff;#8b949e" dur="12s" repeatCount="indefinite" />
+    </rect>
+    <rect x="20" y="60" width="180" height="20" rx="3" fill="#8b949e" opacity="0.2">
+      <animate attributeName="width" values="180;200;180" dur="9s" repeatCount="indefinite" />
+      <animate attributeName="fill" values="#8b949e;#f0883e;#8b949e" dur="11s" repeatCount="indefinite" />
+    </rect>
+    <rect x="20" y="90" width="140" height="20" rx="3" fill="#8b949e" opacity="0.2">
+      <animate attributeName="width" values="140;160;140" dur="10s" repeatCount="indefinite" />
+      <animate attributeName="fill" values="#8b949e;#39d353;#8b949e" dur="9s" repeatCount="indefinite" />
+    </rect>
+    <rect x="0" y="120" width="190" height="20" rx="3" fill="#8b949e" opacity="0.2">
+      <animate attributeName="width" values="190;210;190" dur="8s" repeatCount="indefinite" />
+      <animate attributeName="fill" values="#8b949e;#ff7b72;#8b949e" dur="10s" repeatCount="indefinite" />
+    </rect>
+    <rect x="0" y="150" width="200" height="20" rx="3" fill="#bc8cff" opacity="0.4">
+      <animate attributeName="width" values="200;220;200" dur="9s" repeatCount="indefinite" />
+      <animate attributeName="fill" values="#bc8cff;#ff00cc;#bc8cff" dur="7s" repeatCount="indefinite" />
+      <animate attributeName="opacity" values="0.4;0.6;0.4" dur="5s" repeatCount="indefinite" />
+    </rect>
+    <rect x="20" y="180" width="150" height="20" rx="3" fill="#8b949e" opacity="0.2">
+      <animate attributeName="width" values="150;170;150" dur="11s" repeatCount="indefinite" />
+      <animate attributeName="fill" values="#8b949e;#d2a8ff;#8b949e" dur="8s" repeatCount="indefinite" />
+    </rect>
+  </g>
+
+  <g transform="translate(940,320)" opacity="0.7">
+    <rect x="0" y="0" width="180" height="20" rx="3" fill="#8b949e" opacity="0.2">
+      <animate attributeName="width" values="180;200;180" dur="9s" repeatCount="indefinite" />
+      <animate attributeName="fill" values="#8b949e;#39d353;#8b949e" dur="11s" repeatCount="indefinite" />
+    </rect>
+    <rect x="0" y="30" width="220" height="20" rx="3" fill="#8b949e" opacity="0.2">
+      <animate attributeName="width" values="220;240;220" dur="10s" repeatCount="indefinite" />
+      <animate attributeName="fill" values="#8b949e;#f0883e;#8b949e" dur="8s" repeatCount="indefinite" />
+    </rect>
+    <rect x="20" y="60" width="160" height="20" rx="3" fill="#8b949e" opacity="0.2">
+      <animate attributeName="width" values="160;180;160" dur="8s" repeatCount="indefinite" />
+      <animate attributeName="fill" values="#8b949e;#8957e5;#8b949e" dur="9s" repeatCount="indefinite" />
+    </rect>
+    <rect x="20" y="90" width="200" height="20" rx="3" fill="#8b949e" opacity="0.2">
+      <animate attributeName="width" values="200;220;200" dur="11s" repeatCount="indefinite" />
+      <animate attributeName="fill" values="#8b949e;#bc8cff;#8b949e" dur="10s" repeatCount="indefinite" />
+    </rect>
+    <rect x="0" y="120" width="190" height="20" rx="3" fill="#8b949e" opacity="0.2">
+      <animate attributeName="width" values="190;210;190" dur="9s" repeatCount="indefinite" />
+      <animate attributeName="fill" values="#8b949e;#ff7b72;#8b949e" dur="8s" repeatCount="indefinite" />
+    </rect>
+    <rect x="0" y="150" width="210" height="20" rx="3" fill="#58a6ff" opacity="0.4">
+      <animate attributeName="width" values="210;230;210" dur="7s" repeatCount="indefinite" />
+      <animate attributeName="fill" values="#58a6ff;#00eeff;#58a6ff" dur="9s" repeatCount="indefinite" />
+      <animate attributeName="opacity" values="0.4;0.6;0.4" dur="6s" repeatCount="indefinite" />
+    </rect>
+    <rect x="20" y="180" width="170" height="20" rx="3" fill="#8b949e" opacity="0.2">
+      <animate attributeName="width" values="170;190;170" dur="10s" repeatCount="indefinite" />
+      <animate attributeName="fill" values="#8b949e;#d2a8ff;#8b949e" dur="9s" repeatCount="indefinite" />
+    </rect>
+  </g>
+
+  <!-- Binary code rain effects -->
+  <g opacity="0.5">
+    <text x="100" y="100" font-family="monospace" font-size="12" fill="#39d353">
+      10110101
+      <animate attributeName="y" from="-20" to="660" dur="10s" repeatCount="indefinite" />
+      <animate attributeName="opacity" values="0.7;0.3;0.7" dur="3s" repeatCount="indefinite" />
+    </text>
+    <text x="400" y="200" font-family="monospace" font-size="12" fill="#bc8cff">
+      01001110
+      <animate attributeName="y" from="-50" to="660" dur="15s" repeatCount="indefinite" />
+      <animate attributeName="opacity" values="0.7;0.3;0.7" dur="4s" repeatCount="indefinite" />
+    </text>
+    <text x="700" y="150" font-family="monospace" font-size="12" fill="#f0883e">
+      11001010
+      <animate attributeName="y" from="-80" to="660" dur="12s" repeatCount="indefinite" />
+      <animate attributeName="opacity" values="0.7;0.3;0.7" dur="3.5s" repeatCount="indefinite" />
+    </text>
+    <text x="900" y="300" font-family="monospace" font-size="12" fill="#58a6ff">
+      01110110
+      <animate attributeName="y" from="-30" to="660" dur="18s" repeatCount="indefinite" />
+      <animate attributeName="opacity" values="0.7;0.3;0.7" dur="4.5s" repeatCount="indefinite" />
+    </text>
+    <text x="1100" y="400" font-family="monospace" font-size="12" fill="#ff7b72">
+      10011001
+      <animate attributeName="y" from="-60" to="660" dur="14s" repeatCount="indefinite" />
+      <animate attributeName="opacity" values="0.7;0.3;0.7" dur="3.8s" repeatCount="indefinite" />
+    </text>
+  </g>
+
+  <!-- Enhanced floating particles with trail effects -->
+  <g>
+    <circle cx="100" cy="100" r="5" fill="#58a6ff" filter="url(#glow)">
+      <animate attributeName="cx" from="100" to="1180" dur="20s" repeatCount="indefinite" />
+      <animate attributeName="cy" from="100" to="540" dur="25s" repeatCount="indefinite" />
+      <animate attributeName="r" values="5;8;5" dur="7s" repeatCount="indefinite" />
+      <animate attributeName="fill" values="#58a6ff;#00eeff;#58a6ff" dur="10s" repeatCount="indefinite" />
+    </circle>
+    <circle cx="200" cy="500" r="4" fill="#bc8cff" filter="url(#glow)">
+      <animate attributeName="cx" from="200" to="1000" dur="18s" repeatCount="indefinite" />
+      <animate attributeName="cy" from="500" to="100" dur="22s" repeatCount="indefinite" />
+      <animate attributeName="r" values="4;7;4" dur="8s" repeatCount="indefinite" />
+      <animate attributeName="fill" values="#bc8cff;#ff00cc;#bc8cff" dur="12s" repeatCount="indefinite" />
+    </circle>
+    <circle cx="1100" cy="200" r="6" fill="#39d353" filter="url(#glow)">
+      <animate attributeName="cx" from="1100" to="200" dur="25s" repeatCount="indefinite" />
+      <animate attributeName="cy" from="200" to="400" dur="20s" repeatCount="indefinite" />
+      <animate attributeName="r" values="6;9;6" dur="6s" repeatCount="indefinite" />
+      <animate attributeName="fill" values="#39d353;#00ffaa;#39d353" dur="9s" repeatCount="indefinite" />
+    </circle>
+    <circle cx="900" cy="500" r="5" fill="#f0883e" filter="url(#glow)">
+      <animate attributeName="cx" from="900" to="300" dur="22s" repeatCount="indefinite" />
+      <animate attributeName="cy" from="500" to="200" dur="19s" repeatCount="indefinite" />
+      <animate attributeName="r" values="5;8;5" dur="7s" repeatCount="indefinite" />
+      <animate attributeName="fill" values="#f0883e;#ffcc00;#f0883e" dur="11s" repeatCount="indefinite" />
+    </circle>
+    <circle cx="500" cy="100" r="4" fill="#58a6ff" filter="url(#glow)">
+      <animate attributeName="cx" from="500" to="700" dur="15s" repeatCount="indefinite" />
+      <animate attributeName="cy" from="100" to="500" dur="18s" repeatCount="indefinite" />
+      <animate attributeName="r" values="4;7;4" dur="9s" repeatCount="indefinite" />
+      <animate attributeName="fill" values="#58a6ff;#00eeff;#58a6ff" dur="10s" repeatCount="indefinite" />
+    </circle>
+
+    <!-- Additional particles -->
+    <circle cx="300" cy="300" r="6" fill="#ff7b72" filter="url(#glow)">
+      <animate attributeName="cx" from="300" to="1000" dur="23s" repeatCount="indefinite" />
+      <animate attributeName="cy" from="300" to="450" dur="17s" repeatCount="indefinite" />
+      <animate attributeName="r" values="6;9;6" dur="5s" repeatCount="indefinite" />
+      <animate attributeName="fill" values="#ff7b72;#ff3d00;#ff7b72" dur="8s" repeatCount="indefinite" />
+    </circle>
+    <circle cx="800" cy="150" r="4" fill="#d2a8ff" filter="url(#glow)">
+      <animate attributeName="cx" from="800" to="400" dur="21s" repeatCount="indefinite" />
+      <animate attributeName="cy" from="150" to="350" dur="16s" repeatCount="indefinite" />
+      <animate attributeName="r" values="4;7;4" dur="6s" repeatCount="indefinite" />
+      <animate attributeName="fill" values="#d2a8ff;#7fff00;#d2a8ff" dur="9s" repeatCount="indefinite" />
+    </circle>
+  </g>
+
+  <!-- Electron orbital effects -->
+  <g opacity="0.6">
+    <ellipse cx="640" cy="320" rx="300" ry="150" fill="none" stroke="#00eeff" stroke-width="1.5" stroke-dasharray="10,5">
+      <animate attributeName="stroke" values="#00eeff;#bc8cff;#00eeff" dur="10s" repeatCount="indefinite" />
+      <animateTransform attributeName="transform" type="rotate" from="0 640 320" to="360 640 320" dur="30s" repeatCount="indefinite" />
+    </ellipse>
+    <ellipse cx="640" cy="320" rx="250" ry="180" fill="none" stroke="#ff00cc" stroke-width="1.5" stroke-dasharray="10,5">
+      <animate attributeName="stroke" values="#ff00cc;#ffcc00;#ff00cc" dur="12s" repeatCount="indefinite" />
+      <animateTransform attributeName="transform" type="rotate" from="90 640 320" to="450 640 320" dur="25s" repeatCount="indefinite" />
+    </ellipse>
+    <ellipse cx="640" cy="320" rx="200" ry="220" fill="none" stroke="#00ffaa" stroke-width="1.5" stroke-dasharray="10,5">
+      <animate attributeName="stroke" values="#00ffaa;#ff3d00;#00ffaa" dur="15s" repeatCount="indefinite" />
+      <animateTransform attributeName="transform" type="rotate" from="45 640 320" to="405 640 320" dur="20s" repeatCount="indefinite" />
+    </ellipse>
+  </g>
+
+  <!-- Shockwave pulse effects -->
+  <circle cx="640" cy="320" r="10" fill="none" stroke="#ffffff" stroke-width="1">
+    <animate attributeName="r" values="10;350;10" dur="10s" repeatCount="indefinite" />
+    <animate attributeName="stroke-opacity" values="0.8;0;0.8" dur="10s" repeatCount="indefinite" />
+  </circle>
+  <circle cx="640" cy="320" r="10" fill="none" stroke="#ffffff" stroke-width="1">
+    <animate attributeName="r" values="10;350;10" dur="10s" begin="3.3s" repeatCount="indefinite" />
+    <animate attributeName="stroke-opacity" values="0.8;0;0.8" dur="10s" begin="3.3s" repeatCount="indefinite" />
+  </circle>
+  <circle cx="640" cy="320" r="10" fill="none" stroke="#ffffff" stroke-width="1">
+    <animate attributeName="r" values="10;350;10" dur="10s" begin="6.6s" repeatCount="indefinite" />
+    <animate attributeName="stroke-opacity" values="0.8;0;0.8" dur="10s" begin="6.6s" repeatCount="indefinite" />
+  </circle>
+</svg>

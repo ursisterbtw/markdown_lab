@@ -29,12 +29,14 @@ logger = logging.getLogger("markdown_scraper")
 class MarkdownScraper:
     """Scrapes websites and converts content to markdown with chunking support."""
 
-    def __init__(self,
-                 requests_per_second: float = 1.0,
-                 timeout: int = 30,
-                 max_retries: int = 3,
-                 chunk_size: int = 1000,
-                 chunk_overlap: int = 200) -> None:
+    def __init__(
+        self,
+        requests_per_second: float = 1.0,
+        timeout: int = 30,
+        max_retries: int = 3,
+        chunk_size: int = 1000,
+        chunk_overlap: int = 200,
+    ) -> None:
         """
         Args:
             requests_per_second: Maximum number of requests per second
@@ -81,7 +83,7 @@ class MarkdownScraper:
                 return response.text
             except requests.exceptions.HTTPError as http_err:
                 logger.warning(
-                    f"HTTP error on attempt {attempt+1}/{self.max_retries}: {http_err}"
+                    f"HTTP error on attempt {attempt + 1}/{self.max_retries}: {http_err}"
                 )
                 if attempt == self.max_retries - 1:
                     logger.error(
@@ -91,7 +93,7 @@ class MarkdownScraper:
                 time.sleep(2**attempt)  # Exponential backoff
             except requests.exceptions.ConnectionError as conn_err:
                 logger.warning(
-                    f"Connection error on attempt {attempt+1}/{self.max_retries}: {conn_err}"
+                    f"Connection error on attempt {attempt + 1}/{self.max_retries}: {conn_err}"
                 )
                 if attempt == self.max_retries - 1:
                     logger.error(
@@ -101,7 +103,7 @@ class MarkdownScraper:
                 time.sleep(2**attempt)
             except requests.exceptions.Timeout as timeout_err:
                 logger.warning(
-                    f"Timeout on attempt {attempt+1}/{self.max_retries}: {timeout_err}"
+                    f"Timeout on attempt {attempt + 1}/{self.max_retries}: {timeout_err}"
                 )
                 if attempt == self.max_retries - 1:
                     logger.error(
@@ -152,11 +154,7 @@ class MarkdownScraper:
             # Ensure src is a string
             if isinstance(src, list):
                 src = src[0] if src else ""
-            if (
-                src
-                and not src.startswith("http://")
-                and not src.startswith("https://")
-            ):
+            if src and not src.startswith("http://") and not src.startswith("https://"):
                 src = urljoin(base_url, src)
             alt = element.get("alt", "image")
             return f"![{alt}]({src})"
@@ -259,9 +257,7 @@ class MarkdownScraper:
                 )
                 if isinstance(e, Tag)
             ]:
-                if element_markdown := self._get_element_markdown(
-                    element, base_url
-                ):
+                if element_markdown := self._get_element_markdown(element, base_url):
                     markdown_content += element_markdown + "\n\n"
 
         logger.info("Conversion to Markdown completed.")
@@ -400,7 +396,7 @@ class MarkdownScraper:
                 output_file = str(output_path / filename)
 
                 # Scrape and convert the page
-                logger.info(f"Scraping URL {i+1}/{len(filtered_urls)}: {url}")
+                logger.info(f"Scraping URL {i + 1}/{len(filtered_urls)}: {url}")
                 html_content = self.scrape_website(url)
                 markdown_content = self.convert_to_markdown(html_content, url)
                 self.save_markdown(markdown_content, output_file)
@@ -471,7 +467,9 @@ def main(
 
             # Get output directory from output_file
             output_path = Path(output_file)
-            output_dir = str(output_path.parent) if output_path.is_file() else output_file
+            output_dir = (
+                str(output_path.parent) if output_path.is_file() else output_file
+            )
             # Scrape by sitemap
             logger.info(f"Scraping website using sitemap: {base_url}")
             scraper.scrape_by_sitemap(
