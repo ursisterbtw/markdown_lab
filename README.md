@@ -166,6 +166,13 @@ The project includes comprehensive unit tests. To run them:
 pytest
 ```
 
+## Running Benchmarks
+
+To run benchmarks using `pytest-benchmark`, use the following command:
+
+```bash
+pytest --benchmark-only
+
 ## Dependencies
 
 - requests: Web scraping and HTTP requests
