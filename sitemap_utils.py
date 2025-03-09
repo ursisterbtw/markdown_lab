@@ -142,7 +142,7 @@ class SitemapParser:
         try:
             # Handle XML namespaces
             ns_match = re.search(r'xmlns\s*=\s*["\']([^"\']+)["\']', content)
-            namespace = ns_match.group(1) if ns_match else None
+            namespace = ns_match[1] if ns_match else None
 
             # Define namespace mapping
             ns_map = {"sm": namespace} if namespace else {}
@@ -152,12 +152,14 @@ class SitemapParser:
             # Check if this is a sitemap index
             if root.tag.endswith("sitemapindex"):
                 # Process sitemap index
-                for sitemap in root.findall(
-                    ".//sm:sitemap/sm:loc" if namespace else ".//sitemap/loc", ns_map
-                ):
-                    if sitemap is not None and sitemap.text is not None:
-                        sitemap_index_urls.append(sitemap.text.strip())
-
+                sitemap_index_urls.extend(
+                    sitemap.text.strip()
+                    for sitemap in root.findall(
+                        ".//sm:sitemap/sm:loc" if namespace else ".//sitemap/loc",
+                        ns_map,
+                    )
+                    if sitemap is not None and sitemap.text is not None
+                )
                 logger.info(
                     f"Found sitemap index with {len(sitemap_index_urls)} sitemaps"
                 )
@@ -279,8 +281,7 @@ class SitemapParser:
 
         # Process each potential sitemap
         for sitemap_url in sitemap_locations:
-            urls = self._process_sitemap(sitemap_url)
-            if urls:
+            if urls := self._process_sitemap(sitemap_url):
                 logger.info(f"Found {len(urls)} URLs in sitemap {sitemap_url}")
                 self.discovered_urls.extend(urls)
                 # If we found URLs in this sitemap, we can stop looking

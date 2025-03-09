@@ -1,3 +1,5 @@
+![Markdown Lab](github-banner.svg)
+
 # Markdown Lab 🔄📝
 
 A powerful and modular web scraper that converts web content into well-structured Markdown files with RAG-ready chunking capabilities.
