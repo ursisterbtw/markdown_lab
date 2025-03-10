@@ -27,6 +27,8 @@ def __init__(self,
         js_rendering: Whether to enable JavaScript rendering
         js_wait_time: Time to wait for JavaScript execution in milliseconds
     """
+    if js_wait_time < 0:
+        raise ValueError("js_wait_time cannot be negative")
     self.session = requests.Session()
     self.session.headers.update(
         {
@@ -40,7 +42,6 @@ def __init__(self,
     self.requests_per_second = requests_per_second
     self.js_rendering = js_rendering
     self.js_wait_time = js_wait_time
-
 
 # Update the scrape_website method:
 def scrape_website(self, url: str) -> str:
