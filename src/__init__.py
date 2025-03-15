@@ -5,17 +5,31 @@ well-structured Markdown files with RAG-ready chunking capabilities.
 
 __version__ = "0.1.0"
 
-# Try to import Rust implementations
-try:
+import importlib.util
+
+# Try to import Rust implementations if the module is available
+if importlib.util.find_spec("markdown_lab.markdown_lab_rs") is not None:
     from .markdown_lab_rs import (
         convert_html_to_markdown,
         chunk_markdown,
         render_js_page,
     )
-
     RUST_AVAILABLE = True
-except ImportError:
+else:
     RUST_AVAILABLE = False
+    try:
+        from .markdown_lab_rs import (
+            convert_html_to_markdown,
+            chunk_markdown,
+            render_js_page,
+        )
+        RUST_AVAILABLE = True
+    except ImportError:
+        logger = logging.getLogger(__name__)
+        logger.warning(
+            f"Rust extension not available, falling back to Python implementation.\n{traceback.format_exc()}"
+        )
+        RUST_AVAILABLE = False
 
 # Import public API
 from .main import MarkdownScraper

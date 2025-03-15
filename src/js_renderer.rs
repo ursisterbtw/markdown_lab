@@ -1,3 +1,4 @@
+use headless_chrome::Browser;
 use thiserror::Error;
 use tokio::time::{sleep, Duration};
 
@@ -65,17 +66,38 @@ fn needs_js_rendering(html: &str) -> bool {
         || html.contains("<div id=\"root\"></div>")
 }
 
-/// Simulate what enhanced HTML might look like after JS rendering
-/// In a real implementation, this would be the actual rendered HTML from the browser
-fn enhanced_html(html: &str) -> String {
-    // This is just a simulation for demonstration purposes
-    // A real implementation would return the actual rendered HTML
-    html.replace(
-        "<div id=\"app\"></div>",
-        "<div id=\"app\"><div class=\"content\">Simulated JavaScript-rendered content</div></div>",
-    )
-    .replace(
-        "<div id=\"root\"></div>",
-        "<div id=\"root\"><div class=\"content\">Simulated JavaScript-rendered content</div></div>",
+#[cfg(feature = "real_rendering")]
+fn enhanced_html(url: &str, _html: &str) -> Result<String, RendererError> {
+    // Integration with a headless browser (e.g., the headless_chrome crate) for dynamic JS rendering.
+    // Note: For a real-world implementation, consider proper async handling (e.g., using spawn_blocking)
+    // or an async WebDriver approach instead.
+    let browser = Browser::default().map_err(|e| RendererError::Other(e.to_string()))?;
+    let tab = browser
+        .new_tab()
+        .map_err(|e| RendererError::Other(e.to_string()))?;
+    tab.navigate_to(url)
+        .map_err(|e| RendererError::Other(e.to_string()))?;
+    tab.wait_until_navigated()
+        .map_err(|e| RendererError::Other(e.to_string()))?;
+    tab.wait_for_element("body")
+        .map_err(|e| RendererError::Other(e.to_string()))?;
+    let content = tab
+        .get_content()
+        .map_err(|e| RendererError::Other(e.to_string()))?;
+    Ok(content)
+}
+
+#[cfg(not(feature = "real_rendering"))]
+fn enhanced_html(_url: &str, html: &str) -> Result<String, RendererError> {
+    // Fallback simulated enhancement for demonstration purposes.
+    Ok(
+        html.replace(
+            "<div id=\"app\"></div>",
+            "<div id=\"app\"><div class=\"content\">Simulated JavaScript-rendered content</div></div>",
+        )
+        .replace(
+            "<div id=\"root\"></div>",
+            "<div id=\"root\"><div class=\"content\">Simulated JavaScript-rendered content</div></div>",
+        )
     )
 }

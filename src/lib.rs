@@ -37,12 +37,13 @@ fn chunk_markdown(
 /// Renders a JavaScript-enabled page and returns the HTML content
 #[pyfunction]
 fn render_js_page(url: &str, wait_time: Option<u64>) -> PyResult<String> {
-    let runtime = tokio::runtime::Runtime::new()
+    // Reuse a global runtime or a lazily initialized one for better performance.
+    // For example, you could define a static RUNTIME: Lazy<Runtime> ...
+    let runtime = get_global_tokio_runtime()
         .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))?;
 
     let html = runtime
         .block_on(async { js_renderer::render_page(url, wait_time.unwrap_or(2000)).await })
         .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))?;
-
     Ok(html)
 }

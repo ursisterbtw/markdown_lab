@@ -31,7 +31,8 @@ pub fn extract_main_content(html: &str) -> Result<Html, ParserError> {
         }
     }
 
-    // If no specific content container found, return the whole document
+    // Fallback: If no specific content container is found, return the whole document.
+    // Note: Downstream consumers should handle processing of large documents gracefully.
     Ok(document)
 }
 

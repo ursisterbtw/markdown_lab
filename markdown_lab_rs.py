@@ -46,7 +46,7 @@ def convert_html_to_markdown(html: str, base_url: str = "") -> str:
             logger.warning(f"Error in Rust HTML-to-markdown conversion, falling back to Python: {e}")
 
     # Fall back to Python implementation
-    from main import MarkdownScraper
+    from main_entry import MarkdownScraper
     scraper = MarkdownScraper()
     return scraper.convert_to_markdown(html, base_url)
 
