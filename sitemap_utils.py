@@ -112,8 +112,8 @@ class SitemapParser:
             logger.warning(f"Could not retrieve robots.txt from {robots_url}")
             return []
 
-        # Extract sitemap URLs from robots.txt
-        sitemap_urls = []
+            # Extract sitemap URLs from robots.txt
+            sitemap_urls: List[str] = []
         for line in robots_content.splitlines():
             if line.lower().startswith("sitemap:"):
                 sitemap_url = line[8:].strip()
@@ -137,7 +137,7 @@ class SitemapParser:
             Tuple containing list of SitemapURLs and list of sitemap index URLs
         """
         sitemap_urls = []
-        sitemap_index_urls = []
+        sitemap_index_urls: List[str] = []
 
         try:
             # Handle XML namespaces

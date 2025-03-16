@@ -89,10 +89,14 @@ pub fn extract_links(html: &str, base_url: &str) -> Result<Vec<String>, ParserEr
     for element in document.select(&selector) {
         if let Some(href) = element.value().attr("href") {
             if !href.starts_with("javascript:") && !href.starts_with("#") {
-                // Resolve relative URLs
-                match base_url.join(href) {
-                    Ok(absolute_url) => links.push(absolute_url.to_string()),
-                    Err(_) => continue, // Skip invalid URLs
+                // For absolute URLs, preserve them exactly as they appear
+                if href.starts_with("http://") || href.starts_with("https://") {
+                    links.push(href.to_string());
+                } else {
+                    // For relative URLs, resolve them against the base URL
+                    if let Ok(absolute_url) = base_url.join(href) {
+                        links.push(absolute_url.to_string());
+                    }
                 }
             }
         }

@@ -31,6 +31,9 @@ A powerful and modular web scraper that converts web content into well-structure
 git clone https://github.com/ursisterbtw/markdown_lab.git
 cd markdown_lab
 pip install -r requirements.txt
+
+# Build the Rust library
+cargo build --release
 ```
 
 ## Usage
@@ -168,12 +171,75 @@ The project includes comprehensive unit tests. To run them:
 pytest
 ```
 
+## Running Tests
+
+### Rust Tests
+```bash
+# Run unit and integration tests
+cargo test
+
+# Run tests with logging
+RUST_LOG=debug cargo test -- --nocapture
+```
+
+### Python Tests
+```bash
+# Run Python binding tests
+pytest tests/test_python_bindings.py -v
+```
+
 ## Running Benchmarks
 
-To run benchmarks using `pytest-benchmark`, use the following command:
+```bash
+# Run all benchmarks
+cargo bench
+
+# Run specific benchmark
+cargo bench html_to_markdown
+cargo bench chunk_markdown
+```
+
+## Visualizing Benchmark Results
+
+After running the benchmarks, you can visualize the results:
 
 ```bash
-pytest --benchmark-only
+python scripts/visualize_benchmarks.py
+```
+
+This will create a `benchmark_results.png` file with a bar chart showing the performance of each operation.
+
+## Development
+
+### Code Organization
+
+- `src/`: Rust source code
+  - `lib.rs`: Main library and Python bindings
+  - `html_parser.rs`: HTML parsing utilities
+  - `markdown_converter.rs`: HTML to Markdown conversion
+  - `chunker.rs`: Markdown chunking logic
+  - `js_renderer.rs`: JavaScript page rendering
+
+- `tests/`: Test files
+  - Rust integration tests
+  - Python binding tests
+
+- `benches/`: Benchmark files
+  - Performance tests for core operations
+
+### Running with Real JavaScript Rendering
+
+To enable real JavaScript rendering with headless Chrome:
+
+```bash
+cargo build --release --features real_rendering
+```
+
+## Performance Considerations
+
+- HTML to Markdown conversion is optimized for medium to large documents
+- Chunking algorithm balances semantic coherence with performance
+- JavaScript rendering can be CPU and memory intensive
 
 ## Dependencies
 

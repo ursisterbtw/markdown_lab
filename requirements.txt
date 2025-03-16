@@ -12,3 +12,10 @@ types-requests>=2.31.0
 types-beautifulsoup4>=4.12.0
 mypy>=1.4.1
 pytest-benchmark>=3.4.1
+pytest>=7.4.0
+matplotlib>=3.8.0
+seaborn>=0.13.0
+pandas>=2.1.0
+types-matplotlib
+types-seaborn
+pandas-stubs

@@ -9,7 +9,7 @@ import requests
 from bs4 import BeautifulSoup, Tag
 from chunk_utils import ContentChunker, create_semantic_chunks
 from sitemap_utils import SitemapParser
-from throttle import RequestThrottlers
+from throttle import RequestThrottler
 
 # Configure logging with more detailed formatting
 logging.basicConfig(
@@ -67,7 +67,7 @@ class MarkdownScraper:
             requests.exceptions.RequestException: If the request fails after retries
         """
         import time
-        import psutil
+        import psutil  # type: ignore
         import tracemalloc
 
         logger.info(f"Attempting to scrape the website: {url}")

@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 import requests
 
-from main1 import MarkdownScraper
+from main import MarkdownScraper
 
 
 @pytest.fixture
@@ -85,7 +85,7 @@ def test_save_markdown(mock_open):
     scraper.save_markdown(markdown_content, output_file)
 
     # assert that open was called with the correct file name and mode
-    mock_open.assert_called_once_with(output_file, "w")
+    mock_open.assert_called_once_with(output_file, "w", encoding="utf-8")
 
     # assert write was called with the content
     mock_file.write.assert_called_once_with(markdown_content)
