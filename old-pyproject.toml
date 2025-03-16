@@ -1,0 +1,56 @@
+[build-system]
+requires = ["maturin>=1.4,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "markdown-lab"
+version = "0.1.0"
+description = "A powerful and modular web scraper that converts web content into well-structured Markdown files with RAG-ready chunking capabilities."
+readme = "README.md"
+requires-python = ">=3.12"
+license = {file = "LICENSE"}
+authors = [
+    {name = "ursister", email = "ursister@example.com"},
+]
+dependencies = [
+    "requests>=2.32.3",
+    "beautifulsoup4>=4.13.3",
+    "markdownify>=0.11.0",
+    "argparse>=1.4.0",
+    "typing-extensions>=4.12.2",
+    "pathlib>=1.0.1",
+    "python-dateutil>=2.9.0.post0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3.5",
+    "pytest-mock>=3.14.0",
+    "pytest-benchmark>=3.4.1",
+    "mypy>=1.4.1",
+    "types-requests>=2.31.0",
+    "types-beautifulsoup4>=4.12.0",
+]
+
+[tool.maturin]
+python-source = "."
+module-name = "markdown_lab.markdown_lab_rs"
+features = ["pyo3/extension-module"]
+profile = "release"
+
+[tool.pytest.ini_options]
+benchmark_min_rounds = 5
+benchmark_max_time = 1.0
+benchmark_save = true
+benchmark_save_data = true
+benchmark_enable = true
+benchmark_group_by = "group"
+benchmark_sort = "name"
+benchmark_columns = ["min", "max", "mean", "stddev", "median", "iqr", "outliers", "rounds", "iterations"]
+benchmark_timer = "time.perf_counter"
+benchmark_disable_gc = true
+benchmark_warmup = true
+benchmark_skip = false
+benchmark_only = false
+benchmark_max_iterations = 100000
+benchmark_min_time = 0.000005

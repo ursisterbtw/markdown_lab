@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 import requests
 
-from main import MarkdownScraper
+from main1 import MarkdownScraper
 
 
 @pytest.fixture
