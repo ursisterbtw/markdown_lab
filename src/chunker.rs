@@ -177,7 +177,7 @@ fn find_good_split_point(text: &str, approximate_position: usize) -> usize {
                 && text
                     .chars()
                     .nth(end_pos)
-                    .map_or(false, |c| c.is_whitespace())
+                    .is_some_and(|c| c.is_whitespace())
             {
                 end_pos += 1;
             }
@@ -223,7 +223,7 @@ fn calculate_semantic_density(text: &str) -> f32 {
 
     for word in text.split_whitespace() {
         // Count words that start with uppercase (potential named entities)
-        if word.chars().next().map_or(false, |c| c.is_uppercase()) {
+        if word.chars().next().is_some_and(|c| c.is_uppercase()) {
             semantic_indicators += 0.5;
         }
 

@@ -102,7 +102,7 @@ pub fn convert_to_markdown(html: &str, base_url: &str) -> Result<String, Markdow
                 markdown_content.push_str(&format!("- {}\n", text));
             }
         }
-        markdown_content.push_str("\n");
+        markdown_content.push('\n');
     }
 
     // Process ordered lists
@@ -118,7 +118,7 @@ pub fn convert_to_markdown(html: &str, base_url: &str) -> Result<String, Markdow
                 i += 1;
             }
         }
-        markdown_content.push_str("\n");
+        markdown_content.push('\n');
     }
 
     // Process code blocks

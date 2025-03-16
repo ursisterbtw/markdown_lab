@@ -1,6 +1,6 @@
 # New Terminal Tools - Terminal Trove
 
-# New Terminal Tools
+## March 11, 2025
 
 Below is a list of new terminal tools added and updated regularly here and RSS.
 
@@ -56,7 +56,7 @@ Want to see a tool on here? Post a Tool.
 
 1. g - A feature-rich, customizable, and cross-platform ls alternative.
 
-1. httpyac - A command line interface to execute *.http, *.rest files.
+1. httpyac - A command line interface to execute *.http,*.rest files.
 
 1. ktool - A TUI Mach-O/ObjC analysis and editing toolkit in the terminal.
 
