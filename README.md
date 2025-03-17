@@ -5,6 +5,7 @@
 A powerful and modular web scraper that converts web content into well-structured Markdown files with RAG-ready chunking capabilities.
 
 [![Python CI](https://github.com/ursisterbtw/markdown_lab/actions/workflows/CI.yml/badge.svg)](https://github.com/ursisterbtw/markdown_lab/actions/workflows/CI.yml)
+[![Rust](https://github.com/ursisterbtw/markdown_lab/actions/workflows/rust.yml/badge.svg)](https://github.com/ursisterbtw/markdown_lab/actions/workflows/rust.yml)
 
 ## Features
 
