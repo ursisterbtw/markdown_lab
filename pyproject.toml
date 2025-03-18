@@ -22,3 +22,6 @@ benchmark_skip = false
 benchmark_only = false
 benchmark_max_iterations = 100000
 benchmark_min_time = 0.000005
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel", "maturin"]
