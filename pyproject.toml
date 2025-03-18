@@ -1,7 +1,7 @@
 [project]
 name = "markdown-lab"
 version = "0.1.0"
-description = "Add your description here"
+description = "a markdown parser"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = []
@@ -24,4 +24,4 @@ benchmark_max_iterations = 100000
 benchmark_min_time = 0.000005
 
 [build-system]
-requires = ["setuptools>=61.0", "wheel", "maturin"]
+requires = ["setuptools", "wheel", "maturin"]
