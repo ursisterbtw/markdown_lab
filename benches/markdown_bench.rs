@@ -1,4 +1,4 @@
-use criterion::{black_box, criterion_group, criterion_main, Criterion, BenchmarkId};
+use criterion::{BenchmarkId, Criterion, black_box, criterion_group, criterion_main};
 use markdown_lab_rs::{
     chunker::create_semantic_chunks,
     html_parser::{clean_html, extract_links, extract_main_content},
@@ -17,14 +17,8 @@ fn bench_html_processing(c: &mut Criterion) {
             "small",
             "<html><body><main><h1>Test</h1><p>Small content</p></main></body></html>",
         ),
-        (
-            "medium",
-            include_str!("../test_data/medium.html"),
-        ),
-        (
-            "large",
-            include_str!("../test_data/large.html"),
-        ),
+        ("medium", include_str!("../test_data/medium.html")),
+        ("large", include_str!("../test_data/large.html")),
     ];
 
     for (size, html) in html_samples.iter() {
@@ -32,36 +26,24 @@ fn bench_html_processing(c: &mut Criterion) {
         group.bench_with_input(
             BenchmarkId::new("extract_main_content", size),
             html,
-            |b, html| {
-                b.iter(|| extract_main_content(black_box(html)))
-            },
+            |b, html| b.iter(|| extract_main_content(black_box(html))),
         );
 
         // Benchmark HTML cleaning
-        group.bench_with_input(
-            BenchmarkId::new("clean_html", size),
-            html,
-            |b, html| {
-                b.iter(|| clean_html(black_box(html)))
-            },
-        );
+        group.bench_with_input(BenchmarkId::new("clean_html", size), html, |b, html| {
+            b.iter(|| clean_html(black_box(html)))
+        });
 
         // Benchmark link extraction
-        group.bench_with_input(
-            BenchmarkId::new("extract_links", size),
-            html,
-            |b, html| {
-                b.iter(|| extract_links(black_box(html), "https://example.com"))
-            },
-        );
+        group.bench_with_input(BenchmarkId::new("extract_links", size), html, |b, html| {
+            b.iter(|| extract_links(black_box(html), "https://example.com"))
+        });
 
         // Benchmark markdown conversion
         group.bench_with_input(
             BenchmarkId::new("convert_to_markdown", size),
             html,
-            |b, html| {
-                b.iter(|| convert_to_markdown(black_box(html), "https://example.com"))
-            },
+            |b, html| b.iter(|| convert_to_markdown(black_box(html), "https://example.com")),
         );
     }
 

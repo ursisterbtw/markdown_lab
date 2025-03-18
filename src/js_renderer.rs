@@ -22,8 +22,8 @@ pub async fn render_page(url: &str, _wait_time: u64) -> Result<String, RendererE
             .build()
             .map_err(|e| RendererError::BrowserError(e.to_string()))?;
 
-        let browser = Browser::new(options)
-            .map_err(|e| RendererError::BrowserError(e.to_string()))?;
+        let browser =
+            Browser::new(options).map_err(|e| RendererError::BrowserError(e.to_string()))?;
 
         let tab = browser
             .wait_for_initial_tab()

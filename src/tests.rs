@@ -57,7 +57,8 @@ mod markdown_converter_tests {
 
     #[test]
     fn test_convert_links_and_images() {
-        let html = "<div><a href=\"/test\">Test Link</a><img src=\"/image.jpg\" alt=\"Test Image\"></div>";
+        let html =
+            "<div><a href=\"/test\">Test Link</a><img src=\"/image.jpg\" alt=\"Test Image\"></div>";
 
         let base_url = "https://example.com";
         let markdown = convert_to_markdown(html, base_url).unwrap();

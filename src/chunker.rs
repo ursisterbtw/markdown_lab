@@ -174,10 +174,7 @@ fn find_good_split_point(text: &str, approximate_position: usize) -> usize {
             // Find next non-whitespace or end of string
             let mut end_pos = approximate_position + i + 1;
             while end_pos < text.len()
-                && text
-                    .chars()
-                    .nth(end_pos)
-                    .is_some_and(|c| c.is_whitespace())
+                && text.chars().nth(end_pos).is_some_and(|c| c.is_whitespace())
             {
                 end_pos += 1;
             }
