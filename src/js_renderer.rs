@@ -55,7 +55,7 @@ pub async fn render_page(url: &str, _wait_time: u64) -> Result<String, RendererE
             .await
             .map_err(|e| RendererError::NetworkError(e.to_string()))?;
 
-        Ok(enhanced_html(&html)?)
+        enhanced_html(&html)
     }
 }
 
