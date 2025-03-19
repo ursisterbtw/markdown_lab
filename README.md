@@ -2,7 +2,11 @@
 
 # Markdown Lab 🔄📝
 
-A powerful and modular web scraper that converts web content into well-structured Markdown files with RAG-ready chunking capabilities.
+This is a web scraping and conversion tool called Markdown Lab that combines Python and Rust components to scrape websites and convert HTML content to markdown format. It supports sitemap parsing, semantic chunking for RAG
+  (Retrieval-Augmented Generation), and includes performance optimizations through Rust integration.
+
+  Key features include HTML-to-markdown conversion with support for various elements (headers, links, images, lists, code blocks), intelligent content chunking that preserves document structure, and systematic content discovery
+  through sitemap parsing. The hybrid architecture uses Python for high-level operations and Rust for performance-critical tasks.
 
 [![Python CI](https://github.com/ursisterbtw/markdown_lab/actions/workflows/CI.yml/badge.svg)](https://github.com/ursisterbtw/markdown_lab/actions/workflows/CI.yml)
 [![Rust](https://github.com/ursisterbtw/markdown_lab/actions/workflows/rust.yml/badge.svg)](https://github.com/ursisterbtw/markdown_lab/actions/workflows/rust.yml)
