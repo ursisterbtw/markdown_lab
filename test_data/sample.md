@@ -37,10 +37,10 @@ function Welcome({ name }) {
 
 Modern CSS practices include:
 
-* CSS Modules
-* Styled Components
-* Tailwind CSS
-* CSS-in-JS solutions
+- CSS Modules
+- Styled Components
+- Tailwind CSS
+- CSS-in-JS solutions
 
 ## Backend Development
 
@@ -213,10 +213,10 @@ function generateToken(user) {
 
 Key metrics to monitor:
 
-* First Contentful Paint (FCP)
-* Largest Contentful Paint (LCP)
-* Time to Interactive (TTI)
-* First Input Delay (FID)
+- First Contentful Paint (FCP)
+- Largest Contentful Paint (LCP)
+- Time to Interactive (TTI)
+- First Input Delay (FID)
 
 ### Backend Performance
 
