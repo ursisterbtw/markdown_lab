@@ -16,3 +16,5 @@ pytest>=7.4.0
 matplotlib>=3.8.0
 seaborn>=0.13.0
 pandas>=2.1.0
+# Optional dependencies for Rust integration
+maturin>=0.14.0
