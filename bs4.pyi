@@ -1,5 +1,5 @@
-from typing import Any, Dict, List, Optional, Union, Callable, Type
 from re import Pattern
+from typing import Any, Callable, Dict, List, Optional, Type, Union
 
 class Tag:
     name: str

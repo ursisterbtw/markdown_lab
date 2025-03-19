@@ -112,8 +112,6 @@ class SitemapParser:
             logger.warning(f"Could not retrieve robots.txt from {robots_url}")
             return []
 
-            # Extract sitemap URLs from robots.txt
-            sitemap_urls: List[str] = []
         for line in robots_content.splitlines():
             if line.lower().startswith("sitemap:"):
                 sitemap_url = line[8:].strip()

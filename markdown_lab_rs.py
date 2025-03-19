@@ -14,17 +14,19 @@ logger = logging.getLogger(__name__)
 
 # Try to import the Rust extension
 try:
+    from .markdown_lab_rs import chunk_markdown as _rs_chunk_markdown
     from .markdown_lab_rs import (
         convert_html_to_markdown as _rs_convert_html_to_markdown,
-        chunk_markdown as _rs_chunk_markdown,
-        render_js_page as _rs_render_js_page,
     )
+    from .markdown_lab_rs import render_js_page as _rs_render_js_page
 
     RUST_AVAILABLE = True
     logger.info("Using Rust implementation for improved performance")
 except ImportError:
     RUST_AVAILABLE = False
-    logger.warning("Rust extension not available, falling back to Python implementation")
+    logger.warning(
+        "Rust extension not available, falling back to Python implementation"
+    )
 
 
 def convert_html_to_markdown(html: str, base_url: str = "") -> str:
@@ -43,18 +45,19 @@ def convert_html_to_markdown(html: str, base_url: str = "") -> str:
         try:
             return _rs_convert_html_to_markdown(html, base_url)
         except Exception as e:
-            logger.warning(f"Error in Rust HTML-to-markdown conversion, falling back to Python: {e}")
+            logger.warning(
+                f"Error in Rust HTML-to-markdown conversion, falling back to Python: {e}"
+            )
 
     # Fall back to Python implementation
     from main1 import MarkdownScraper
+
     scraper = MarkdownScraper()
     return scraper.convert_to_markdown(html, base_url)
 
 
 def chunk_markdown(
-    markdown: str,
-    chunk_size: int = 1000,
-    chunk_overlap: int = 200
+    markdown: str, chunk_size: int = 1000, chunk_overlap: int = 200
 ) -> List[str]:
     """
     Chunk markdown content using the Rust implementation if available,
@@ -76,11 +79,12 @@ def chunk_markdown(
 
     # Fall back to Python implementation
     from chunk_utils import create_semantic_chunks
+
     chunks = create_semantic_chunks(
         content=markdown,
         source_url="",  # Not used for content
         chunk_size=chunk_size,
-        chunk_overlap=chunk_overlap
+        chunk_overlap=chunk_overlap,
     )
     return [chunk.content for chunk in chunks]
 
@@ -107,5 +111,7 @@ def render_js_page(url: str, wait_time_ms: Optional[int] = None) -> str:
     # Fall back to Python implementation
     # This would require a JS renderer like Playwright or Selenium
     # For now, we'll just log a warning and return None
-    logger.warning("JS rendering requires the Rust extension or an external browser automation tool")
+    logger.warning(
+        "JS rendering requires the Rust extension or an external browser automation tool"
+    )
     return None

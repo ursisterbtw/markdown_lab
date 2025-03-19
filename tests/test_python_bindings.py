@@ -1,5 +1,7 @@
 import pytest
+
 import markdown_lab_rs
+
 
 def test_convert_html_to_markdown():
     html = """
@@ -17,6 +19,7 @@ def test_convert_html_to_markdown():
     assert "# Test Page" in markdown
     assert "# Main Title" in markdown
     assert "This is a test paragraph." in markdown
+
 
 def test_chunk_markdown():
     markdown = """
@@ -38,11 +41,13 @@ This is a test paragraph.
     assert any("## Section 1" in chunk for chunk in chunks)
     assert any("## Section 2" in chunk for chunk in chunks)
 
+
 def test_render_js_page():
     url = "https://example.com"
     html = markdown_lab_rs.render_js_page(url)
     assert isinstance(html, str)
     assert len(html) > 0
+
 
 def test_error_handling():
     with pytest.raises(RuntimeError):

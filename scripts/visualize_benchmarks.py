@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 import json
-import os
 from pathlib import Path
-import plotly.graph_objects as go
-import plotly.express as px
+
 import pandas as pd
+import plotly.graph_objects as go
+
 
 def load_benchmark_data():
     """Load benchmark data from Criterion output directory."""
@@ -21,15 +21,20 @@ def load_benchmark_data():
                 with open(estimates_file) as f:
                     estimates = json.load(f)
                     benchmark_name = bench_dir.parent.name
-                    mean_time = estimates["mean"]["point_estimate"] / 1e9  # Convert to seconds
+                    mean_time = (
+                        estimates["mean"]["point_estimate"] / 1e9
+                    )  # Convert to seconds
                     std_dev = estimates["mean"]["standard_error"] / 1e9
-                    data.append({
-                        "benchmark": benchmark_name,
-                        "mean_time": mean_time,
-                        "std_dev": std_dev
-                    })
+                    data.append(
+                        {
+                            "benchmark": benchmark_name,
+                            "mean_time": mean_time,
+                            "std_dev": std_dev,
+                        }
+                    )
 
     return pd.DataFrame(data)
+
 
 def create_benchmark_plot(df):
     """Create an interactive bar plot of benchmark results."""
@@ -39,13 +44,15 @@ def create_benchmark_plot(df):
     fig = go.Figure()
 
     # Add bars for mean execution time
-    fig.add_trace(go.Bar(
-        name="Execution Time",
-        x=df["benchmark"],
-        y=df["mean_time"],
-        error_y=dict(type="data", array=df["std_dev"]),
-        marker_color="rgb(55, 83, 109)"
-    ))
+    fig.add_trace(
+        go.Bar(
+            name="Execution Time",
+            x=df["benchmark"],
+            y=df["mean_time"],
+            error_y=dict(type="data", array=df["std_dev"]),
+            marker_color="rgb(55, 83, 109)",
+        )
+    )
 
     # Update layout
     fig.update_layout(
@@ -54,16 +61,18 @@ def create_benchmark_plot(df):
         yaxis_title="Time (seconds)",
         template="plotly_white",
         showlegend=False,
-        hovermode="x"
+        hovermode="x",
     )
 
     # Save the plot
     fig.write_html("target/criterion/benchmark_results.html")
     print("Benchmark visualization saved to target/criterion/benchmark_results.html")
 
+
 def main():
     df = load_benchmark_data()
     create_benchmark_plot(df)
+
 
 if __name__ == "__main__":
     main()

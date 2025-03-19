@@ -7,6 +7,7 @@ from urllib.parse import urljoin, urlparse
 
 import requests
 from bs4 import BeautifulSoup, Tag
+
 from chunk_utils import ContentChunker, create_semantic_chunks
 from sitemap_utils import SitemapParser
 from throttle import RequestThrottler
@@ -27,12 +28,14 @@ logger = logging.getLogger("markdown_scraper")
 class MarkdownScraper:
     """Scrapes websites and converts content to markdown with chunking support."""
 
-    def __init__(self,
-                 requests_per_second: float = 1.0,
-                 timeout: int = 30,
-                 max_retries: int = 3,
-                 chunk_size: int = 1000,
-                 chunk_overlap: int = 200) -> None:
+    def __init__(
+        self,
+        requests_per_second: float = 1.0,
+        timeout: int = 30,
+        max_retries: int = 3,
+        chunk_size: int = 1000,
+        chunk_overlap: int = 200,
+    ) -> None:
         """
         Args:
             requests_per_second: Maximum number of requests per second
@@ -67,8 +70,9 @@ class MarkdownScraper:
             requests.exceptions.RequestException: If the request fails after retries
         """
         import time
-        import psutil  # type: ignore
         import tracemalloc
+
+        import psutil  # type: ignore
 
         logger.info(f"Attempting to scrape the website: {url}")
 
@@ -91,10 +95,16 @@ class MarkdownScraper:
                 cpu_usage = process.cpu_percent(interval=0.1)
                 network_latency = response.elapsed.total_seconds()
 
-                logger.info(f"Execution time for scraping {url}: {execution_time:.2f} seconds")
-                logger.info(f"Memory usage for scraping {url}: {memory_usage[1] / 1024 / 1024:.2f} MB")
+                logger.info(
+                    f"Execution time for scraping {url}: {execution_time:.2f} seconds"
+                )
+                logger.info(
+                    f"Memory usage for scraping {url}: {memory_usage[1] / 1024 / 1024:.2f} MB"
+                )
                 logger.info(f"CPU usage for scraping {url}: {cpu_usage:.2f}%")
-                logger.info(f"Network latency for scraping {url}: {network_latency:.2f} seconds")
+                logger.info(
+                    f"Network latency for scraping {url}: {network_latency:.2f} seconds"
+                )
 
                 tracemalloc.stop()
                 return response.text
@@ -171,11 +181,7 @@ class MarkdownScraper:
             # Ensure src is a string
             if isinstance(src, list):
                 src = src[0] if src else ""
-            if (
-                src
-                and not src.startswith("http://")
-                and not src.startswith("https://")
-            ):
+            if src and not src.startswith("http://") and not src.startswith("https://"):
                 src = urljoin(base_url, src)
             alt = element.get("alt", "image")
             return f"![{alt}]({src})"
@@ -278,9 +284,7 @@ class MarkdownScraper:
                 )
                 if isinstance(e, Tag)
             ]:
-                if element_markdown := self._get_element_markdown(
-                    element, base_url
-                ):
+                if element_markdown := self._get_element_markdown(element, base_url):
                     markdown_content += element_markdown + "\n\n"
 
         logger.info("Conversion to Markdown completed.")
@@ -490,7 +494,9 @@ def main(
 
             # Get output directory from output_file
             output_path = Path(output_file)
-            output_dir = str(output_path.parent) if output_path.is_file() else output_file
+            output_dir = (
+                str(output_path.parent) if output_path.is_file() else output_file
+            )
             # Scrape by sitemap
             logger.info(f"Scraping website using sitemap: {base_url}")
             scraper.scrape_by_sitemap(
@@ -521,20 +527,63 @@ def main(
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Scrape a website and convert it to Markdown with RAG chunking support.")
+    parser = argparse.ArgumentParser(
+        description="Scrape a website and convert it to Markdown with RAG chunking support."
+    )
     parser.add_argument("url", type=str, help="The URL to scrape")
-    parser.add_argument("-o", "--output", type=str, default="output.md", help="The output Markdown file name")
-    parser.add_argument("--save-chunks", action="store_true", help="Save content chunks for RAG")
-    parser.add_argument("--chunk-dir", type=str, default="chunks", help="Directory to save content chunks")
-    parser.add_argument("--chunk-format", type=str, choices=["json", "jsonl"], default="jsonl", help="Format to save chunks")
-    parser.add_argument("--chunk-size", type=int, default=1000, help="Maximum chunk size in characters")
-    parser.add_argument("--chunk-overlap", type=int, default=200, help="Overlap between chunks in characters")
-    parser.add_argument("--requests-per-second", type=float, default=1.0, help="Maximum requests per second")
-    parser.add_argument("--use-sitemap", action="store_true", help="Use sitemap.xml to discover URLs")
-    parser.add_argument("--min-priority", type=float, help="Minimum priority for sitemap URLs (0.0-1.0)")
-    parser.add_argument("--include", type=str, nargs="+", help="Regex patterns for URLs to include")
-    parser.add_argument("--exclude", type=str, nargs="+", help="Regex patterns for URLs to exclude")
-    parser.add_argument("--limit", type=int, help="Maximum number of URLs to scrape from sitemap")
+    parser.add_argument(
+        "-o",
+        "--output",
+        type=str,
+        default="output.md",
+        help="The output Markdown file name",
+    )
+    parser.add_argument(
+        "--save-chunks", action="store_true", help="Save content chunks for RAG"
+    )
+    parser.add_argument(
+        "--chunk-dir",
+        type=str,
+        default="chunks",
+        help="Directory to save content chunks",
+    )
+    parser.add_argument(
+        "--chunk-format",
+        type=str,
+        choices=["json", "jsonl"],
+        default="jsonl",
+        help="Format to save chunks",
+    )
+    parser.add_argument(
+        "--chunk-size", type=int, default=1000, help="Maximum chunk size in characters"
+    )
+    parser.add_argument(
+        "--chunk-overlap",
+        type=int,
+        default=200,
+        help="Overlap between chunks in characters",
+    )
+    parser.add_argument(
+        "--requests-per-second",
+        type=float,
+        default=1.0,
+        help="Maximum requests per second",
+    )
+    parser.add_argument(
+        "--use-sitemap", action="store_true", help="Use sitemap.xml to discover URLs"
+    )
+    parser.add_argument(
+        "--min-priority", type=float, help="Minimum priority for sitemap URLs (0.0-1.0)"
+    )
+    parser.add_argument(
+        "--include", type=str, nargs="+", help="Regex patterns for URLs to include"
+    )
+    parser.add_argument(
+        "--exclude", type=str, nargs="+", help="Regex patterns for URLs to exclude"
+    )
+    parser.add_argument(
+        "--limit", type=int, help="Maximum number of URLs to scrape from sitemap"
+    )
 
     args = parser.parse_args()
     main(
