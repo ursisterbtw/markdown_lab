@@ -179,6 +179,7 @@ pytest
 ## Running Tests
 
 ### Rust Tests
+
 ```bash
 # Run unit and integration tests
 cargo test
@@ -188,6 +189,7 @@ RUST_LOG=debug cargo test -- --nocapture
 ```
 
 ### Python Tests
+
 ```bash
 # Run Python binding tests
 pytest tests/test_python_bindings.py -v

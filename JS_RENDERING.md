@@ -13,12 +13,13 @@ To use the JavaScript rendering feature:
 1. **Rust Extension**: The JavaScript rendering feature requires the Rust extension to be built and installed.
 
 2. **Building the Rust Extension**:
+
    ```bash
    # Install maturin (build tool for Rust Python extensions)
    pip install maturin
 
    # Build and install the extension
-   maturin develop
+   maturin develop --release
    ```
 
 ## Usage
