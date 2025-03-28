@@ -8,6 +8,7 @@ typing-extensions>=4.12.2
 pathlib>=1.0.1
 python-dateutil>=2.9.0.post0
 psutil
+patchelf
 # Type stubs for external libraries
 types-requests>=2.31.0
 types-beautifulsoup4>=4.12.0
