@@ -1,5 +1,8 @@
 .request_cache/
 
+# Cached Files
+*cache*
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
