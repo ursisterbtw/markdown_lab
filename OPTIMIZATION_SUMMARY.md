@@ -24,7 +24,7 @@ We've implemented a two-level caching mechanism for HTTP requests in the Markdow
 
 Benchmarks demonstrate significant performance improvements:
 
-- **With cache enabled:** ~0.55 microseconds per request
+- **With cache enabled:** ~0.55 milliseconds per request
 - **Without cache:** ~1.018 seconds per request (over 1,800,000× slower)
 
 This optimization is particularly valuable for repeated scraping of the same URLs, such as during development and testing, or for incremental updates of previously scraped content.
