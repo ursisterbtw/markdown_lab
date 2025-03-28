@@ -15,6 +15,14 @@
 - `python demo_formats.py` - Demonstrate all output formats (markdown, JSON, XML)
 - `mypy *.py` - Type checking
 
+## Code Quality Commands
+- `ruff check . --fix` - Run linter and auto-fix issues
+- `ruff check . --fix --unsafe-fixes` - Run linter with more aggressive fixes
+- `black .` - Format Python code
+- `isort .` - Sort imports
+- `sourcery review . --fix` - Analyze and improve code quality
+- `mypy *.py` - Type checking
+
 ## Code Style Guidelines
 - **Python**: Python 3.12+ with type annotations
 - **Imports**: Group imports (stdlib, third-party, local)

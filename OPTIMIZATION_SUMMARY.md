@@ -36,6 +36,24 @@ This optimization is particularly valuable for repeated scraping of the same URL
 - Improved reliability (can work with cached content when offline)
 - Faster development and testing cycles
 
+## Recent Optimization Improvements
+
+1. **Enhanced Error Handling in RequestCache:**
+   - Improved error reporting for file operations
+   - Added detailed logging with stack traces for debugging
+   - Better handling of file operation failures
+
+2. **Refactored Output Format Logic:**
+   - Eliminated code duplication in format conversion (markdown, JSON, XML)
+   - Created a centralized `_convert_content` method to handle all format conversions
+   - Improved fallback mechanisms when Rust implementations are unavailable
+   - Consistent error handling across all conversion paths
+
+3. **Robust Output Format Handling:**
+   - Graceful fallbacks for JSON and XML formats when dependencies are missing
+   - Proper extension management for output files based on available format converters
+   - Clear logging when format conversion isn't possible
+
 ## Future Optimization Opportunities
 
 1. **Parallel Processing:**

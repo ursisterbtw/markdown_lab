@@ -1,7 +1,8 @@
-import pytest
 import tempfile
-from unittest.mock import MagicMock, patch
 from pathlib import Path
+from unittest.mock import MagicMock, patch
+
+import pytest
 
 from main import MarkdownScraper, RequestCache
 
@@ -58,19 +59,19 @@ def test_benchmark_scrape_with_cache_enabled(benchmark):
             <body><h1>This is a test heading</h1><p>This is a test paragraph with some content.</p></body></html>"""
             mock_response.elapsed.total_seconds.return_value = 0.1
             mock_get.return_value = mock_response
-            
+
             # Create scraper with cache enabled
             scraper = MarkdownScraper(cache_enabled=True)
             scraper.request_cache.cache_dir = Path(temp_dir)  # Override cache directory
-            
+
             # Trigger initial request to populate cache
             url = "http://example.com/benchmark"
             scraper.scrape_website(url)
-            
+
             # Benchmark subsequent requests
             def scrape():
                 return scraper.scrape_website(url)
-            
+
             benchmark(scrape)
 
 
@@ -85,14 +86,14 @@ def test_benchmark_scrape_with_cache_disabled(benchmark):
         <body><h1>This is a test heading</h1><p>This is a test paragraph with some content.</p></body></html>"""
         mock_response.elapsed.total_seconds.return_value = 0.1
         mock_get.return_value = mock_response
-        
+
         # Create scraper with cache disabled
         scraper = MarkdownScraper(cache_enabled=False)
-        
+
         # Benchmark requests
         def scrape():
             return scraper.scrape_website("http://example.com/benchmark")
-        
+
         benchmark(scrape)
 
 
@@ -102,11 +103,13 @@ def test_benchmark_cache_set(benchmark):
     with tempfile.TemporaryDirectory() as temp_dir:
         cache = RequestCache(cache_dir=temp_dir, max_age=3600)
         url = "http://example.com/benchmark/set"
-        content = "<html><body>Test content for benchmarking cache set</body></html>" * 10
-        
+        content = (
+            "<html><body>Test content for benchmarking cache set</body></html>" * 10
+        )
+
         def cache_set():
             cache.set(url, content)
-            
+
         benchmark(cache_set)
 
 
@@ -116,12 +119,14 @@ def test_benchmark_cache_get(benchmark):
     with tempfile.TemporaryDirectory() as temp_dir:
         cache = RequestCache(cache_dir=temp_dir, max_age=3600)
         url = "http://example.com/benchmark/get"
-        content = "<html><body>Test content for benchmarking cache get</body></html>" * 10
-        
+        content = (
+            "<html><body>Test content for benchmarking cache get</body></html>" * 10
+        )
+
         # Pre-populate cache
         cache.set(url, content)
-        
+
         def cache_get():
             return cache.get(url)
-            
+
         benchmark(cache_get)

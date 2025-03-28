@@ -1,10 +1,9 @@
 import argparse
+import contextlib
 import hashlib
 import logging
-import os
 import re
 import time
-from functools import lru_cache
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 from urllib.parse import urljoin, urlparse
@@ -31,11 +30,11 @@ logger = logging.getLogger("markdown_scraper")
 
 class RequestCache:
     """Simple cache for HTTP requests to avoid repeated network calls."""
-    
+
     def __init__(self, cache_dir: str = ".request_cache", max_age: int = 3600):
         """
         Initialize the request cache.
-        
+
         Args:
             cache_dir: Directory to store cached responses
             max_age: Maximum age of cached responses in seconds (default: 1 hour)
@@ -43,24 +42,26 @@ class RequestCache:
         self.cache_dir = Path(cache_dir)
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         self.max_age = max_age
-        self.memory_cache: Dict[str, Tuple[str, float]] = {}  # url -> (content, timestamp)
-        
+        self.memory_cache: Dict[
+            str, Tuple[str, float]
+        ] = {}  # url -> (content, timestamp)
+
     def _get_cache_key(self, url: str) -> str:
         """Generate a cache key from a URL."""
         return hashlib.md5(url.encode()).hexdigest()
-    
+
     def _get_cache_path(self, url: str) -> Path:
         """Get the path to the cache file for a URL."""
         key = self._get_cache_key(url)
         return self.cache_dir / key
-    
+
     def get(self, url: str) -> Optional[str]:
         """
         Get a cached response for a URL if it exists and is not expired.
-        
+
         Args:
             url: The URL to get from cache
-            
+
         Returns:
             The cached content or None if not in cache or expired
         """
@@ -71,7 +72,7 @@ class RequestCache:
                 return content
             # Remove expired item from memory cache
             del self.memory_cache[url]
-        
+
         # Check disk cache
         cache_path = self._get_cache_path(url)
         if cache_path.exists():
@@ -83,28 +84,32 @@ class RequestCache:
                     # Add to memory cache
                     self.memory_cache[url] = (content, time.time())
                     return content
-                except IOError:
-                    pass
-            
+                except IOError as e:
+                    logger.error(f"Failed to read cache file {cache_path}: {e}")
+                    # Log stack trace for debugging
+                    import traceback
+
+                    logger.debug(f"Cache read error details: {traceback.format_exc()}")
+
             # Remove expired cache file
             try:
                 cache_path.unlink()
-            except OSError:
-                pass
-                
+            except OSError as e:
+                logger.warning(f"Failed to remove expired cache file {cache_path}: {e}")
+
         return None
-    
+
     def set(self, url: str, content: str) -> None:
         """
         Cache a response for a URL.
-        
+
         Args:
             url: The URL to cache
             content: The content to cache
         """
         # Update memory cache
         self.memory_cache[url] = (content, time.time())
-        
+
         # Update disk cache
         cache_path = self._get_cache_path(url)
         try:
@@ -112,29 +117,30 @@ class RequestCache:
                 f.write(content)
         except IOError as e:
             logging.warning(f"Failed to save response to cache: {e}")
-    
+
     def clear(self, max_age: Optional[int] = None) -> int:
         """
         Clear expired cache entries.
-        
+
         Args:
             max_age: Maximum age in seconds (defaults to instance max_age)
-            
+
         Returns:
             Number of cache entries removed
         """
         if max_age is None:
             max_age = self.max_age
-            
+
         # Clear memory cache
         current_time = time.time()
         expired_keys = [
-            k for k, (_, timestamp) in self.memory_cache.items() 
+            k
+            for k, (_, timestamp) in self.memory_cache.items()
             if current_time - timestamp > max_age
         ]
         for k in expired_keys:
             del self.memory_cache[k]
-            
+
         # Clear disk cache
         count = 0
         for cache_file in self.cache_dir.glob("*"):
@@ -142,9 +148,9 @@ class RequestCache:
                 try:
                     cache_file.unlink()
                     count += 1
-                except OSError:
-                    pass
-                    
+                except OSError as e:
+                    logger.warning(f"Failed to clear cache file {cache_file}: {e}")
+
         return count + len(expired_keys)
 
 
@@ -182,14 +188,17 @@ class MarkdownScraper:
         self.max_retries = max_retries
         self.chunker = ContentChunker(chunk_size, chunk_overlap)
         self.requests_per_second = requests_per_second
-        
+
         # Initialize request cache
         self.cache_enabled = cache_enabled
-        self.request_cache = RequestCache(max_age=cache_max_age) if cache_enabled else None
-        
+        self.request_cache = (
+            RequestCache(max_age=cache_max_age) if cache_enabled else None
+        )
+
         # Try to use the Rust implementation if available
         try:
-            from markdown_lab_rs import convert_html, OutputFormat
+            from markdown_lab_rs import OutputFormat, convert_html
+
             self.rust_available = True
             self.OutputFormat = OutputFormat
             self.convert_html = convert_html
@@ -212,96 +221,130 @@ class MarkdownScraper:
         """
         import time
         import tracemalloc
-
         import psutil  # type: ignore
 
-        # Check cache first if enabled and not explicitly skipped
+        # Check cache first
+        cached_content = self._check_cache(url, skip_cache)
+        if cached_content is not None:
+            return cached_content
+
+        logger.info(f"Attempting to scrape the website: {url}")
+
+        # Start performance monitoring
+        performance_monitor = self._start_performance_monitoring()
+
+        # Attempt to fetch content with retries
+        html_content = self._fetch_with_retries(url)
+
+        # Stop performance monitoring and log results
+        self._log_performance_metrics(url, performance_monitor)
+
+        # Cache the response if enabled
+        self._cache_response(url, html_content)
+
+        return html_content
+
+    def _check_cache(self, url: str, skip_cache: bool) -> Optional[str]:
+        """Check if content is available in cache."""
         if self.cache_enabled and not skip_cache and self.request_cache is not None:
             cached_content = self.request_cache.get(url)
             if cached_content is not None:
                 logger.info(f"Using cached content for {url}")
                 return cached_content
+        return None
 
-        logger.info(f"Attempting to scrape the website: {url}")
+    def _start_performance_monitoring(self):
+        """Start monitoring performance metrics."""
+        import time
+        import tracemalloc
+        import psutil
 
         start_time = time.time()
         tracemalloc.start()
         process = psutil.Process()
+
+        return {
+            "start_time": start_time,
+            "process": process,
+        }
+
+    def _log_performance_metrics(self, url: str, monitor):
+        """Log performance metrics for the request."""
+        import time
+        import tracemalloc
+
+        end_time = time.time()
+        execution_time = end_time - monitor["start_time"]
+        memory_usage = tracemalloc.get_traced_memory()
+        cpu_usage = monitor["process"].cpu_percent(interval=0.1)
+
+        logger.info(f"Execution time for scraping {url}: {execution_time:.2f} seconds")
+        logger.info(f"Memory usage for scraping {url}: {memory_usage[1] / 1024 / 1024:.2f} MB")
+        logger.info(f"CPU usage for scraping {url}: {cpu_usage:.2f}%")
+
+        tracemalloc.stop()
+
+    def _cache_response(self, url: str, content: str) -> None:
+        """Cache the response if caching is enabled."""
+        if self.cache_enabled and self.request_cache is not None:
+            self.request_cache.set(url, content)
+
+    def _fetch_with_retries(self, url: str) -> str:
+        """Fetch URL content with retry logic."""
+        import time
 
         for attempt in range(self.max_retries):
             try:
                 self.throttler.throttle()
                 response = self.session.get(url, timeout=self.timeout)
                 response.raise_for_status()
-                logger.info(
-                    f"Successfully retrieved the website content (status code: {response.status_code})."
-                )
 
-                end_time = time.time()
-                execution_time = end_time - start_time
-                memory_usage = tracemalloc.get_traced_memory()
-                cpu_usage = process.cpu_percent(interval=0.1)
-                network_latency = response.elapsed.total_seconds()
+                logger.info(f"Successfully retrieved the website content (status code: {response.status_code}).")
+                logger.info(f"Network latency: {response.elapsed.total_seconds():.2f} seconds")
 
-                logger.info(
-                    f"Execution time for scraping {url}: {execution_time:.2f} seconds"
-                )
-                logger.info(
-                    f"Memory usage for scraping {url}: {memory_usage[1] / 1024 / 1024:.2f} MB"
-                )
-                logger.info(f"CPU usage for scraping {url}: {cpu_usage:.2f}%")
-                logger.info(
-                    f"Network latency for scraping {url}: {network_latency:.2f} seconds"
-                )
+                return response.text
 
-                tracemalloc.stop()
-                
-                html_content = response.text
-                
-                # Cache the response if caching is enabled
-                if self.cache_enabled and self.request_cache is not None:
-                    self.request_cache.set(url, html_content)
-                
-                return html_content
             except requests.exceptions.HTTPError as http_err:
-                logger.warning(
-                    f"HTTP error on attempt {attempt+1}/{self.max_retries}: {http_err}"
+                self._handle_request_error(
+                    url, attempt, http_err,
+                    f"HTTP error on attempt {attempt+1}/{self.max_retries}: {http_err}",
+                    f"Failed to retrieve {url} after {self.max_retries} attempts."
                 )
-                if attempt == self.max_retries - 1:
-                    logger.error(
-                        f"Failed to retrieve {url} after {self.max_retries} attempts."
-                    )
-                    raise
-                time.sleep(2**attempt)  # Exponential backoff
             except requests.exceptions.ConnectionError as conn_err:
-                logger.warning(
-                    f"Connection error on attempt {attempt+1}/{self.max_retries}: {conn_err}"
+                self._handle_request_error(
+                    url, attempt, conn_err,
+                    f"Connection error on attempt {attempt+1}/{self.max_retries}: {conn_err}",
+                    f"Connection error persisted for {url} after {self.max_retries} attempts."
                 )
-                if attempt == self.max_retries - 1:
-                    logger.error(
-                        f"Connection error persisted for {url} after {self.max_retries} attempts."
-                    )
-                    raise
-                time.sleep(2**attempt)
             except requests.exceptions.Timeout as timeout_err:
-                logger.warning(
-                    f"Timeout on attempt {attempt+1}/{self.max_retries}: {timeout_err}"
+                self._handle_request_error(
+                    url, attempt, timeout_err,
+                    f"Timeout on attempt {attempt+1}/{self.max_retries}: {timeout_err}",
+                    f"Request to {url} timed out after {self.max_retries} attempts."
                 )
-                if attempt == self.max_retries - 1:
-                    logger.error(
-                        f"Request to {url} timed out after {self.max_retries} attempts."
-                    )
-                    raise
-                time.sleep(2**attempt)
             except Exception as err:
                 logger.error(f"An unexpected error occurred: {err}")
                 raise
 
-        # This line should never be reached due to the raise statements above,
+        # This line should never be reached due to the raise statements in _handle_request_error,
         # but adding it to satisfy the linter's "missing return statement" warning
         raise requests.exceptions.RequestException(
             f"Failed to retrieve {url} after {self.max_retries} attempts"
         )
+
+    def _handle_request_error(self, url: str, attempt: int, error, warning_msg: str, error_msg: str) -> None:
+        """Handle request errors with appropriate logging and retries."""
+        import time
+
+        logger.warning(warning_msg)
+
+        # If this is the last attempt, log error and raise
+        if attempt == self.max_retries - 1:
+            logger.error(error_msg)
+            raise error
+
+        # Otherwise apply exponential backoff
+        time.sleep(2**attempt)
 
     def _get_text_from_element(self, element: Optional[Tag]) -> str:
         """Extract clean text from a BeautifulSoup element."""
@@ -311,63 +354,92 @@ class MarkdownScraper:
 
     def _get_element_markdown(self, element: Tag, base_url: str) -> str:
         """Convert a single HTML element to markdown."""
-        if element.name in ["h1", "h2", "h3", "h4", "h5", "h6"]:
-            level = int(element.name[1])
-            return f"{'#' * level} {self._get_text_from_element(element)}"
+        element_type = element.name
 
-        elif element.name == "p":
-            return self._get_text_from_element(element)
-
-        elif element.name == "a" and element.get("href"):
-            href = element.get("href", "")
-            # Ensure href is a string
-            if isinstance(href, list):
-                href = href[0] if href else ""
-            if (
-                href
-                and not href.startswith("http://")
-                and not href.startswith("https://")
-            ):
-                href = urljoin(base_url, href)
-            return f"[{self._get_text_from_element(element)}]({href})"
-
-        elif element.name == "img" and element.get("src"):
-            src = element.get("src", "")
-            # Ensure src is a string
-            if isinstance(src, list):
-                src = src[0] if src else ""
-            if src and not src.startswith("http://") and not src.startswith("https://"):
-                src = urljoin(base_url, src)
-            alt = element.get("alt", "image")
-            return f"![{alt}]({src})"
-
-        elif element.name == "ul":
-            items = [
-                f"- {self._get_text_from_element(li)}"
-                for li in element.find_all("li", recursive=False)
-            ]
-            return "\n".join(items)
-
-        elif element.name == "ol":
-            items = [
-                f"{i}. {self._get_text_from_element(li)}"
-                for i, li in enumerate(element.find_all("li", recursive=False), 1)
-            ]
-            return "\n".join(items)
-
-        elif element.name == "blockquote":
-            lines = self._get_text_from_element(element).split("\n")
-            return "\n".join([f"> {line}" for line in lines])
-
-        elif element.name in ["pre", "code"]:
-            code = self._get_text_from_element(element)
-            lang = element.get("class", [""])[0] if element.get("class") else ""
-            if lang.startswith("language-"):
-                lang = lang[9:]
-            return f"```{lang}\n{code}\n```"
-
+        # Dispatch to specific handler methods based on element type
+        if element_type in ["h1", "h2", "h3", "h4", "h5", "h6"]:
+            return self._convert_heading(element)
+        elif element_type == "p":
+            return self._convert_paragraph(element)
+        elif element_type == "a" and element.get("href"):
+            return self._convert_link(element, base_url)
+        elif element_type == "img" and element.get("src"):
+            return self._convert_image(element, base_url)
+        elif element_type == "ul":
+            return self._convert_unordered_list(element)
+        elif element_type == "ol":
+            return self._convert_ordered_list(element)
+        elif element_type == "blockquote":
+            return self._convert_blockquote(element)
+        elif element_type in ["pre", "code"]:
+            return self._convert_code(element)
         else:
             return self._get_text_from_element(element)
+
+    def _convert_heading(self, element: Tag) -> str:
+        """Convert heading elements to markdown."""
+        level = int(element.name[1])
+        return f"{'#' * level} {self._get_text_from_element(element)}"
+
+    def _convert_paragraph(self, element: Tag) -> str:
+        """Convert paragraph elements to markdown."""
+        return self._get_text_from_element(element)
+
+    def _convert_link(self, element: Tag, base_url: str) -> str:
+        """Convert link elements to markdown."""
+        href = element.get("href", "")
+        # Ensure href is a string
+        if isinstance(href, list):
+            href = href[0] if href else ""
+
+        # Resolve relative URLs
+        if href and not href.startswith("http://") and not href.startswith("https://"):
+            href = urljoin(base_url, href)
+
+        return f"[{self._get_text_from_element(element)}]({href})"
+
+    def _convert_image(self, element: Tag, base_url: str) -> str:
+        """Convert image elements to markdown."""
+        src = element.get("src", "")
+        # Ensure src is a string
+        if isinstance(src, list):
+            src = src[0] if src else ""
+
+        # Resolve relative URLs
+        if src and not src.startswith("http://") and not src.startswith("https://"):
+            src = urljoin(base_url, src)
+
+        alt = element.get("alt", "image")
+        return f"![{alt}]({src})"
+
+    def _convert_unordered_list(self, element: Tag) -> str:
+        """Convert unordered list elements to markdown."""
+        items = [
+            f"- {self._get_text_from_element(li)}"
+            for li in element.find_all("li", recursive=False)
+        ]
+        return "\n".join(items)
+
+    def _convert_ordered_list(self, element: Tag) -> str:
+        """Convert ordered list elements to markdown."""
+        items = [
+            f"{i}. {self._get_text_from_element(li)}"
+            for i, li in enumerate(element.find_all("li", recursive=False), 1)
+        ]
+        return "\n".join(items)
+
+    def _convert_blockquote(self, element: Tag) -> str:
+        """Convert blockquote elements to markdown."""
+        lines = self._get_text_from_element(element).split("\n")
+        return "\n".join([f"> {line}" for line in lines])
+
+    def _convert_code(self, element: Tag) -> str:
+        """Convert code elements to markdown."""
+        code = self._get_text_from_element(element)
+        lang = element.get("class", [""])[0] if element.get("class") else ""
+        if lang.startswith("language-"):
+            lang = lang[9:]
+        return f"```{lang}\n{code}\n```"
 
     def convert_to_markdown(self, html_content: str, url: str = "") -> str:
         """
@@ -464,7 +536,7 @@ class MarkdownScraper:
         except IOError as e:
             logger.error(f"Failed to save content to {output_file}: {e}")
             raise
-            
+
     def save_markdown(self, markdown_content: str, output_file: str) -> None:
         """
         Save markdown content to a file (legacy method).
@@ -504,6 +576,65 @@ class MarkdownScraper:
         """
         self.chunker.save_chunks(chunks, output_dir, output_format)
 
+    def _convert_content(
+        self, html_content: str, url: str, output_format: str
+    ) -> tuple:
+        """
+        Convert HTML content to the specified output format.
+
+        Args:
+            html_content: The HTML content to convert
+            url: The source URL for resolving relative links
+            output_format: The output format (markdown, json, or xml)
+
+        Returns:
+            Tuple of (converted_content, markdown_content) where:
+            - converted_content is the content in the requested format
+            - markdown_content is always the markdown version (for chunking)
+        """
+        if self.rust_available:
+            # Use Rust implementation if available
+            rust_format = getattr(self.OutputFormat, output_format.upper())
+            content = self.convert_html(html_content, url, rust_format)
+            # Always get markdown content for chunking
+            markdown_content = (
+                self.convert_html(html_content, url, self.OutputFormat.MARKDOWN)
+                if output_format != "markdown"
+                else content
+            )
+        elif output_format == "markdown":
+            content = self.convert_to_markdown(html_content, url)
+            markdown_content = content
+        else:
+            # For JSON and XML, first convert to markdown
+            markdown_content = self.convert_to_markdown(html_content, url)
+
+            # Then convert to the requested format
+            try:
+                # Try to use functions from markdown_lab_rs for conversion
+                from markdown_lab_rs import (document_to_xml,
+                                             parse_markdown_to_document)
+
+                document = parse_markdown_to_document(markdown_content, url)
+
+                if output_format == "json":
+                    import json
+
+                    content = json.dumps(document, indent=2)
+                elif output_format == "xml":
+                    content = document_to_xml(document)
+                else:
+                    # Fallback to markdown if format not supported
+                    content = markdown_content
+            except ImportError:
+                # Fallback to markdown if conversion functions are not available
+                logger.warning(
+                    f"Could not convert to {output_format}, using markdown instead"
+                )
+                content = markdown_content
+
+        return content, markdown_content
+
     def scrape_by_sitemap(
         self,
         base_url: str,
@@ -534,6 +665,47 @@ class MarkdownScraper:
         Returns:
             List of successfully scraped URLs
         """
+        # Get URLs from sitemap
+        filtered_urls = self._discover_urls_from_sitemap(
+            base_url, min_priority, include_patterns, exclude_patterns, limit
+        )
+
+        if not filtered_urls:
+            return []
+
+        # Prepare directories
+        output_path, chunk_directory = self._prepare_directories(
+            output_dir, save_chunks, chunk_dir
+        )
+
+        # Process each URL
+        successfully_scraped = []
+        for i, url_info in enumerate(filtered_urls):
+            url = url_info.loc
+            try:
+                self._process_single_url(
+                    url, i, len(filtered_urls), output_path, output_format,
+                    save_chunks, chunk_directory, chunk_format
+                )
+                successfully_scraped.append(url)
+            except Exception as e:
+                logger.error(f"Error processing URL {url}: {e}")
+                continue
+
+        logger.info(
+            f"Successfully scraped {len(successfully_scraped)}/{len(filtered_urls)} URLs"
+        )
+        return successfully_scraped
+
+    def _discover_urls_from_sitemap(
+        self,
+        base_url: str,
+        min_priority: Optional[float] = None,
+        include_patterns: Optional[List[str]] = None,
+        exclude_patterns: Optional[List[str]] = None,
+        limit: Optional[int] = None
+    ) -> List:
+        """Discover and filter URLs from a sitemap."""
         # Create sitemap parser
         sitemap_parser = SitemapParser(
             requests_per_second=self.requests_per_second,
@@ -551,106 +723,114 @@ class MarkdownScraper:
             limit=limit,
         )
 
-        # If no URLs were found, return empty list
+        # If no URLs were found, log warning
         if not filtered_urls:
             logger.warning(f"No URLs found in sitemap for {base_url}")
             return []
 
         logger.info(f"Found {len(filtered_urls)} URLs to scrape from sitemap")
+        return filtered_urls
 
+    def _prepare_directories(
+        self,
+        output_dir: str,
+        save_chunks: bool,
+        chunk_dir: Optional[str] = None
+    ) -> Tuple[Path, Optional[str]]:
+        """Prepare output and chunk directories."""
         # Create output directory
         output_path = Path(output_dir)
         output_path.mkdir(parents=True, exist_ok=True)
 
         # Set up chunk directory if chunking is enabled
+        chunk_directory = None
         if save_chunks:
             if chunk_dir is None:
-                chunk_dir = str(output_path / "chunks")
-            Path(chunk_dir).mkdir(parents=True, exist_ok=True)
+                chunk_directory = str(output_path / "chunks")
+            else:
+                chunk_directory = chunk_dir
+            Path(chunk_directory).mkdir(parents=True, exist_ok=True)
 
-        # Scrape each URL
-        successfully_scraped = []
-        for i, url_info in enumerate(filtered_urls):
-            url = url_info.loc
-            try:
-                # Create filename from URL
-                parsed_url = urlparse(url)
-                path_parts = parsed_url.path.strip("/").split("/")
-                if not path_parts or path_parts[0] == "":
-                    filename = "index"
-                else:
-                    filename = "_".join(path_parts)
+        return output_path, chunk_directory
 
-                # Remove or replace invalid characters
-                filename = re.sub(r'[\\/*?:"<>|]', "_", filename)
-                
-                # Ensure correct file extension based on output format
-                output_ext = ".md" if output_format == "markdown" else f".{output_format}"
-                if not filename.endswith(output_ext):
-                    # Remove any existing extension and add the correct one
-                    if "." in filename:
-                        filename = filename.rsplit(".", 1)[0] + output_ext
-                    else:
-                        filename += output_ext
-                    
-                output_file = str(output_path / filename)
+    def _get_filename_from_url(self, url: str, output_format: str) -> str:
+        """Generate a filename from a URL with appropriate extension."""
+        # Extract path from URL
+        parsed_url = urlparse(url)
+        path_parts = parsed_url.path.strip("/").split("/")
 
-                # Scrape and convert the page
-                logger.info(f"Scraping URL {i+1}/{len(filtered_urls)}: {url}")
-                html_content = self.scrape_website(url, skip_cache=False)
-                
-                # Convert based on output format
-                if self.rust_available:
-                    # Use Rust implementation if available
-                    rust_format = getattr(self.OutputFormat, output_format.upper())
-                    content = self.convert_html(html_content, url, rust_format)
-                    markdown_content = self.convert_html(html_content, url, self.OutputFormat.MARKDOWN) if output_format != "markdown" else content
-                else:
-                    # Fall back to Python implementation
-                    if output_format == "markdown":
-                        content = self.convert_to_markdown(html_content, url)
-                        markdown_content = content
-                    else:
-                        # For JSON and XML, first convert to markdown
-                        markdown_content = self.convert_to_markdown(html_content, url)
-                        
-                        # Then convert to the requested format
-                        try:
-                            # Try to use functions from markdown_lab_rs for conversion
-                            from markdown_lab_rs import parse_markdown_to_document, document_to_xml
-                            document = parse_markdown_to_document(markdown_content, url)
-                            
-                            if output_format == "json":
-                                import json
-                                content = json.dumps(document, indent=2)
-                            elif output_format == "xml":
-                                content = document_to_xml(document)
-                        except ImportError:
-                            # Fallback to markdown if conversion functions are not available
-                            logger.warning(f"Could not convert to {output_format}, using markdown instead")
-                            content = markdown_content
-                            output_file = output_file.replace(f".{output_format}", ".md")
-                
-                # Save the content
-                self.save_content(content, output_file)
+        # Handle empty paths
+        if not path_parts or path_parts[0] == "":
+            filename = "index"
+        else:
+            filename = "_".join(path_parts)
 
-                # Create and save chunks if enabled (always from markdown content)
-                if save_chunks:
-                    chunks = self.create_chunks(markdown_content, url)
-                    # Create URL-specific chunk directory to prevent filename collisions
-                    url_chunk_dir = f"{chunk_dir}/{filename.split('.')[-2]}"
-                    self.save_chunks(chunks, url_chunk_dir, chunk_format)
+        # Remove or replace invalid characters
+        filename = re.sub(r'[\\/*?:"<>|]', "_", filename)
 
-                successfully_scraped.append(url)
+        # Ensure correct file extension based on output format
+        output_ext = ".md" if output_format == "markdown" else f".{output_format}"
+        if not filename.endswith(output_ext):
+            # Remove any existing extension and add the correct one
+            if "." in filename:
+                filename = filename.rsplit(".", 1)[0] + output_ext
+            else:
+                filename += output_ext
 
-            except Exception as e:
-                logger.error(f"Error processing URL {url}: {e}")
-                continue
+        return filename
 
-        logger.info(
-            f"Successfully scraped {len(successfully_scraped)}/{len(filtered_urls)} URLs"
+    def _process_single_url(
+        self,
+        url: str,
+        index: int,
+        total: int,
+        output_path: Path,
+        output_format: str,
+        save_chunks: bool,
+        chunk_dir: Optional[str],
+        chunk_format: str
+    ) -> None:
+        """Process a single URL: scrape, convert, save content and chunks."""
+        # Generate filename for this URL
+        filename = self._get_filename_from_url(url, output_format)
+        output_file = str(output_path / filename)
+
+        # Scrape and convert the page
+        logger.info(f"Scraping URL {index+1}/{total}: {url}")
+        html_content = self.scrape_website(url, skip_cache=False)
+
+        # Convert based on output format using the helper method
+        content, markdown_content = self._convert_content(
+            html_content, url, output_format
         )
-        return successfully_scraped
+
+        # Check if we had to fall back to markdown
+        if output_format != "markdown" and content == markdown_content:
+            output_file = output_file.replace(f".{output_format}", ".md")
+
+        # Save the content
+        self.save_content(content, output_file)
+
+        # Create and save chunks if enabled (always from markdown content)
+        if save_chunks and chunk_dir:
+            self._process_chunks(
+                markdown_content, url, chunk_dir, filename, chunk_format
+            )
+
+    def _process_chunks(
+        self,
+        markdown_content: str,
+        url: str,
+        chunk_dir: str,
+        filename: str,
+        chunk_format: str
+    ) -> None:
+        """Process chunking for a single document."""
+        chunks = self.create_chunks(markdown_content, url)
+
+        # Create URL-specific chunk directory to prevent filename collisions
+        url_chunk_dir = f"{chunk_dir}/{filename.split('.')[-2]}"
+        self.save_chunks(chunks, url_chunk_dir, chunk_format)
 
 
 def main(
@@ -694,25 +874,10 @@ def main(
         cache_max_age: Maximum age of cached responses in seconds
         skip_cache: Whether to skip the cache and force new requests
     """
-    # Validate output format
-    output_format = output_format.lower()
-    if output_format not in ["markdown", "json", "xml"]:
-        logger.warning(f"Invalid output format: {output_format}. Using markdown instead.")
-        output_format = "markdown"
-    
-    # Try to use the optimized Rust implementation if available
-    try:
-        from markdown_lab_rs import convert_html, OutputFormat
-        use_rust = True
-        if output_format == "json":
-            rust_format = OutputFormat.JSON
-        elif output_format == "xml":
-            rust_format = OutputFormat.XML
-        else:
-            rust_format = OutputFormat.MARKDOWN
-    except ImportError:
-        use_rust = False
-    
+    # Setup
+    validated_format = _validate_output_format(output_format)
+    _check_rust_availability()
+
     scraper = MarkdownScraper(
         requests_per_second=requests_per_second,
         chunk_size=chunk_size,
@@ -723,86 +888,143 @@ def main(
 
     try:
         if use_sitemap:
-            # Parse base URL
-            parsed_url = urlparse(url)
-            base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
-
-            # Get output directory from output_file
-            output_path = Path(output_file)
-            output_dir = (
-                str(output_path.parent) if output_path.is_file() else output_file
-            )
-            # Scrape by sitemap
-            logger.info(f"Scraping website using sitemap: {base_url}")
-            
-            # Update the sitemap scraper to handle different output formats
-            # This is simplified - in a real implementation you'd refactor
-            # scrape_by_sitemap to handle different output formats
-            scraper.scrape_by_sitemap(
-                base_url=base_url,
-                output_dir=output_dir,
+            _process_sitemap_mode(
+                scraper=scraper,
+                url=url,
+                output_file=output_file,
+                output_format=validated_format,
+                save_chunks=save_chunks,
+                chunk_dir=chunk_dir,
+                chunk_format=chunk_format,
                 min_priority=min_priority,
                 include_patterns=include_patterns,
                 exclude_patterns=exclude_patterns,
                 limit=limit,
+            )
+        else:
+            _process_single_url_mode(
+                scraper=scraper,
+                url=url,
+                output_file=output_file,
+                output_format=validated_format,
                 save_chunks=save_chunks,
                 chunk_dir=chunk_dir,
                 chunk_format=chunk_format,
-                output_format=output_format,
+                skip_cache=skip_cache,
             )
-        else:
-            # Single URL scrape
-            html_content = scraper.scrape_website(url, skip_cache=skip_cache)
-            
-            # Use the appropriate conversion based on format
-            if use_rust:
-                # Use the Rust implementation if available
-                content = convert_html(html_content, url, rust_format)
-            else:
-                # Fall back to Python implementation
-                if output_format == "markdown":
-                    content = scraper.convert_to_markdown(html_content, url)
-                else:
-                    # For JSON and XML, first convert to markdown
-                    markdown_content = scraper.convert_to_markdown(html_content, url)
-                    if output_format == "json":
-                        from markdown_lab_rs import parse_markdown_to_document
-                        document = parse_markdown_to_document(markdown_content, url)
-                        import json
-                        content = json.dumps(document, indent=2)
-                    elif output_format == "xml":
-                        from markdown_lab_rs import parse_markdown_to_document, document_to_xml
-                        document = parse_markdown_to_document(markdown_content, url)
-                        content = document_to_xml(document)
-            
-            # Make sure the output file has the correct extension
-            output_ext = ".md" if output_format == "markdown" else f".{output_format}"
-            if not output_file.endswith(output_ext):
-                base_output = output_file.rsplit(".", 1)[0] if "." in output_file else output_file
-                output_file = f"{base_output}{output_ext}"
-            
-            # Save the content
-            scraper.save_content(content, output_file)
 
-            # Only create chunks from markdown content
-            if save_chunks:
-                if output_format != "markdown" and use_rust:
-                    # If we're using Rust and not outputting markdown, we need to get markdown first
-                    markdown_content = convert_html(html_content, url, OutputFormat.MARKDOWN)
-                elif output_format != "markdown":
-                    # If we're not using Rust, we already have markdown_content from above
-                    pass
-                else:
-                    # If output_format is markdown, content is already markdown
-                    markdown_content = content
-                
-                chunks = scraper.create_chunks(markdown_content, url)
-                scraper.save_chunks(chunks, chunk_dir, chunk_format)
-
-        logger.info(f"Process completed successfully. Output saved in {output_format} format.")
+        logger.info(
+            f"Process completed successfully. Output saved in {validated_format} format."
+        )
     except Exception as e:
         logger.error(f"An error occurred during the process: {e}", exc_info=True)
         raise
+
+def _validate_output_format(output_format: str) -> str:
+    """Validate and normalize output format."""
+    normalized_format = output_format.lower()
+    if normalized_format not in ["markdown", "json", "xml"]:
+        logger.warning(
+            f"Invalid output format: {output_format}. Using markdown instead."
+        )
+        return "markdown"
+    return normalized_format
+
+def _check_rust_availability() -> None:
+    """Check if Rust implementation is available."""
+    with contextlib.suppress(ImportError):
+        import importlib.util
+        if importlib.util.find_spec("markdown_lab_rs") is not None:
+            pass  # Rust implementation is available
+
+def _process_sitemap_mode(
+    scraper: MarkdownScraper,
+    url: str,
+    output_file: str,
+    output_format: str,
+    save_chunks: bool,
+    chunk_dir: str,
+    chunk_format: str,
+    min_priority: Optional[float],
+    include_patterns: Optional[List[str]],
+    exclude_patterns: Optional[List[str]],
+    limit: Optional[int],
+) -> None:
+    """Process website using sitemap mode."""
+    # Parse base URL
+    parsed_url = urlparse(url)
+    base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
+
+    # Get output directory from output_file
+    output_path = Path(output_file)
+    output_dir = str(output_path.parent) if output_path.is_file() else output_file
+
+    # Scrape by sitemap
+    logger.info(f"Scraping website using sitemap: {base_url}")
+
+    scraper.scrape_by_sitemap(
+        base_url=base_url,
+        output_dir=output_dir,
+        min_priority=min_priority,
+        include_patterns=include_patterns,
+        exclude_patterns=exclude_patterns,
+        limit=limit,
+        save_chunks=save_chunks,
+        chunk_dir=chunk_dir,
+        chunk_format=chunk_format,
+        output_format=output_format,
+    )
+
+def _process_single_url_mode(
+    scraper: MarkdownScraper,
+    url: str,
+    output_file: str,
+    output_format: str,
+    save_chunks: bool,
+    chunk_dir: str,
+    chunk_format: str,
+    skip_cache: bool,
+) -> None:
+    """Process a single URL."""
+    # Scrape the URL
+    html_content = scraper.scrape_website(url, skip_cache=skip_cache)
+
+    # Convert the content
+    content, markdown_content = scraper._convert_content(
+        html_content, url, output_format
+    )
+
+    # Ensure correct output filename
+    output_file = _ensure_correct_extension(output_file, output_format, content, markdown_content)
+
+    # Save the content
+    scraper.save_content(content, output_file)
+
+    # Process chunks if enabled
+    if save_chunks:
+        chunks = scraper.create_chunks(markdown_content, url)
+        scraper.save_chunks(chunks, chunk_dir, chunk_format)
+
+def _ensure_correct_extension(
+    output_file: str,
+    output_format: str,
+    content: str,
+    markdown_content: str
+) -> str:
+    """Ensure the output file has the correct extension."""
+    # Set correct extension
+    output_ext = ".md" if output_format == "markdown" else f".{output_format}"
+
+    # If file doesn't have the correct extension, add it
+    if not output_file.endswith(output_ext):
+        base_output = output_file.rsplit(".", 1)[0] if "." in output_file else output_file
+        output_file = f"{base_output}{output_ext}"
+
+    # If we had to fall back to markdown, adjust the extension
+    if output_format != "markdown" and content == markdown_content:
+        output_file = output_file.replace(f".{output_format}", ".md")
+
+    return output_file
 
 
 if __name__ == "__main__":
@@ -872,16 +1094,21 @@ if __name__ == "__main__":
         "--limit", type=int, help="Maximum number of URLs to scrape from sitemap"
     )
     parser.add_argument(
-        "--no-cache", dest="cache_enabled", action="store_false", 
-        help="Disable caching of HTTP requests"
+        "--no-cache",
+        dest="cache_enabled",
+        action="store_false",
+        help="Disable caching of HTTP requests",
     )
     parser.add_argument(
-        "--cache-max-age", type=int, default=3600,
-        help="Maximum age of cached responses in seconds (default: 3600)"
+        "--cache-max-age",
+        type=int,
+        default=3600,
+        help="Maximum age of cached responses in seconds (default: 3600)",
     )
     parser.add_argument(
-        "--skip-cache", action="store_true",
-        help="Skip the cache and force new requests"
+        "--skip-cache",
+        action="store_true",
+        help="Skip the cache and force new requests",
     )
 
     args = parser.parse_args()

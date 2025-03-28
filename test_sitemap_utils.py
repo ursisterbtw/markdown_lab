@@ -63,10 +63,9 @@ class TestSitemapUtils(unittest.TestCase):
 
     @mock.patch("sitemap_utils.SitemapParser._make_request")
     def test_parse_sitemap_index(self, mock_make_request):
-        # Mock sitemap index and child sitemaps
-        def side_effect(url):
-            if url == "https://example.com/sitemap.xml":
-                return """<?xml version="1.0" encoding="UTF-8"?>
+        # Setup mock responses for different URLs
+        sitemap_responses = {
+            "https://example.com/sitemap.xml": """<?xml version="1.0" encoding="UTF-8"?>
                 <sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
                     <sitemap>
                         <loc>https://example.com/sitemap1.xml</loc>
@@ -75,18 +74,16 @@ class TestSitemapUtils(unittest.TestCase):
                         <loc>https://example.com/sitemap2.xml</loc>
                     </sitemap>
                 </sitemapindex>
-                """
-            elif url == "https://example.com/sitemap1.xml":
-                return """<?xml version="1.0" encoding="UTF-8"?>
+                """,
+            "https://example.com/sitemap1.xml": """<?xml version="1.0" encoding="UTF-8"?>
                 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
                     <url>
                         <loc>https://example.com/page1</loc>
                         <priority>0.9</priority>
                     </url>
                 </urlset>
-                """
-            elif url == "https://example.com/sitemap2.xml":
-                return """<?xml version="1.0" encoding="UTF-8"?>
+                """,
+            "https://example.com/sitemap2.xml": """<?xml version="1.0" encoding="UTF-8"?>
                 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
                     <url>
                         <loc>https://example.com/page2</loc>
@@ -94,8 +91,10 @@ class TestSitemapUtils(unittest.TestCase):
                     </url>
                 </urlset>
                 """
-
-        mock_make_request.side_effect = side_effect
+        }
+        
+        # Configure the mock to return appropriate content based on the URL
+        mock_make_request.side_effect = lambda url: sitemap_responses.get(url)
 
         urls = self.parser.parse_sitemap("https://example.com/sitemap.xml")
 
@@ -109,16 +108,14 @@ class TestSitemapUtils(unittest.TestCase):
     @mock.patch("sitemap_utils.SitemapParser._make_request")
     def test_robots_txt_parser(self, mock_make_request):
         # Mock robots.txt and sitemap
-        def side_effect(url):
-            if url == "https://example.com/robots.txt":
-                return """
+        robots_sitemap_responses = {
+            "https://example.com/robots.txt": """
                 User-agent: *
                 Disallow: /private/
 
                 Sitemap: https://example.com/custom_sitemap.xml
-                """
-            elif url == "https://example.com/custom_sitemap.xml":
-                return """<?xml version="1.0" encoding="UTF-8"?>
+                """,
+            "https://example.com/custom_sitemap.xml": """<?xml version="1.0" encoding="UTF-8"?>
                 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
                     <url>
                         <loc>https://example.com/home</loc>
@@ -126,8 +123,10 @@ class TestSitemapUtils(unittest.TestCase):
                     </url>
                 </urlset>
                 """
-
-        mock_make_request.side_effect = side_effect
+        }
+        
+        # Configure the mock to return appropriate content based on the URL
+        mock_make_request.side_effect = lambda url: robots_sitemap_responses.get(url)
 
         # Enable respect_robots_txt
         self.parser.respect_robots_txt = True
