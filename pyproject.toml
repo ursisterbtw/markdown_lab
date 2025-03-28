@@ -4,7 +4,10 @@ version = "0.1.0"
 description = "a markdown parser"
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "pytest",
+    "requests"
+]
 
 [tool.pytest.ini_options]
 benchmark_min_rounds = 5
