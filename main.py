@@ -832,6 +832,59 @@ class MarkdownScraper:
         url_chunk_dir = f"{chunk_dir}/{filename.split('.')[-2]}"
         self.save_chunks(chunks, url_chunk_dir, chunk_format)
 
+    def scrape_by_links_file(
+        self,
+        links_file: str,
+        output_dir: str,
+        save_chunks: bool = True,
+        chunk_dir: Optional[str] = None,
+        chunk_format: str = "jsonl",
+        output_format: str = "markdown",
+    ) -> List[str]:
+        """
+        Scrape multiple pages from a list of links in a file.
+
+        Args:
+            links_file: Path to the file containing links to scrape
+            output_dir: Directory to save markdown files
+            save_chunks: Whether to save chunks for RAG
+            chunk_dir: Directory to save chunks (defaults to output_dir/chunks)
+            chunk_format: Format to save chunks (json or jsonl)
+
+        Returns:
+            List of successfully scraped URLs
+        """
+        # Read links from file
+        with open(links_file, "r", encoding="utf-8") as f:
+            links = [line.strip() for line in f if line.strip()]
+
+        if not links:
+            logger.warning(f"No links found in {links_file}")
+            return []
+
+        # Prepare directories
+        output_path, chunk_directory = self._prepare_directories(
+            output_dir, save_chunks, chunk_dir
+        )
+
+        # Process each link
+        successfully_scraped = []
+        for i, url in enumerate(links):
+            try:
+                self._process_single_url(
+                    url, i, len(links), output_path, output_format,
+                    save_chunks, chunk_directory, chunk_format
+                )
+                successfully_scraped.append(url)
+            except Exception as e:
+                logger.error(f"Error processing URL {url}: {e}")
+                continue
+
+        logger.info(
+            f"Successfully scraped {len(successfully_scraped)}/{len(links)} URLs"
+        )
+        return successfully_scraped
+
 
 def main(
     url: str,
@@ -851,6 +904,7 @@ def main(
     cache_enabled: bool = True,
     cache_max_age: int = 3600,
     skip_cache: bool = False,
+    links_file: Optional[str] = None,
 ) -> None:
     """
     Main entry point for the scraper.
@@ -873,6 +927,7 @@ def main(
         cache_enabled: Whether to enable request caching
         cache_max_age: Maximum age of cached responses in seconds
         skip_cache: Whether to skip the cache and force new requests
+        links_file: Path to a file containing links to scrape
     """
     # Setup
     validated_format = _validate_output_format(output_format)
@@ -887,7 +942,17 @@ def main(
     )
 
     try:
-        if use_sitemap:
+        if links_file:
+            _process_links_file_mode(
+                scraper=scraper,
+                links_file=links_file,
+                output_file=output_file,
+                output_format=validated_format,
+                save_chunks=save_chunks,
+                chunk_dir=chunk_dir,
+                chunk_format=chunk_format,
+            )
+        elif use_sitemap:
             _process_sitemap_mode(
                 scraper=scraper,
                 url=url,
@@ -1005,6 +1070,32 @@ def _process_single_url_mode(
         chunks = scraper.create_chunks(markdown_content, url)
         scraper.save_chunks(chunks, chunk_dir, chunk_format)
 
+def _process_links_file_mode(
+    scraper: MarkdownScraper,
+    links_file: str,
+    output_file: str,
+    output_format: str,
+    save_chunks: bool,
+    chunk_dir: str,
+    chunk_format: str,
+) -> None:
+    """Process multiple URLs from a links file."""
+    # Get output directory from output_file
+    output_path = Path(output_file)
+    output_dir = str(output_path.parent) if output_path.is_file() else output_file
+
+    # Scrape by links file
+    logger.info(f"Scraping website using links file: {links_file}")
+
+    scraper.scrape_by_links_file(
+        links_file=links_file,
+        output_dir=output_dir,
+        save_chunks=save_chunks,
+        chunk_dir=chunk_dir,
+        chunk_format=chunk_format,
+        output_format=output_format,
+    )
+
 def _ensure_correct_extension(
     output_file: str,
     output_format: str,
@@ -1110,6 +1201,11 @@ if __name__ == "__main__":
         action="store_true",
         help="Skip the cache and force new requests",
     )
+    parser.add_argument(
+        "--links-file",
+        type=str,
+        help="Path to a file containing links to scrape",
+    )
 
     args = parser.parse_args()
     main(
@@ -1130,4 +1226,5 @@ if __name__ == "__main__":
         cache_enabled=args.cache_enabled,
         cache_max_age=args.cache_max_age,
         skip_cache=args.skip_cache,
+        links_file=args.links_file,
     )
