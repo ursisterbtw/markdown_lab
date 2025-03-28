@@ -2,10 +2,10 @@
 
 # Markdown Lab 🔄📝
 
-This is a web scraping and conversion tool called Markdown Lab that combines Python and Rust components to scrape websites and convert HTML content to markdown format. It supports sitemap parsing, semantic chunking for RAG
+This is a web scraping and conversion tool called Markdown Lab that combines Python and Rust components to scrape websites and convert HTML content to markdown, JSON, or XML formats. It supports sitemap parsing, semantic chunking for RAG
   (Retrieval-Augmented Generation), and includes performance optimizations through Rust integration.
 
-  Key features include HTML-to-markdown conversion with support for various elements (headers, links, images, lists, code blocks), intelligent content chunking that preserves document structure, and systematic content discovery
+  Key features include HTML-to-markdown/JSON/XML conversion with support for various elements (headers, links, images, lists, code blocks), intelligent content chunking that preserves document structure, and systematic content discovery
   through sitemap parsing. The hybrid architecture uses Python for high-level operations and Rust for performance-critical tasks.
 
 [![Python CI](https://github.com/ursisterbtw/markdown_lab/actions/workflows/CI.yml/badge.svg)](https://github.com/ursisterbtw/markdown_lab/actions/workflows/CI.yml)
@@ -15,7 +15,7 @@ This is a web scraping and conversion tool called Markdown Lab that combines Pyt
 
 - 🌐 Scrapes any accessible website with robust error handling and rate limiting
 - 🗺️ Parses sitemap.xml to discover and scrape the most relevant content
-- 📝 Converts HTML to clean Markdown format
+- 📝 Converts HTML to clean Markdown, JSON, or XML formats
 - 🧩 Implements intelligent chunking for RAG (Retrieval-Augmented Generation) systems
 - 🔄 Handles various HTML elements:
   - Headers (h1-h6)
@@ -43,10 +43,17 @@ cargo build --release
 
 ## Usage
 
-### Basic Markdown Conversion
+### Basic Conversion
 
 ```bash
+# Convert to Markdown (default)
 python main.py https://www.example.com -o output.md
+
+# Convert to JSON
+python main.py https://www.example.com -o output.json -f json
+
+# Convert to XML
+python main.py https://www.example.com -o output.xml -f xml
 ```
 
 ### With RAG Chunking
@@ -80,7 +87,8 @@ python main.py https://www.example.com -o output_dir \
 | Argument | Description | Default |
 |----------|-------------|---------|
 | `url` | The URL to scrape | (required) |
-| `-o, --output` | Output markdown file/directory | `output.md` |
+| `-o, --output` | Output file/directory | `output.md` |
+| `-f, --format` | Output format (markdown, json, xml) | `markdown` |
 | `--save-chunks` | Save content chunks for RAG | False |
 | `--chunk-dir` | Directory to save chunks | `chunks` |
 | `--chunk-format` | Format for chunks (`json`, `jsonl`) | `jsonl` |
@@ -100,10 +108,22 @@ python main.py https://www.example.com -o output_dir \
 ```python
 from main import MarkdownScraper
 
+# Using default Markdown format
 scraper = MarkdownScraper()
 html_content = scraper.scrape_website("https://example.com")
 markdown_content = scraper.convert_to_markdown(html_content, "https://example.com")
-scraper.save_markdown(markdown_content, "output.md")
+scraper.save_content(markdown_content, "output.md")
+
+# Using JSON or XML format with the Rust implementation
+from markdown_lab_rs import convert_html, OutputFormat
+
+html_content = scraper.scrape_website("https://example.com")
+# Convert to JSON
+json_content = convert_html(html_content, "https://example.com", OutputFormat.JSON)
+scraper.save_content(json_content, "output.json")
+# Convert to XML
+xml_content = convert_html(html_content, "https://example.com", OutputFormat.XML)
+scraper.save_content(xml_content, "output.xml")
 ```
 
 #### With Sitemap Discovery
@@ -282,6 +302,7 @@ This project is licensed under the MIT License - see the [LICENSE file](LICENSE)
 - [x] Add support for more HTML elements
 - [x] Implement chunking for RAG
 - [x] Add sitemap.xml parsing for systematic scraping
+- [x] Add JSON and XML output formats
 - [ ] Add support for JavaScript-rendered pages
 - [ ] Implement custom markdown templates
 - [ ] Add concurrent scraping for multiple URLs

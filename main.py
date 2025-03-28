@@ -149,7 +149,7 @@ class RequestCache:
 
 
 class MarkdownScraper:
-    """Scrapes websites and converts content to markdown with chunking support."""
+    """Scrapes websites and converts content to markdown, JSON, or XML with chunking support."""
 
     def __init__(
         self,
@@ -186,6 +186,15 @@ class MarkdownScraper:
         # Initialize request cache
         self.cache_enabled = cache_enabled
         self.request_cache = RequestCache(max_age=cache_max_age) if cache_enabled else None
+        
+        # Try to use the Rust implementation if available
+        try:
+            from markdown_lab_rs import convert_html, OutputFormat
+            self.rust_available = True
+            self.OutputFormat = OutputFormat
+            self.convert_html = convert_html
+        except ImportError:
+            self.rust_available = False
 
     def scrape_website(self, url: str, skip_cache: bool = False) -> str:
         """
@@ -436,12 +445,12 @@ class MarkdownScraper:
         logger.info("Conversion to Markdown completed.")
         return markdown_content.strip()
 
-    def save_markdown(self, markdown_content: str, output_file: str) -> None:
+    def save_content(self, content: str, output_file: str) -> None:
         """
-        Save markdown content to a file.
+        Save content to a file.
 
         Args:
-            markdown_content: The markdown content to save
+            content: The content to save (markdown, JSON, or XML)
             output_file: The output file path
         """
         try:
@@ -450,11 +459,21 @@ class MarkdownScraper:
             output_path.parent.mkdir(parents=True, exist_ok=True)
 
             with open(output_file, "w", encoding="utf-8") as f:
-                f.write(markdown_content)
-            logger.info(f"Markdown file '{output_file}' has been created successfully.")
+                f.write(content)
+            logger.info(f"File '{output_file}' has been created successfully.")
         except IOError as e:
-            logger.error(f"Failed to save markdown to {output_file}: {e}")
+            logger.error(f"Failed to save content to {output_file}: {e}")
             raise
+            
+    def save_markdown(self, markdown_content: str, output_file: str) -> None:
+        """
+        Save markdown content to a file (legacy method).
+
+        Args:
+            markdown_content: The markdown content to save
+            output_file: The output file path
+        """
+        self.save_content(markdown_content, output_file)
 
     def create_chunks(self, markdown_content: str, source_url: str):
         """
@@ -496,6 +515,7 @@ class MarkdownScraper:
         save_chunks: bool = True,
         chunk_dir: Optional[str] = None,
         chunk_format: str = "jsonl",
+        output_format: str = "markdown",
     ) -> List[str]:
         """
         Scrape multiple pages from a website based on its sitemap.
@@ -566,19 +586,57 @@ class MarkdownScraper:
                 if not filename.endswith(".md"):
                     filename += ".md"
 
+                # Ensure correct file extension based on output format
+                output_ext = f".{output_format}"
+                if not filename.endswith(output_ext):
+                    filename = filename.rsplit(".", 1)[0] + output_ext
+                    
                 output_file = str(output_path / filename)
 
                 # Scrape and convert the page
                 logger.info(f"Scraping URL {i+1}/{len(filtered_urls)}: {url}")
                 html_content = self.scrape_website(url, skip_cache=False)
-                markdown_content = self.convert_to_markdown(html_content, url)
-                self.save_markdown(markdown_content, output_file)
+                
+                # Convert based on output format
+                if self.rust_available:
+                    # Use Rust implementation if available
+                    rust_format = getattr(self.OutputFormat, output_format.upper())
+                    content = self.convert_html(html_content, url, rust_format)
+                    markdown_content = self.convert_html(html_content, url, self.OutputFormat.MARKDOWN) if output_format != "markdown" else content
+                else:
+                    # Fall back to Python implementation
+                    if output_format == "markdown":
+                        content = self.convert_to_markdown(html_content, url)
+                        markdown_content = content
+                    else:
+                        # For JSON and XML, first convert to markdown
+                        markdown_content = self.convert_to_markdown(html_content, url)
+                        
+                        # Then convert to the requested format
+                        try:
+                            # Try to use functions from markdown_lab_rs for conversion
+                            from markdown_lab_rs import parse_markdown_to_document, document_to_xml
+                            document = parse_markdown_to_document(markdown_content, url)
+                            
+                            if output_format == "json":
+                                import json
+                                content = json.dumps(document, indent=2)
+                            elif output_format == "xml":
+                                content = document_to_xml(document)
+                        except ImportError:
+                            # Fallback to markdown if conversion functions are not available
+                            logger.warning(f"Could not convert to {output_format}, using markdown instead")
+                            content = markdown_content
+                            output_file = output_file.replace(f".{output_format}", ".md")
+                
+                # Save the content
+                self.save_content(content, output_file)
 
-                # Create and save chunks if enabled
+                # Create and save chunks if enabled (always from markdown content)
                 if save_chunks:
                     chunks = self.create_chunks(markdown_content, url)
                     # Create URL-specific chunk directory to prevent filename collisions
-                    url_chunk_dir = f"{chunk_dir}/{filename.replace('.md', '')}"
+                    url_chunk_dir = f"{chunk_dir}/{filename.split('.')[-2]}"
                     self.save_chunks(chunks, url_chunk_dir, chunk_format)
 
                 successfully_scraped.append(url)
@@ -596,6 +654,7 @@ class MarkdownScraper:
 def main(
     url: str,
     output_file: str,
+    output_format: str = "markdown",
     save_chunks: bool = True,
     chunk_dir: str = "chunks",
     chunk_format: str = "jsonl",
@@ -616,7 +675,8 @@ def main(
 
     Args:
         url: The URL to scrape
-        output_file: Path to save the markdown output
+        output_file: Path to save the output
+        output_format: Format of the output (markdown, json, or xml)
         save_chunks: Whether to save chunks for RAG
         chunk_dir: Directory to save chunks
         chunk_format: Format to save chunks (json or jsonl)
@@ -632,6 +692,25 @@ def main(
         cache_max_age: Maximum age of cached responses in seconds
         skip_cache: Whether to skip the cache and force new requests
     """
+    # Validate output format
+    output_format = output_format.lower()
+    if output_format not in ["markdown", "json", "xml"]:
+        logger.warning(f"Invalid output format: {output_format}. Using markdown instead.")
+        output_format = "markdown"
+    
+    # Try to use the optimized Rust implementation if available
+    try:
+        from markdown_lab_rs import convert_html, OutputFormat
+        use_rust = True
+        if output_format == "json":
+            rust_format = OutputFormat.JSON
+        elif output_format == "xml":
+            rust_format = OutputFormat.XML
+        else:
+            rust_format = OutputFormat.MARKDOWN
+    except ImportError:
+        use_rust = False
+    
     scraper = MarkdownScraper(
         requests_per_second=requests_per_second,
         chunk_size=chunk_size,
@@ -653,6 +732,10 @@ def main(
             )
             # Scrape by sitemap
             logger.info(f"Scraping website using sitemap: {base_url}")
+            
+            # Update the sitemap scraper to handle different output formats
+            # This is simplified - in a real implementation you'd refactor
+            # scrape_by_sitemap to handle different output formats
             scraper.scrape_by_sitemap(
                 base_url=base_url,
                 output_dir=output_dir,
@@ -663,18 +746,57 @@ def main(
                 save_chunks=save_chunks,
                 chunk_dir=chunk_dir,
                 chunk_format=chunk_format,
+                output_format=output_format,
             )
         else:
             # Single URL scrape
             html_content = scraper.scrape_website(url, skip_cache=skip_cache)
-            markdown_content = scraper.convert_to_markdown(html_content, url)
-            scraper.save_markdown(markdown_content, output_file)
+            
+            # Use the appropriate conversion based on format
+            if use_rust:
+                # Use the Rust implementation if available
+                content = convert_html(html_content, url, rust_format)
+            else:
+                # Fall back to Python implementation
+                if output_format == "markdown":
+                    content = scraper.convert_to_markdown(html_content, url)
+                else:
+                    # For JSON and XML, first convert to markdown
+                    markdown_content = scraper.convert_to_markdown(html_content, url)
+                    if output_format == "json":
+                        from markdown_lab_rs import parse_markdown_to_document
+                        document = parse_markdown_to_document(markdown_content, url)
+                        import json
+                        content = json.dumps(document, indent=2)
+                    elif output_format == "xml":
+                        from markdown_lab_rs import parse_markdown_to_document, document_to_xml
+                        document = parse_markdown_to_document(markdown_content, url)
+                        content = document_to_xml(document)
+            
+            # Make sure the output file has the correct extension
+            if not output_file.endswith(f".{output_format}"):
+                base_output = output_file.rsplit(".", 1)[0] if "." in output_file else output_file
+                output_file = f"{base_output}.{output_format}"
+            
+            # Save the content
+            scraper.save_content(content, output_file)
 
+            # Only create chunks from markdown content
             if save_chunks:
+                if output_format != "markdown" and use_rust:
+                    # If we're using Rust and not outputting markdown, we need to get markdown first
+                    markdown_content = convert_html(html_content, url, OutputFormat.MARKDOWN)
+                elif output_format != "markdown":
+                    # If we're not using Rust, we already have markdown_content from above
+                    pass
+                else:
+                    # If output_format is markdown, content is already markdown
+                    markdown_content = content
+                
                 chunks = scraper.create_chunks(markdown_content, url)
                 scraper.save_chunks(chunks, chunk_dir, chunk_format)
 
-        logger.info("Process completed successfully.")
+        logger.info(f"Process completed successfully. Output saved in {output_format} format.")
     except Exception as e:
         logger.error(f"An error occurred during the process: {e}", exc_info=True)
         raise
@@ -682,7 +804,7 @@ def main(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Scrape a website and convert it to Markdown with RAG chunking support."
+        description="Scrape a website and convert it to Markdown, JSON, or XML with RAG chunking support."
     )
     parser.add_argument("url", type=str, help="The URL to scrape")
     parser.add_argument(
@@ -690,7 +812,15 @@ if __name__ == "__main__":
         "--output",
         type=str,
         default="output.md",
-        help="The output Markdown file name",
+        help="The output file name",
+    )
+    parser.add_argument(
+        "-f",
+        "--format",
+        type=str,
+        choices=["markdown", "json", "xml"],
+        default="markdown",
+        help="Output format (markdown, json, or xml)",
     )
     parser.add_argument(
         "--save-chunks", action="store_true", help="Save content chunks for RAG"
@@ -755,6 +885,7 @@ if __name__ == "__main__":
     main(
         url=args.url,
         output_file=args.output,
+        output_format=args.format,
         save_chunks=args.save_chunks,
         chunk_dir=args.chunk_dir,
         chunk_format=args.chunk_format,

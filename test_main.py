@@ -71,6 +71,70 @@ def test_convert_to_markdown(scraper):
     assert "Item 2" in result
 
 
+@patch("main.requests.Session.get")
+def test_format_conversion(mock_get, scraper):
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.text = """<html><head><title>Format Test</title></head>
+    <body>
+    <h1>Test Heading</h1>
+    <p>Test paragraph</p>
+    <ul><li>Item A</li><li>Item B</li></ul>
+    </body></html>"""
+    mock_response.elapsed.total_seconds.return_value = 0.1
+    mock_get.return_value = mock_response
+    
+    # Test the JSON output format
+    try:
+        # Try to use the Rust implementation first
+        from markdown_lab_rs import convert_html, OutputFormat
+        
+        # Convert to JSON
+        json_content = convert_html(mock_response.text, "http://example.com", OutputFormat.JSON)
+        
+        # Basic validation
+        assert "Format Test" in json_content
+        assert "Test Heading" in json_content
+        assert "Test paragraph" in json_content
+        assert "Item A" in json_content
+        assert "Item B" in json_content
+        
+        # XML output test
+        xml_content = convert_html(mock_response.text, "http://example.com", OutputFormat.XML)
+        
+        # Basic validation
+        assert "<title>Format Test</title>" in xml_content
+        assert "Test Heading" in xml_content
+        assert "Test paragraph" in xml_content
+        assert "Item A" in xml_content
+        assert "Item B" in xml_content
+        
+    except ImportError:
+        # Fall back to Python implementation (import a helper)
+        from markdown_lab_rs import parse_markdown_to_document, document_to_xml
+        
+        # Convert to markdown first
+        markdown_content = scraper.convert_to_markdown(mock_response.text)
+        
+        # Then convert to JSON
+        document = parse_markdown_to_document(markdown_content, "http://example.com")
+        import json
+        json_content = json.dumps(document, indent=2)
+        
+        # Basic validation
+        assert "Format Test" in json_content
+        assert "Test Heading" in json_content
+        assert "Item A" in json_content or "Item B" in json_content
+        
+        # XML output test
+        xml_content = document_to_xml(document)
+        
+        # Basic validation
+        assert "<title>Format Test</title>" in xml_content
+        assert "Test Heading" in xml_content
+        assert "Item A" in xml_content or "Item B" in xml_content
+
+
 @patch("builtins.open")
 def test_save_markdown(mock_open):
     # setup the mock file object
