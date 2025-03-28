@@ -1,8 +1,12 @@
 import argparse
+import hashlib
 import logging
+import os
 import re
+import time
+from functools import lru_cache
 from pathlib import Path
-from typing import List, Optional
+from typing import Dict, List, Optional, Tuple
 from urllib.parse import urljoin, urlparse
 
 import requests
@@ -25,6 +29,125 @@ logging.basicConfig(
 logger = logging.getLogger("markdown_scraper")
 
 
+class RequestCache:
+    """Simple cache for HTTP requests to avoid repeated network calls."""
+    
+    def __init__(self, cache_dir: str = ".request_cache", max_age: int = 3600):
+        """
+        Initialize the request cache.
+        
+        Args:
+            cache_dir: Directory to store cached responses
+            max_age: Maximum age of cached responses in seconds (default: 1 hour)
+        """
+        self.cache_dir = Path(cache_dir)
+        self.cache_dir.mkdir(parents=True, exist_ok=True)
+        self.max_age = max_age
+        self.memory_cache: Dict[str, Tuple[str, float]] = {}  # url -> (content, timestamp)
+        
+    def _get_cache_key(self, url: str) -> str:
+        """Generate a cache key from a URL."""
+        return hashlib.md5(url.encode()).hexdigest()
+    
+    def _get_cache_path(self, url: str) -> Path:
+        """Get the path to the cache file for a URL."""
+        key = self._get_cache_key(url)
+        return self.cache_dir / key
+    
+    def get(self, url: str) -> Optional[str]:
+        """
+        Get a cached response for a URL if it exists and is not expired.
+        
+        Args:
+            url: The URL to get from cache
+            
+        Returns:
+            The cached content or None if not in cache or expired
+        """
+        # First check memory cache
+        if url in self.memory_cache:
+            content, timestamp = self.memory_cache[url]
+            if time.time() - timestamp <= self.max_age:
+                return content
+            # Remove expired item from memory cache
+            del self.memory_cache[url]
+        
+        # Check disk cache
+        cache_path = self._get_cache_path(url)
+        if cache_path.exists():
+            # Check if cache is expired
+            if time.time() - cache_path.stat().st_mtime <= self.max_age:
+                try:
+                    with open(cache_path, "r", encoding="utf-8") as f:
+                        content = f.read()
+                    # Add to memory cache
+                    self.memory_cache[url] = (content, time.time())
+                    return content
+                except IOError:
+                    pass
+            
+            # Remove expired cache file
+            try:
+                cache_path.unlink()
+            except OSError:
+                pass
+                
+        return None
+    
+    def set(self, url: str, content: str) -> None:
+        """
+        Cache a response for a URL.
+        
+        Args:
+            url: The URL to cache
+            content: The content to cache
+        """
+        # Update memory cache
+        self.memory_cache[url] = (content, time.time())
+        
+        # Update disk cache
+        cache_path = self._get_cache_path(url)
+        try:
+            with open(cache_path, "w", encoding="utf-8") as f:
+                f.write(content)
+        except IOError as e:
+            logging.warning(f"Failed to save response to cache: {e}")
+    
+    def clear(self, max_age: Optional[int] = None) -> int:
+        """
+        Clear expired cache entries.
+        
+        Args:
+            max_age: Maximum age in seconds (defaults to instance max_age)
+            
+        Returns:
+            Number of cache entries removed
+        """
+        if max_age is None:
+            max_age = self.max_age
+            
+        # Clear memory cache
+        current_time = time.time()
+        expired_keys = [
+            k for k, (_, timestamp) in self.memory_cache.items() 
+            if current_time - timestamp > max_age
+        ]
+        for k in expired_keys:
+            del self.memory_cache[k]
+            
+        # Clear disk cache
+        count = 0
+        for cache_file in self.cache_dir.glob("*"):
+            if current_time - cache_file.stat().st_mtime > max_age:
+                try:
+                    cache_file.unlink()
+                    count += 1
+                except OSError:
+                    pass
+                    
+        return count + len(expired_keys)
+
+
 class MarkdownScraper:
     """Scrapes websites and converts content to markdown with chunking support."""
 
@@ -35,6 +158,8 @@ class MarkdownScraper:
         max_retries: int = 3,
         chunk_size: int = 1000,
         chunk_overlap: int = 200,
+        cache_enabled: bool = True,
+        cache_max_age: int = 3600,
     ) -> None:
         """
         Args:
@@ -43,6 +168,8 @@ class MarkdownScraper:
             max_retries: Maximum number of retry attempts for failed requests
             chunk_size: Maximum size of content chunks in characters
             chunk_overlap: Overlap between consecutive chunks in characters
+            cache_enabled: Whether to enable request caching
+            cache_max_age: Maximum age of cached responses in seconds
         """
         self.session = requests.Session()
         self.session.headers.update(
@@ -55,13 +182,18 @@ class MarkdownScraper:
         self.max_retries = max_retries
         self.chunker = ContentChunker(chunk_size, chunk_overlap)
         self.requests_per_second = requests_per_second
+        
+        # Initialize request cache
+        self.cache_enabled = cache_enabled
+        self.request_cache = RequestCache(max_age=cache_max_age) if cache_enabled else None
 
-    def scrape_website(self, url: str) -> str:
+    def scrape_website(self, url: str, skip_cache: bool = False) -> str:
         """
-        Scrape a website with retry logic and rate limiting.
+        Scrape a website with retry logic, rate limiting, and caching.
 
         Args:
             url: The URL to scrape
+            skip_cache: Whether to skip the cache and force a new request
 
         Returns:
             The HTML content as a string
@@ -73,6 +205,13 @@ class MarkdownScraper:
         import tracemalloc
 
         import psutil  # type: ignore
+
+        # Check cache first if enabled and not explicitly skipped
+        if self.cache_enabled and not skip_cache and self.request_cache is not None:
+            cached_content = self.request_cache.get(url)
+            if cached_content is not None:
+                logger.info(f"Using cached content for {url}")
+                return cached_content
 
         logger.info(f"Attempting to scrape the website: {url}")
 
@@ -107,7 +246,14 @@ class MarkdownScraper:
                 )
 
                 tracemalloc.stop()
-                return response.text
+                
+                html_content = response.text
+                
+                # Cache the response if caching is enabled
+                if self.cache_enabled and self.request_cache is not None:
+                    self.request_cache.set(url, html_content)
+                
+                return html_content
             except requests.exceptions.HTTPError as http_err:
                 logger.warning(
                     f"HTTP error on attempt {attempt+1}/{self.max_retries}: {http_err}"
@@ -424,7 +570,7 @@ class MarkdownScraper:
 
                 # Scrape and convert the page
                 logger.info(f"Scraping URL {i+1}/{len(filtered_urls)}: {url}")
-                html_content = self.scrape_website(url)
+                html_content = self.scrape_website(url, skip_cache=False)
                 markdown_content = self.convert_to_markdown(html_content, url)
                 self.save_markdown(markdown_content, output_file)
 
@@ -461,6 +607,9 @@ def main(
     include_patterns: Optional[List[str]] = None,
     exclude_patterns: Optional[List[str]] = None,
     limit: Optional[int] = None,
+    cache_enabled: bool = True,
+    cache_max_age: int = 3600,
+    skip_cache: bool = False,
 ) -> None:
     """
     Main entry point for the scraper.
@@ -479,11 +628,16 @@ def main(
         include_patterns: Regex patterns for URLs to include
         exclude_patterns: Regex patterns for URLs to exclude
         limit: Maximum number of URLs to scrape from sitemap
+        cache_enabled: Whether to enable request caching
+        cache_max_age: Maximum age of cached responses in seconds
+        skip_cache: Whether to skip the cache and force new requests
     """
     scraper = MarkdownScraper(
         requests_per_second=requests_per_second,
         chunk_size=chunk_size,
         chunk_overlap=chunk_overlap,
+        cache_enabled=cache_enabled,
+        cache_max_age=cache_max_age,
     )
 
     try:
@@ -512,7 +666,7 @@ def main(
             )
         else:
             # Single URL scrape
-            html_content = scraper.scrape_website(url)
+            html_content = scraper.scrape_website(url, skip_cache=skip_cache)
             markdown_content = scraper.convert_to_markdown(html_content, url)
             scraper.save_markdown(markdown_content, output_file)
 
@@ -584,6 +738,18 @@ if __name__ == "__main__":
     parser.add_argument(
         "--limit", type=int, help="Maximum number of URLs to scrape from sitemap"
     )
+    parser.add_argument(
+        "--no-cache", dest="cache_enabled", action="store_false", 
+        help="Disable caching of HTTP requests"
+    )
+    parser.add_argument(
+        "--cache-max-age", type=int, default=3600,
+        help="Maximum age of cached responses in seconds (default: 3600)"
+    )
+    parser.add_argument(
+        "--skip-cache", action="store_true",
+        help="Skip the cache and force new requests"
+    )
 
     args = parser.parse_args()
     main(
@@ -600,4 +766,7 @@ if __name__ == "__main__":
         include_patterns=args.include,
         exclude_patterns=args.exclude,
         limit=args.limit,
+        cache_enabled=args.cache_enabled,
+        cache_max_age=args.cache_max_age,
+        skip_cache=args.skip_cache,
     )
