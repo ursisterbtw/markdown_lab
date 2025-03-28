@@ -10,6 +10,7 @@ This is a web scraping and conversion tool called Markdown Lab that combines Pyt
 
 [![Python CI](https://github.com/ursisterbtw/markdown_lab/actions/workflows/CI.yml/badge.svg)](https://github.com/ursisterbtw/markdown_lab/actions/workflows/CI.yml)
 [![Rust](https://github.com/ursisterbtw/markdown_lab/actions/workflows/rust.yml/badge.svg)](https://github.com/ursisterbtw/markdown_lab/actions/workflows/rust.yml)
+[![Release](https://github.com/ursisterbtw/markdown_lab/actions/workflows/release.yml/badge.svg)](https://github.com/ursisterbtw/markdown_lab/actions/workflows/release.yml)
 
 ## Features
 
@@ -314,3 +315,48 @@ This project is licensed under the MIT License - see the [LICENSE file](LICENSE)
 🐍🦀 ursister
 
 ---
+
+## Creating an Official Release
+
+To create an official release, follow these steps:
+
+1. **Update Version Numbers**:
+   - Update the version number in `Cargo.toml` and `pyproject.toml` to the new release version.
+
+2. **Commit Changes**:
+   - Commit the changes to the version numbers and any other updates.
+
+3. **Tag the Release**:
+   - Create a new Git tag for the release:
+     ```bash
+     git tag -a v1.0.0 -m "Release version 1.0.0"
+     git push origin v1.0.0
+     ```
+
+4. **Create Release Notes**:
+   - Create release notes that include the following updates and changes:
+     * Added `.editorconfig` file for consistent coding styles across different editors.
+     * Added GitHub Actions workflows for continuous integration:
+       * `CI.yml` (`.github/workflows/CI.yml`) for Python CI.
+       * `rust.yml` (`.github/workflows/rust.yml`) for Rust CI.
+     * Updated `.gitignore` to include various files and directories to be ignored by Git.
+     * Added `.python-version` file specifying Python version 3.12.
+     * Added `.vscode/settings.json` for VS Code settings.
+     * Added `Cargo.toml` for Rust project configuration.
+     * Added `CLAUDE.md` with commands and guidelines for the project.
+     * Added `demo_output/output.json`, `demo_output/output.md`, and `demo_output/output.xml` as examples of output formats.
+     * Added `JS_RENDERING.md` for JavaScript rendering support documentation.
+     * Updated `README.md` with project details, features, installation, usage, and more.
+     * Added `test_data/sample.md` as a sample markdown file for testing.
+
+5. **Push Changes**:
+   - Push the changes to the main branch:
+     ```bash
+     git push origin main
+     ```
+
+6. **Create GitHub Release**:
+   - Go to the GitHub repository and create a new release using the tag created in step 3. Include the release notes created in step 4.
+
+7. **Verify Release**:
+   - Verify that the release has been created successfully and that the release notes are accurate.
