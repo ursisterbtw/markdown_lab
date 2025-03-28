@@ -59,9 +59,8 @@ It also has multiple lines.
         self.assertGreater(len(chunks), 1)
 
         # All chunks should have the same heading in metadata
-        for chunk in chunks:
-            self.assertEqual(chunk.metadata["heading"], "# Large Section")
-            self.assertEqual(chunk.source_url, self.test_url)
+        self.assertTrue(all(chunk.metadata["heading"] == "# Large Section" for chunk in chunks))
+        self.assertTrue(all(chunk.source_url == self.test_url for chunk in chunks))
 
     def test_save_chunks_jsonl(self):
         """Test saving chunks to JSONL format."""
