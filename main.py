@@ -583,13 +583,15 @@ class MarkdownScraper:
 
                 # Remove or replace invalid characters
                 filename = re.sub(r'[\\/*?:"<>|]', "_", filename)
-                if not filename.endswith(".md"):
-                    filename += ".md"
-
+                
                 # Ensure correct file extension based on output format
-                output_ext = f".{output_format}"
+                output_ext = ".md" if output_format == "markdown" else f".{output_format}"
                 if not filename.endswith(output_ext):
-                    filename = filename.rsplit(".", 1)[0] + output_ext
+                    # Remove any existing extension and add the correct one
+                    if "." in filename:
+                        filename = filename.rsplit(".", 1)[0] + output_ext
+                    else:
+                        filename += output_ext
                     
                 output_file = str(output_path / filename)
 
@@ -774,9 +776,10 @@ def main(
                         content = document_to_xml(document)
             
             # Make sure the output file has the correct extension
-            if not output_file.endswith(f".{output_format}"):
+            output_ext = ".md" if output_format == "markdown" else f".{output_format}"
+            if not output_file.endswith(output_ext):
                 base_output = output_file.rsplit(".", 1)[0] if "." in output_file else output_file
-                output_file = f"{base_output}.{output_format}"
+                output_file = f"{base_output}{output_ext}"
             
             # Save the content
             scraper.save_content(content, output_file)
@@ -812,7 +815,7 @@ if __name__ == "__main__":
         "--output",
         type=str,
         default="output.md",
-        help="The output file name",
+        help="The output file name (extension will be set based on format)",
     )
     parser.add_argument(
         "-f",
