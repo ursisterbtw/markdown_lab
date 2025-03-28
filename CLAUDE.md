@@ -7,10 +7,12 @@
 - `pytest` - Run all Python tests
 - `pytest tests/test_python_bindings.py -v` - Run Python binding tests
 - `pytest test_main.py::test_convert_to_markdown -v` - Run specific Python test
+- `pytest test_main.py::test_format_conversion -v` - Test JSON and XML output formats
 - `cargo test` - Run Rust tests
 - `RUST_LOG=debug cargo test -- --nocapture` - Run Rust tests with logging
 - `cargo bench` - Run all benchmarks
 - `cargo bench html_to_markdown` - Run specific benchmark
+- `python demo_formats.py` - Demonstrate all output formats (markdown, JSON, XML)
 - `mypy *.py` - Type checking
 
 ## Code Style Guidelines
@@ -26,6 +28,21 @@
 
 ## Repository Structure
 - **src/**: Rust code with PyO3 bindings
+  - **markdown_converter.rs**: HTML to Markdown/JSON/XML conversion
+  - **lib.rs**: PyO3 bindings and Python module exports
 - **Python modules**: Main functionality (main.py, chunk_utils.py, etc.)
+  - **markdown_lab_rs.py**: Python interface to Rust implementations
+  - **main.py**: CLI interface and MarkdownScraper implementation
 - **tests/**: Test files for both Python and Rust components
 - **benches/**: Performance benchmarks
+
+## Output Format Features
+- **Markdown**: Human-readable plain text format (default)
+- **JSON**: Structured data format for programmatic usage
+  - Document structure with title, headers, paragraphs, links, images, etc.
+  - Serialized with proper indentation for readability
+- **XML**: Markup format for document interchange
+  - Document structure with proper XML tags and hierarchy
+  - Includes XML declaration and proper escaping
+- Use `-f/--format` CLI argument to specify output format
+- All formats support the same HTML elements and content structure
