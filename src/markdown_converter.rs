@@ -178,7 +178,7 @@ pub fn parse_html_to_document(html: &str, base_url_str: &str) -> Result<Document
                 items.push(text);
             }
         }
-        
+
         if !items.is_empty() {
             document.lists.push(List {
                 ordered: false,
@@ -199,7 +199,7 @@ pub fn parse_html_to_document(html: &str, base_url_str: &str) -> Result<Document
                 items.push(text);
             }
         }
-        
+
         if !items.is_empty() {
             document.lists.push(List {
                 ordered: true,
@@ -317,16 +317,27 @@ pub fn document_to_json(document: &Document) -> Result<String, MarkdownError> {
 /// Convert document to XML format
 pub fn document_to_xml(document: &Document) -> Result<String, MarkdownError> {
     use quick_xml::se::to_string;
-    
-    to_string(document).map_err(|e| {
-        MarkdownError::SerializationError(format!("Failed to serialize to XML: {}", e))
-    })
+
+    match to_string(document) {
+        Ok(xml) => Ok(xml),
+        Err(e) => {
+            eprintln!("Error serializing document to XML: {:?}", e);
+            Err(MarkdownError::SerializationError(format!(
+                "Failed to serialize to XML: {}",
+                e
+            )))
+        }
+    }
 }
 
 /// Convert HTML to the specified output format
-pub fn convert_html(html: &str, base_url: &str, format: OutputFormat) -> Result<String, MarkdownError> {
+pub fn convert_html(
+    html: &str,
+    base_url: &str,
+    format: OutputFormat,
+) -> Result<String, MarkdownError> {
     let document = parse_html_to_document(html, base_url)?;
-    
+
     match format {
         OutputFormat::Markdown => Ok(document_to_markdown(&document)),
         OutputFormat::Json => document_to_json(&document),

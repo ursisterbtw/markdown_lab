@@ -80,7 +80,7 @@ def convert_html(
             )
 
     # Fall back to Python implementation
-    from main import MarkdownScraper
+    from markdown_lab.core.scraper import MarkdownScraper
 
     scraper = MarkdownScraper()
 
@@ -246,7 +246,7 @@ def chunk_markdown(
             logger.warning(f"Error in Rust chunking, falling back to Python: {e}")
 
     # Fall back to Python implementation
-    from chunk_utils import create_semantic_chunks
+    from markdown_lab.utils.chunk_utils import create_semantic_chunks
 
     chunks = create_semantic_chunks(
         content=markdown,
