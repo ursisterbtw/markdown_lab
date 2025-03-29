@@ -47,6 +47,46 @@
         <animate attributeName="stop-color" values="#0099ff;#39d353;#8957e5;#0099ff" dur="10s" repeatCount="indefinite" />
       </stop>
     </radialGradient>
+
+    <!-- Gears animation -->
+    <g id="gears">
+      <g transform="translate(100, 100)">
+        <circle cx="0" cy="0" r="50" fill="#ffcc00" />
+        <path d="M-50,0 L50,0 M0,-50 L0,50" stroke="#000" stroke-width="5" />
+        <animateTransform attributeName="transform" attributeType="XML" type="rotate" from="0 0 0" to="360 0 0" dur="10s" repeatCount="indefinite" />
+      </g>
+      <g transform="translate(200, 200)">
+        <circle cx="0" cy="0" r="30" fill="#ffcc00" />
+        <path d="M-30,0 L30,0 M0,-30 L0,30" stroke="#000" stroke-width="3" />
+        <animateTransform attributeName="transform" attributeType="XML" type="rotate" from="0 0 0" to="-360 0 0" dur="8s" repeatCount="indefinite" />
+      </g>
+    </g>
+
+    <!-- Speed lines animation -->
+    <g id="speed-lines">
+      <line x1="0" y1="0" x2="100" y2="0" stroke="#00ffcc" stroke-width="2">
+        <animate attributeName="x1" from="0" to="1280" dur="2s" repeatCount="indefinite" />
+        <animate attributeName="x2" from="100" to="1380" dur="2s" repeatCount="indefinite" />
+      </line>
+      <line x1="0" y1="20" x2="120" y2="20" stroke="#00ffcc" stroke-width="2">
+        <animate attributeName="x1" from="0" to="1280" dur="2.5s" repeatCount="indefinite" />
+        <animate attributeName="x2" from="120" to="1400" dur="2.5s" repeatCount="indefinite" />
+      </line>
+      <line x1="0" y1="40" x2="80" y2="40" stroke="#00ffcc" stroke-width="2">
+        <animate attributeName="x1" from="0" to="1280" dur="1.5s" repeatCount="indefinite" />
+        <animate attributeName="x2" from="80" to="1360" dur="1.5s" repeatCount="indefinite" />
+      </line>
+    </g>
+
+    <!-- Glowing circuit board pattern -->
+    <pattern id="circuit-pattern" x="0" y="0" width="80" height="80" patternUnits="userSpaceOnUse">
+      <path d="M 0 0 L 80 0 L 80 80 L 0 80 Z" fill="none" stroke="#00ffaa" stroke-width="2">
+        <animate attributeName="stroke" values="#00ffaa;#ff00cc;#00ffaa" dur="10s" repeatCount="indefinite" />
+      </path>
+      <circle cx="40" cy="40" r="10" fill="#00ffaa">
+        <animate attributeName="fill" values="#00ffaa;#ff00cc;#00ffaa" dur="10s" repeatCount="indefinite" />
+      </circle>
+    </pattern>
   </defs>
 
   <!-- Main background -->
@@ -346,4 +386,9 @@
     <animate attributeName="r" values="10;350;10" dur="10s" begin="6.6s" repeatCount="indefinite" />
     <animate attributeName="stroke-opacity" values="0.8;0;0.8" dur="10s" begin="6.6s" repeatCount="indefinite" />
   </circle>
+
+  <!-- Brief description of RAG features -->
+  <text x="640" y="600" font-family="Arial" font-size="24" fill="#ffffff" text-anchor="middle">
+    Enhancing performance with RAG: Chunking and Content Retrieval
+  </text>
 </svg>

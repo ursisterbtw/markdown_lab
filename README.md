@@ -31,6 +31,12 @@ This is a web scraping and conversion tool called Markdown Lab that combines Pyt
 - ✅ Robust error handling with exponential backoff
 - 🏎️ Performance optimizations and best practices
 
+## RAG Features
+
+- **Chunking**: The tool can break down large documents into smaller, manageable chunks for better retrieval and generation.
+- **Content Retrieval**: Efficiently retrieves relevant content chunks based on queries, enhancing the performance of the web scraper.
+- **Use Cases**: Improves search results, generates summaries, and adapts to various domains.
+
 ## Installation
 
 ```bash
