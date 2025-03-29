@@ -80,13 +80,13 @@ def convert_html(
             )
 
     # Fall back to Python implementation
-    from main import MarkdownScraper
+    from .main import MarkdownScraper
 
     scraper = MarkdownScraper()
 
     if output_format == OutputFormat.MARKDOWN:
         return scraper.convert_to_markdown(html, base_url)
-    
+
     # For JSON and XML, first convert to markdown to get structured content
     # This is a simplified implementation - the real one would parse the HTML directly
     markdown_content = scraper.convert_to_markdown(html, base_url)
@@ -246,7 +246,7 @@ def chunk_markdown(
             logger.warning(f"Error in Rust chunking, falling back to Python: {e}")
 
     # Fall back to Python implementation
-    from chunk_utils import create_semantic_chunks
+    from .chunk_utils import create_semantic_chunks
 
     chunks = create_semantic_chunks(
         content=markdown,

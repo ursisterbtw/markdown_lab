@@ -11,9 +11,9 @@ from urllib.parse import urljoin, urlparse
 import requests
 from bs4 import BeautifulSoup, Tag
 
-from chunk_utils import ContentChunker, create_semantic_chunks
-from sitemap_utils import SitemapParser
-from throttle import RequestThrottler
+from .chunk_utils import ContentChunker, create_semantic_chunks
+from .sitemap_utils import SitemapParser
+from .throttle import RequestThrottler
 
 # Configure logging with more detailed formatting
 logging.basicConfig(
@@ -221,7 +221,13 @@ class MarkdownScraper:
         """
         import time
         import tracemalloc
-        import psutil  # type: ignore
+
+        # Try to import psutil but make it optional
+        try:
+            import psutil
+            psutil_available = True
+        except ImportError:
+            psutil_available = False
 
         # Check cache first
         cached_content = self._check_cache(url, skip_cache)
@@ -231,13 +237,13 @@ class MarkdownScraper:
         logger.info(f"Attempting to scrape the website: {url}")
 
         # Start performance monitoring
-        performance_monitor = self._start_performance_monitoring()
+        performance_monitor = self._start_performance_monitoring(psutil_available)
 
         # Attempt to fetch content with retries
         html_content = self._fetch_with_retries(url)
 
         # Stop performance monitoring and log results
-        self._log_performance_metrics(url, performance_monitor)
+        self._log_performance_metrics(url, performance_monitor, psutil_available)
 
         # Cache the response if enabled
         self._cache_response(url, html_content)
@@ -253,22 +259,20 @@ class MarkdownScraper:
                 return cached_content
         return None
 
-    def _start_performance_monitoring(self):
+    def _start_performance_monitoring(self, psutil_available: bool):
         """Start monitoring performance metrics."""
         import time
         import tracemalloc
-        import psutil
 
         start_time = time.time()
         tracemalloc.start()
-        process = psutil.Process()
 
         return {
             "start_time": start_time,
-            "process": process,
+            "psutil_available": psutil_available,
         }
 
-    def _log_performance_metrics(self, url: str, monitor):
+    def _log_performance_metrics(self, url: str, monitor, psutil_available: bool):
         """Log performance metrics for the request."""
         import time
         import tracemalloc
@@ -276,7 +280,10 @@ class MarkdownScraper:
         end_time = time.time()
         execution_time = end_time - monitor["start_time"]
         memory_usage = tracemalloc.get_traced_memory()
-        cpu_usage = monitor["process"].cpu_percent(interval=0.1)
+        cpu_usage = 0
+        if psutil_available:
+            import psutil
+            cpu_usage = psutil.Process().cpu_percent(interval=0.1)
 
         logger.info(f"Execution time for scraping {url}: {execution_time:.2f} seconds")
         logger.info(f"Memory usage for scraping {url}: {memory_usage[1] / 1024 / 1024:.2f} MB")

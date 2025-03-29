@@ -3,8 +3,10 @@ import shutil
 import tempfile
 import unittest
 from pathlib import Path
+from typing import List
+from unittest.mock import MagicMock, mock_open, patch
 
-from chunk_utils import Chunk, ContentChunker, create_semantic_chunks
+from markdown_lab.chunk_utils import Chunk, ContentChunker, create_semantic_chunks
 
 
 class TestChunkUtils(unittest.TestCase):

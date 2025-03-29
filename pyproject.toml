@@ -9,7 +9,11 @@ dependencies = [
     "requests"
 ]
 
+[tool.setuptools]
+packages = ["markdown_lab"]
+
 [tool.pytest.ini_options]
+testpaths = ["tests"]
 benchmark_min_rounds = 5
 benchmark_max_time = 1.0
 benchmark_save = true

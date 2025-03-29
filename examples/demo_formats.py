@@ -5,7 +5,7 @@ Demo script to showcase markdown_lab's multiple output formats.
 
 from pathlib import Path
 
-from markdown_lab_rs import OutputFormat, convert_html
+from markdown_lab.markdown_lab_rs import OutputFormat, convert_html
 
 # HTML sample for conversion testing
 SAMPLE_HTML = """
@@ -21,7 +21,7 @@ SAMPLE_HTML = """
         <li>JSON - Structured data format for programmatic usage</li>
         <li>XML - Markup format for document interchange</li>
     </ul>
-    
+
     <h2>Benefits of Multiple Formats</h2>
     <p>Having multiple output formats provides several advantages:</p>
     <ol>
@@ -29,14 +29,14 @@ SAMPLE_HTML = """
         <li>Integration with various systems</li>
         <li>Easier data processing and transformation</li>
     </ol>
-    
+
     <blockquote>
         <p>Format conversion is performed efficiently using Rust implementations.</p>
     </blockquote>
-    
+
     <pre><code>
 # Sample Python code
-from markdown_lab_rs import convert_html, OutputFormat
+from markdown_lab.markdown_lab_rs import convert_html, OutputFormat
 
 result = convert_html(html_content, url, OutputFormat.JSON)
     </code></pre>
