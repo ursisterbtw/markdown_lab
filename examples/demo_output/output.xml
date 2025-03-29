@@ -1,0 +1,570 @@
+<?xml version="1.0" ?>
+<document>
+  <title>List of Terminal Tools (A-Z) - Terminal Trove</title>
+  <base_url>https://terminaltrove.com/list/</base_url>
+  <headings>
+    <heading level="1">List of Terminal Tools (A-Z)</heading>
+    <heading level="2">A</heading>
+    <heading level="2">B</heading>
+    <heading level="2">C</heading>
+    <heading level="2">D</heading>
+    <heading level="2">E</heading>
+    <heading level="2">F</heading>
+    <heading level="2">G</heading>
+    <heading level="2">H</heading>
+    <heading level="2">I</heading>
+    <heading level="2">J</heading>
+    <heading level="2">K</heading>
+    <heading level="2">L</heading>
+    <heading level="2">M</heading>
+    <heading level="2">N</heading>
+    <heading level="2">O</heading>
+    <heading level="2">P</heading>
+    <heading level="2">Q</heading>
+    <heading level="2">R</heading>
+    <heading level="2">S</heading>
+    <heading level="2">T</heading>
+    <heading level="2">U</heading>
+    <heading level="2">V</heading>
+    <heading level="2">W</heading>
+    <heading level="2">X</heading>
+    <heading level="2">Y</heading>
+    <heading level="2">Z</heading>
+  </headings>
+  <paragraphs>
+    <paragraph>Below is a list of terminal tools in alphabetical order (A-Z) and updated regularly.</paragraph>
+    <paragraph>Looking for categories?</paragraph>
+    <paragraph>1. act3 - Glance at the last 3 runs of your Github Actions.</paragraph>
+    <paragraph>1. adguardian-term - An AdGuard Home terminal monitoring tool.</paragraph>
+    <paragraph>1. aerc - A pretty good email client.</paragraph>
+    <paragraph>1. age - A simple, modern and secure file encryption tool.</paragraph>
+    <paragraph>1. aichat - all-in-one AI powered CLI chat and copilot.</paragraph>
+    <paragraph>1. aider - AI pair programming in your terminal</paragraph>
+    <paragraph>1. aim - A command line download/upload tool with resume.</paragraph>
+    <paragraph>1. ali - A load testing tool capable of performing real-time analysis.</paragraph>
+    <paragraph>1. amfora - A fancy terminal browser for the Gemini protocol.</paragraph>
+    <paragraph>1. amp - A complete text editor for your terminal.</paragraph>
+    <paragraph>1. angryoxide - A WiFi attack and pentesting tool built in Rust.</paragraph>
+    <paragraph>1. arduino-cli-interactive - An Interactive way to use the arduino-cli.</paragraph>
+    <paragraph>1. aria2 - The ultra fast download utility.</paragraph>
+    <paragraph>1. asciinema - A terminal session recorder.</paragraph>
+    <paragraph>1. asn - ASN lookup tool and traceroute server</paragraph>
+    <paragraph>1. astroterm - A terminal-based star map.</paragraph>
+    <paragraph>1. atac - A simple API client (postman like) in your terminal.</paragraph>
+    <paragraph>1. atop - An advanced interactive monitor for linux systems.</paragraph>
+    <paragraph>1. atuin - Sync, search and backup shell history.</paragraph>
+    <paragraph>1. bacon - A background rust code checker.</paragraph>
+    <paragraph>1. bagels - A powerful expense tracker that lives in your terminal.</paragraph>
+    <paragraph>1. bandwhich - Terminal bandwidth utilization tool</paragraph>
+    <paragraph>1. basilk - A TUI to manage your tasks with minimal kanban logic.</paragraph>
+    <paragraph>1. bat - A cat(1) clone with wings.</paragraph>
+    <paragraph>1. bbcli - A TUI for accessing BBC News in the terminal.</paragraph>
+    <paragraph>1. bcal - Bits, bytes and address calculator.</paragraph>
+    <paragraph>1. bibiman - A simple TUI for handling your BibLaTeX database.</paragraph>
+    <paragraph>1. binsider - Analyze ELF binaries like a boss.</paragraph>
+    <paragraph>1. bkp - Utility that makes backups of your files/directories.</paragraph>
+    <paragraph>1. blink - tiniest x86-64-linux emulator.</paragraph>
+    <paragraph>1. bluetui - TUI for managing bluetooth on Linux.</paragraph>
+    <paragraph>1. bluetuith - A TUI bluetooth manager for Linux.</paragraph>
+    <paragraph>1. bmm - Get to your bookmarks in a flash.</paragraph>
+    <paragraph>1. bmon - Bandwidth monitor and rate estimator</paragraph>
+    <paragraph>1. bombadillo - A non-web client for the terminal, supporting Gopher, Gemini and much more.</paragraph>
+    <paragraph>1. bottom - Yet another cross-platform graphical process/system monitor.</paragraph>
+    <paragraph>1. braindrop - A terminal-based client for raindrop.io.</paragraph>
+    <paragraph>1. broot - A new way to see and navigate directory trees.</paragraph>
+    <paragraph>1. brows - A GitHub releases browser for the terminal</paragraph>
+    <paragraph>1. browsr - A pleasant file explorer in your terminal supporting all filesystems.</paragraph>
+    <paragraph>1. bt - Interactive tree-like terminal file manager.</paragraph>
+    <paragraph>1. btop - A terminal monitor of resources.</paragraph>
+    <paragraph>1. buku - Personal mini-web in text</paragraph>
+    <paragraph>1. byobu - Text-based window manager and terminal multiplexer</paragraph>
+    <paragraph>1. calcure - Modern, customizable TUI calendar and task manager.</paragraph>
+    <paragraph>1. calcurse - A calendar and scheduling application for the command line.</paragraph>
+    <paragraph>1. caligula - A user-friendly, lightweight TUI for disk imaging.</paragraph>
+    <paragraph>1. carbon-now-cli - generate beautiful images of your code from right inside your terminal.</paragraph>
+    <paragraph>1. cargo-selector - Cargo subcommand to select and execute binary/example targets.</paragraph>
+    <paragraph>1. carl - a cal(1) alternative calendar for the command-line.</paragraph>
+    <paragraph>1. castero - A TUI podcast client for the terminal.</paragraph>
+    <paragraph>1. cava - Cross-platform Audio Visualizer for Alsa</paragraph>
+    <paragraph>1. cgdb - A curses (terminal-based) interface to the GNU Debugger (GDB)</paragraph>
+    <paragraph>1. chdig - Dig into ClickHouse with TUI interface.</paragraph>
+    <paragraph>1. chmod-cli - effortlessly generate chmod commands.</paragraph>
+    <paragraph>1. cidr - A CLI to perform various actions on CIDR ranges.</paragraph>
+    <paragraph>1. circumflex - It's Hacker News in your terminal.</paragraph>
+    <paragraph>1. clipboard - Your new, ridonkulously smart clipboard manager.</paragraph>
+    <paragraph>1. cloc - Count lines of code in many programming languages</paragraph>
+    <paragraph>1. cmus - Small, fast and powerful console music player for Unix-like operating systems.</paragraph>
+    <paragraph>1. cointop - cryptocurrency tracking for hackers that like htop.</paragraph>
+    <paragraph>1. cotp - trusted, encrypted, TOTP/HOTP authenticator with import functionality.</paragraph>
+    <paragraph>1. cpufetch - Simple yet fancy CPU architecture fetching tool.</paragraph>
+    <paragraph>1. crates-tui - A TUI for exploring crates.io</paragraph>
+    <paragraph>1. croc - Easily and securely send things from one computer to another.</paragraph>
+    <paragraph>1. csvlens - a csv viewer like less but made for csv.</paragraph>
+    <paragraph>1. ctop - A top-like interface for container metrics.</paragraph>
+    <paragraph>1. curl - A command line tool and library for transferring data.</paragraph>
+    <paragraph>1. curlie - The power of curl, the ease of use of httpie.</paragraph>
+    <paragraph>1. cy - A time traveling terminal multiplexer.</paragraph>
+    <paragraph>1. cyme - List system USB buses and devices.</paragraph>
+    <paragraph>1. daff - align and compare tables</paragraph>
+    <paragraph>1. dblab - The database client designed for command line specialists.</paragraph>
+    <paragraph>1. ddgr - DuckDuckGo from the terminal.</paragraph>
+    <paragraph>1. ddv - A TUI to view Amazon DynamoDB in the terminal.</paragraph>
+    <paragraph>1. delta - A viewer for git and diff output.</paragraph>
+    <paragraph>1. desed - Demystify and debug your sed scripts, from the comfort of your terminal.</paragraph>
+    <paragraph>1. devzat - A tool to chat over SSH.</paragraph>
+    <paragraph>1. diffnav - A git diff pager based on delta but with a file tree, à la GitHub.</paragraph>
+    <paragraph>1. difftastic - A structural diff that understands syntax</paragraph>
+    <paragraph>1. dijo - scriptable, curses-based, digital habit tracker.</paragraph>
+    <paragraph>1. diskonaut - terminal disk space navigator.</paragraph>
+    <paragraph>1. dive - A tool for exploring each layer in a docker image.</paragraph>
+    <paragraph>1. dns53 - Expose your EC2 quickly, easily and privately within a VPC.</paragraph>
+    <paragraph>1. docfd - TUI multiline fuzzy document finder.</paragraph>
+    <paragraph>1. dog - A command-line DNS client.</paragraph>
+    <paragraph>1. doggo - A command-line DNS client for humans.</paragraph>
+    <paragraph>1. dolphie - Realtime MySQL health monitoring in the terminal.</paragraph>
+    <paragraph>1. dooit - A TUI todo manager for the terminal</paragraph>
+    <paragraph>1. dotenvhub - A TUI to manage your .env files in the terminal.</paragraph>
+    <paragraph>1. dra - A command line tool to download release assets from GitHub.</paragraph>
+    <paragraph>1. drft - A diff re/viewer and file tree viewer.</paragraph>
+    <paragraph>1. dry - A Docker manager for the terminal.</paragraph>
+    <paragraph>1. dstask - A CLI TODO manager with git-based sync + markdown notes.</paragraph>
+    <paragraph>1. dstp - Run common networking tests against any site.</paragraph>
+    <paragraph>1. dte - A small, configurable console text editor.</paragraph>
+    <paragraph>1. dua - View disk space usage and delete unwanted data, fast.</paragraph>
+    <paragraph>1. ducker - A slightly quackers Docker TUI.</paragraph>
+    <paragraph>1. duf - Disk Usage/Free Utility - a better 'df' alternative.</paragraph>
+    <paragraph>1. dug - A global DNS propagation checker on your CLI</paragraph>
+    <paragraph>1. dunk - Prettier git diffs in the terminal 🎨</paragraph>
+    <paragraph>1. durdraw - Versatile ASCII and ANSI Art text editor for terminals.</paragraph>
+    <paragraph>1. dusage - A command line disk usage information tool.</paragraph>
+    <paragraph>1. dust - A more intuitive version of du in rust</paragraph>
+    <paragraph>1. dyff - diff tool for YAML files, and sometimes JSON.</paragraph>
+    <paragraph>1. eddy - Simple, fast CLI file encryption tool.</paragraph>
+    <paragraph>1. eget - Easily install prebuilt binaries from GitHub.</paragraph>
+    <paragraph>1. elia - A TUI ChatGPT client built with Textual</paragraph>
+    <paragraph>1. elinks - A full-featured text www browser.</paragraph>
+    <paragraph>1. emacs - The extensible, customizable, free/libre display editor.</paragraph>
+    <paragraph>1. enola - A CLI tool to search for usernames across social networks.</paragraph>
+    <paragraph>1. envfetch - Lightweight cross-platform CLI tool for working with environment variables.</paragraph>
+    <paragraph>1. erdtree - A general purpose filesystem and disk-usage utility.</paragraph>
+    <paragraph>1. erldash - A simple, terminal-based Erlang dashboard.</paragraph>
+    <paragraph>1. euporie - Jupyter notebooks in the terminal.</paragraph>
+    <paragraph>1. eva - A calculator REPL, similar to bc.</paragraph>
+    <paragraph>1. exa - The original modern replacement for ls</paragraph>
+    <paragraph>1. eza - A modern replacement for ls</paragraph>
+    <paragraph>1. fastfetch - Like neofetch, but much faster.</paragraph>
+    <paragraph>1. fblog - Small command-line JSON Log viewer.</paragraph>
+    <paragraph>1. fd - A simple, fast and user-friendly alternative to 'find'</paragraph>
+    <paragraph>1. fend - An arbitrary-precision unit-aware calculator.</paragraph>
+    <paragraph>1. ffmpeg - record, convert and stream audio and video in the terminal.</paragraph>
+    <paragraph>1. flamelens - An interactive flamegraph viewer in the terminal.</paragraph>
+    <paragraph>1. flameshow - A flamegraph viewer in the terminal.</paragraph>
+    <paragraph>1. flawz - A TUI for browsing CVE security vulnerabilities.</paragraph>
+    <paragraph>1. flowcontrol - Flow Control: a programmer's text editor.</paragraph>
+    <paragraph>1. fm - A minimalistic file manager for the terminal.</paragraph>
+    <paragraph>1. fnc - interactive text-based user interface for Fossil</paragraph>
+    <paragraph>1. fnm - fast and simple node.js version manager in rust.</paragraph>
+    <paragraph>1. fnt - apt for fonts, the missing font manager for macOS and Linux</paragraph>
+    <paragraph>1. fnug - Run all your lints, tests and commands at once, in the terminal.</paragraph>
+    <paragraph>1. forgit - A utility tool powered by fzf for using Git interactively.</paragraph>
+    <paragraph>1. fork-cleaner - A tool to clean up old and inactive forks on your GitHub account.</paragraph>
+    <paragraph>1. fq - jq for binary formats.</paragraph>
+    <paragraph>1. frogmouth - A Markdown browser for your terminal</paragraph>
+    <paragraph>1. fselect - Find files with SQL-like queries.</paragraph>
+    <paragraph>1. fuzpad - A minimalistic note management solution. Powered by fzf.</paragraph>
+    <paragraph>1. fx - command-line tool and terminal JSON viewer.</paragraph>
+    <paragraph>1. fzf - A command-line fuzzy finder</paragraph>
+    <paragraph>1. fztea - A flipperzero remote control locally in the terminal and ssh.</paragraph>
+    <paragraph>1. g - A feature-rich, customizable, and cross-platform ls alternative.</paragraph>
+    <paragraph>1. gallery-dl - Download image galleries and collections from image hosting sites.</paragraph>
+    <paragraph>1. gama - Manage your GitHub Actions from the terminal.</paragraph>
+    <paragraph>1. gaze - Executes commands for you.</paragraph>
+    <paragraph>1. gdb - The GNU Project Debugger</paragraph>
+    <paragraph>1. gdu - Pretty fast disk usage analyzer</paragraph>
+    <paragraph>1. gfold - A CLI tool that helps you keep track of multiple Git repositories.</paragraph>
+    <paragraph>1. ggh - Recall your SSH sessions.</paragraph>
+    <paragraph>1. gh-dash - An interactive GitHub Dashboard for your terminal.</paragraph>
+    <paragraph>1. ghfetch - A CLI tool to fetch GitHub user information.</paragraph>
+    <paragraph>1. ghq - Remote repository management made easy.</paragraph>
+    <paragraph>1. git-cc - a git extension to help write conventional commits</paragraph>
+    <paragraph>1. git-split-diffs - Syntax highlighted side-by-side diffs in your terminal</paragraph>
+    <paragraph>1. git-who - Git blame for file trees.</paragraph>
+    <paragraph>1. gitnr - A CLI / TUI to generate .gitignore files using templates.</paragraph>
+    <paragraph>1. gitu - A TUI Git client inspired by Magit.</paragraph>
+    <paragraph>1. gitui - A blazing fast TUI for git written in rust</paragraph>
+    <paragraph>1. glances - A cross platform top/htop alternative in python.</paragraph>
+    <paragraph>1. glow - Render markdown on the CLI, with pizzazz!</paragraph>
+    <paragraph>1. goaccess - a real-time web log analyzer and interactive viewer.</paragraph>
+    <paragraph>1. gobang - A cross platform TUI database management tool written in Rust</paragraph>
+    <paragraph>1. gocker - TUI for Docker management.</paragraph>
+    <paragraph>1. gocovsh - A shell for interacting with Go coverage profiles.</paragraph>
+    <paragraph>1. godap - A complete terminal user interface (TUI) for LDAP.</paragraph>
+    <paragraph>1. goji - Commitizen-like tool for formatting commit messages using emojis.</paragraph>
+    <paragraph>1. gomi - Unix rm(1) command that can restore deleted files.</paragraph>
+    <paragraph>1. gomuks - A terminal based Matrix client written in Go.</paragraph>
+    <paragraph>1. goose - A database migration tool written in Go.</paragraph>
+    <paragraph>1. gopass - The enhanced unix password manager for teams.</paragraph>
+    <paragraph>1. goto - SSH manager for easy server access.</paragraph>
+    <paragraph>1. gotop - A terminal-based graphical activity monitor written in Go.</paragraph>
+    <paragraph>1. gotp - A CLI to manage and generate Time-based One Time Password. (TOTP)</paragraph>
+    <paragraph>1. gotz - A simple CLI timezone info tool.</paragraph>
+    <paragraph>1. gowall - A CLI tool to convert an image to any color-scheme.</paragraph>
+    <paragraph>1. gpg-tui - A terminal user interface for GPG</paragraph>
+    <paragraph>1. gping - Ping, but with a graph.</paragraph>
+    <paragraph>1. gpterminator - A TUI for OpenAI's ChatGPT</paragraph>
+    <paragraph>1. grex - generate regular expressions from user-provided test cases.</paragraph>
+    <paragraph>1. gri - manage git/gerrit change requests in the terminal.</paragraph>
+    <paragraph>1. grv - A Git Repository Viewer.</paragraph>
+    <paragraph>1. gtop - System monitoring dashboard for terminal.</paragraph>
+    <paragraph>1. gtrash - A featureful trash CLI manager.</paragraph>
+    <paragraph>1. gtt - A TUI for Google Translate, ChatGPT, DeepL and other AI services.</paragraph>
+    <paragraph>1. gurk - Signal Messenger client for terminal.</paragraph>
+    <paragraph>1. hackernews-tui - A Terminal UI (TUI) to browse Hacker News.</paragraph>
+    <paragraph>1. haiti - A CLI to that identifies various hash types.</paragraph>
+    <paragraph>1. halp - A CLI tool to get help with CLI tools.</paragraph>
+    <paragraph>1. harlequin - The SQL IDE for Your Terminal.</paragraph>
+    <paragraph>1. has - Checks presence of various CLI tools and their versions on the path.</paragraph>
+    <paragraph>1. hashcat - World's fastest and most advanced password recovery utility.</paragraph>
+    <paragraph>1. havn - A fast configurable port scanner with reasonable defaults.</paragraph>
+    <paragraph>1. hdf5_ui - A TUI for inspection of HDF5 files.</paragraph>
+    <paragraph>1. heh - A terminal UI to edit bytes by the nibble.</paragraph>
+    <paragraph>1. helix - A post-modern text editor.</paragraph>
+    <paragraph>1. heretek - Yet Another GDB TUI Frontend.</paragraph>
+    <paragraph>1. hevi - A hex viewer.</paragraph>
+    <paragraph>1. hexabyte - A modern, modular, and robust TUI hex editor.</paragraph>
+    <paragraph>1. hexpatch - A binary patcher and editor with a terminal user interface.</paragraph>
+    <paragraph>1. hexyl - A rust based command-line hex viewer</paragraph>
+    <paragraph>1. hf - Cross-platform hidden file library and utility.</paragraph>
+    <paragraph>1. hike - A Markdown browser for the terminal.</paragraph>
+    <paragraph>1. hishtory - Your shell history: synced, queryable, and in context.</paragraph>
+    <paragraph>1. hl - A fast and powerful log viewer and processor.</paragraph>
+    <paragraph>1. hledger - Fast, friendly, robust plain text accounting software</paragraph>
+    <paragraph>1. hledger-ui - Fast, friendly, robust plain text accounting software (TUI version)</paragraph>
+    <paragraph>1. hnterm - Hacker News in the terminal.</paragraph>
+    <paragraph>1. hoard - A CLI command organizer tool to hoard all your precious commands.</paragraph>
+    <paragraph>1. hostctl - A CLI tool to manage /etc/hosts like a pro!</paragraph>
+    <paragraph>1. hours - no-frills time tracking toolkit for the command line.</paragraph>
+    <paragraph>1. hstr - A bash and zsh shell history suggestion box for your command history.</paragraph>
+    <paragraph>1. htop - An interactive process viewer.</paragraph>
+    <paragraph>1. httm - Interactive, file-level Time Machine-like tool for ZFS/btrfs/nilfs2.</paragraph>
+    <paragraph>1. httplab - Inspect HTTP requests and mock their responses in the terminal.</paragraph>
+    <paragraph>1. httpstat - Visualizes curl(1) statistics in a way of beauty and clarity.</paragraph>
+    <paragraph>1. httpyac - A command line interface to execute *.http, *.rest files.</paragraph>
+    <paragraph>1. humble-explorer - cross-platform, command-line Bluetooth Low Energy scanner.</paragraph>
+    <paragraph>1. hurl - Run and test HTTP requests with plain text.</paragraph>
+    <paragraph>1. hwatch - An alternative watch command.</paragraph>
+    <paragraph>1. hyperfine - A command-line benchmarking tool.</paragraph>
+    <paragraph>1. iamb - A matrix client for vim addicts.</paragraph>
+    <paragraph>1. impala - TUI for managing WiFi on Linux.</paragraph>
+    <paragraph>1. irssi - A well known cross-platform and famous IRC client</paragraph>
+    <paragraph>1. isd - A keyboard-focused, highly customizable systemd units TUI.</paragraph>
+    <paragraph>1. jaq - A jq clone focused on correctness, speed, and simplicity</paragraph>
+    <paragraph>1. jc - A tool convert CLI output, files &amp; strings to JSON/YAML.</paragraph>
+    <paragraph>1. jellex - A TUI to filter JSON and JSON Lines data with Python syntax.</paragraph>
+    <paragraph>1. jira-cli - Interact with Jira in the Terminal with Jira CLI.</paragraph>
+    <paragraph>1. jjui - A terminal user interface for working with Jujutsu.</paragraph>
+    <paragraph>1. jless - A command-line JSON viewer.</paragraph>
+    <paragraph>1. jnv - Interactive JSON filter using jq.</paragraph>
+    <paragraph>1. joshuto - ranger-like terminal file manager written in Rust.</paragraph>
+    <paragraph>1. jq - Command-line JSON processor</paragraph>
+    <paragraph>1. jql - A JSON Query Language CLI tool.</paragraph>
+    <paragraph>1. jqp - A TUI playground to experiment with jq.</paragraph>
+    <paragraph>1. jujutsu - A Git-compatible VCS that is both simple and powerful.</paragraph>
+    <paragraph>1. jwt-ui - A CLI and TUI for decoding/encoding JSON Web Tokens.</paragraph>
+    <paragraph>1. k9s - Kubernetes CLI and TUI To Manage Your Clusters In Style!</paragraph>
+    <paragraph>1. kalker - A scientific terminal calculator with math syntax.</paragraph>
+    <paragraph>1. kanban-tui - A customizable task manager in the terminal.</paragraph>
+    <paragraph>1. kaskade - A text user interface (TUI) for Apache Kafka.</paragraph>
+    <paragraph>1. kb - A minimalist knowledge base manager.</paragraph>
+    <paragraph>1. kbt - A keyboard tester in terminal.</paragraph>
+    <paragraph>1. keep-alive - A lightweight, cross-platform utility to prevent your system from sleeping.</paragraph>
+    <paragraph>1. keyb - Create and view custom hotkey cheatsheets in the terminal.</paragraph>
+    <paragraph>1. khal - A standards based CLI and terminal calendar program.</paragraph>
+    <paragraph>1. kibi - A text editor in less than 1024 lines of code, written in Rust.</paragraph>
+    <paragraph>1. kl - An interactive Kubernetes log viewer for your terminal.</paragraph>
+    <paragraph>1. kmon - Linux Kernel Manager and Activity Monitor.</paragraph>
+    <paragraph>1. koji - An interactive CLI for creating conventional commits.</paragraph>
+    <paragraph>1. kondo - Cleans node_modules, target, build, and friends from your projects.</paragraph>
+    <paragraph>1. kplay - Inspect messages in a Kafka topic in a simple and deliberate manner.</paragraph>
+    <paragraph>1. ktool - A TUI Mach-O/ObjC analysis and editing toolkit in the terminal.</paragraph>
+    <paragraph>1. ktop - A top-like tool for your Kubernetes clusters.</paragraph>
+    <paragraph>1. kubecolor - Colorize your kubectl output.</paragraph>
+    <paragraph>1. kupo - A terminal file manager / browser, kupo!</paragraph>
+    <paragraph>1. lazydocker - The lazier way to manage everything docker</paragraph>
+    <paragraph>1. lazygit - Simple terminal UI for git commands.</paragraph>
+    <paragraph>1. lazyjournal - A terminal user interface for journalctl.</paragraph>
+    <paragraph>1. lazynpm - A simple TUI for npm commands.</paragraph>
+    <paragraph>1. lazysql - A cross-platform TUI database management tool.</paragraph>
+    <paragraph>1. lemmeknow - The fastest way to identify anything!</paragraph>
+    <paragraph>1. lf - A terminal file manager which &quot;lists files&quot;.</paragraph>
+    <paragraph>1. links - A fast and lightweight web browser running in both graphics and text mode.</paragraph>
+    <paragraph>1. lla - A blazing fast ls replacement with superpowers.</paragraph>
+    <paragraph>1. lnav - An ncurses-based log file viewer for the terminal.</paragraph>
+    <paragraph>1. loggo - A powerful terminal app for structured log streaming.</paragraph>
+    <paragraph>1. logmerger - A utility to view multiple log files with merged timeline.</paragraph>
+    <paragraph>1. logria - A powerful CLI tool that puts log aggregation at your fingertips.</paragraph>
+    <paragraph>1. logshark - A CLI / TUI debugger for JSON logs.</paragraph>
+    <paragraph>1. logss - A simple cli for logs splitting.</paragraph>
+    <paragraph>1. lsd - lsdeluxe, the next gen ls command in Rust.</paragraph>
+    <paragraph>1. lsix - like &quot;ls&quot;, but for sixel images.</paragraph>
+    <paragraph>1. lsr - Basically ls but readable.</paragraph>
+    <paragraph>1. lssh - A TUI list select SSH/SCP/SFTP client tools.</paragraph>
+    <paragraph>1. lychee - A fast, async link checker written in Rust.</paragraph>
+    <paragraph>1. lynx - A TUI based web browser.</paragraph>
+    <paragraph>1. macmon - Sudoless performance monitoring for Apple Silicon processors.</paragraph>
+    <paragraph>1. mani - A CLI tool to help you manage multiple repositories.</paragraph>
+    <paragraph>1. manly - A TUI for viewing man pages in the terminal.</paragraph>
+    <paragraph>1. mapscii - The whole world in your console.</paragraph>
+    <paragraph>1. mc - Midnight Commander, a feature-rich visual file manager for the terminal.</paragraph>
+    <paragraph>1. mdcat - fancy cat for markdown</paragraph>
+    <paragraph>1. mdp - A command-line based markdown presentation tool</paragraph>
+    <paragraph>1. mdtt - Markdown Table Editor TUI.</paragraph>
+    <paragraph>1. meli - configurable and extensible terminal email client.</paragraph>
+    <paragraph>1. menyoki - Screenshot/cast and perform ImageOps on the command line.</paragraph>
+    <paragraph>1. micro - A modern and intuitive terminal-based text editor.</paragraph>
+    <paragraph>1. miller - an all in one swiss army knife for data processing.</paragraph>
+    <paragraph>1. mise - The front-end to your dev env.</paragraph>
+    <paragraph>1. mitmproxy - A TLS/SSL-capable interception HTTP proxy.</paragraph>
+    <paragraph>1. moc - A music player with a terminal user interface (TUI)</paragraph>
+    <paragraph>1. moe - A command line Nim based editor inspired by Vim.</paragraph>
+    <paragraph>1. moneyterm - TUI expense and budget tracker.</paragraph>
+    <paragraph>1. monolith - A CLI tool for saving complete web pages as a single HTML file.</paragraph>
+    <paragraph>1. mop - stock market tracker for hackers.</paragraph>
+    <paragraph>1. mprocs - Run multiple commands in parallel.</paragraph>
+    <paragraph>1. mqttui - A TUI tool to publish/subscribe MQTT messages from the terminal.</paragraph>
+    <paragraph>1. mtr - A network diagnostics tool</paragraph>
+    <paragraph>1. musikcube - A cross-platform terminal-based music player</paragraph>
+    <paragraph>1. nap - Code snippets in your terminal.</paragraph>
+    <paragraph>1. navi - An interactive cheatsheet tool for the command line.</paragraph>
+    <paragraph>1. ncdu - A ncurses based disk usage analyzer</paragraph>
+    <paragraph>1. ncspot - A cross-platform ncurses Spotify client.</paragraph>
+    <paragraph>1. nemu - ncurses-based TUI for QEMU.</paragraph>
+    <paragraph>1. neofetch - A command-line system information tool.</paragraph>
+    <paragraph>1. neomutt - A command line mail reader based on mutt</paragraph>
+    <paragraph>1. neoss - User-friendly and detailed socket statistics with a TUI.</paragraph>
+    <paragraph>1. neovim - Hyperextensible Vim-based text editor</paragraph>
+    <paragraph>1. netop - A network topology visualizer.</paragraph>
+    <paragraph>1. netscanner - A network scanning tool.</paragraph>
+    <paragraph>1. newsboat - An open-source RSS/Atom feed reader for text terminals</paragraph>
+    <paragraph>1. nkt - Note taking in the terminal.</paragraph>
+    <paragraph>1. nnn - The missing terminal file manager for X</paragraph>
+    <paragraph>1. nomino - Batch rename utility for developers.</paragraph>
+    <paragraph>1. noping - A C library to generate ICMP echo requests with a visualization</paragraph>
+    <paragraph>1. notox - No toxic names anymore.</paragraph>
+    <paragraph>1. nping - A TUI concurrent ping tool developed in Rust.</paragraph>
+    <paragraph>1. ntop-windows - htop-like system-monitor for windows.</paragraph>
+    <paragraph>1. numbat - high precision scientific calculator with full support for physical units.</paragraph>
+    <paragraph>1. nvitop - An interactive NVIDIA-GPU process viewer and beyond.</paragraph>
+    <paragraph>1. nvrs - Fast new version checker for software releases.</paragraph>
+    <paragraph>1. nvtop - NVIDIA GPUs htop like monitoring tool</paragraph>
+    <paragraph>1. octocov - A toolkit for collecting code metrics.</paragraph>
+    <paragraph>1. oha - A tiny TUI program that sends some load to a web application.</paragraph>
+    <paragraph>1. ollama - get up and running with large language models locally.</paragraph>
+    <paragraph>1. omm - A keyboard-driven task manager for the terminal.</paragraph>
+    <paragraph>1. onefetch - A command-line Git information tool.</paragraph>
+    <paragraph>1. openapi-tui - Browse and run APIs defined with OpenAPI v3.0 in the TUI</paragraph>
+    <paragraph>1. opencubicplayer - a text-based audio player with some few graphical views.</paragraph>
+    <paragraph>1. orbiton - A terminal-based text editor and a minimalistic IDE.</paragraph>
+    <paragraph>1. oryx - A TUI for sniffing network traffic using eBPF on Linux.</paragraph>
+    <paragraph>1. oterm - A text-based terminal client for ollama.</paragraph>
+    <paragraph>1. otree - A tool to view objects (JSON/YAML/TOML) in a TUI tree widget.</paragraph>
+    <paragraph>1. otti - one-time TUI password manager for the terminal.</paragraph>
+    <paragraph>1. ouch - Painless compression and decompression in the terminal</paragraph>
+    <paragraph>1. ov - A feature rich terminal-based pager.</paragraph>
+    <paragraph>1. ox - A Rust text editor that runs in your terminal!</paragraph>
+    <paragraph>1. oxker - A simple TUI to view &amp; control docker containers.</paragraph>
+    <paragraph>1. packemon - A TUI for generating packets of arbitrary input and monitoring packets.</paragraph>
+    <paragraph>1. pacseek - A TUI for searching and installing Arch Linux packages.</paragraph>
+    <paragraph>1. pandoc - a universal markup converter.</paragraph>
+    <paragraph>1. papis - A powerful and highly extensible CLI document and bibliography manager.</paragraph>
+    <paragraph>1. para-cada - Executes your command for each file selected using glob expression(s).</paragraph>
+    <paragraph>1. pass - the standard unix password manager.</paragraph>
+    <paragraph>1. pastel - Generate, analyze, convert and manipulate colors.</paragraph>
+    <paragraph>1. patat - Terminal-based presentations using Pandoc.</paragraph>
+    <paragraph>1. patch-hub - TUI for lore.kernel.org</paragraph>
+    <paragraph>1. pathos - A terminal interface for editing and managing PATH environment variables.</paragraph>
+    <paragraph>1. pctrl - A terminal-based process controller.</paragraph>
+    <paragraph>1. pdu - Highly parallelized, blazing fast directory tree analyzer.</paragraph>
+    <paragraph>1. peco - A simplistic interactive filtering tool.</paragraph>
+    <paragraph>1. pet - Simple command-line snippet manager.</paragraph>
+    <paragraph>1. pgtree - Unix process hierarchy tree for specific processes.</paragraph>
+    <paragraph>1. phetch - A terminal client designed to help you quickly navigate the gophersphere.</paragraph>
+    <paragraph>1. pik - A TUI for interactively stopping processes.</paragraph>
+    <paragraph>1. pillager - Pillage filesystems for sensitive information.</paragraph>
+    <paragraph>1. pingtop - Ping multiple servers and show the result in a top like terminal UI.</paragraph>
+    <paragraph>1. pipeform - A TUI for Terraform runtime progress.</paragraph>
+    <paragraph>1. pkgtop - An interactive linux package manager &amp; resource monitor.</paragraph>
+    <paragraph>1. planor - A TUI client for cloud services for aws, vultr, heroku, etc.</paragraph>
+    <paragraph>1. pls - A prettier and powerful ls(1) for the pros.</paragraph>
+    <paragraph>1. pocker - A TUI tool for Docker.</paragraph>
+    <paragraph>1. portal - A quick and easy command-line file transfer utility.</paragraph>
+    <paragraph>1. posting - A powerful HTTP client that lives in your terminal.</paragraph>
+    <paragraph>1. pqviewer - View Apache Parquet Files In Your Terminal.</paragraph>
+    <paragraph>1. presenterm - A TUI markdown terminal slideshow tool.</paragraph>
+    <paragraph>1. process-compose - A scheduler and orchestrator to manage non-containerized applications.</paragraph>
+    <paragraph>1. procmux - A terminal multiplexer for processes.</paragraph>
+    <paragraph>1. procs - A modern replacement for ps written in Rust.</paragraph>
+    <paragraph>1. projectable - A terminal-based project manager</paragraph>
+    <paragraph>1. prs - Stay updated on PRs without leaving the terminal.</paragraph>
+    <paragraph>1. pueue - Manage your shell commands.</paragraph>
+    <paragraph>1. pug - Drive terraform at terminal velocity.</paragraph>
+    <paragraph>1. pumas - Power Usage Monitor for Apple Silicon.</paragraph>
+    <paragraph>1. pvw - A terminal-based (TUI) port viewer in Go</paragraph>
+    <paragraph>1. pwdsafety - A CLI tool for checking password safety.</paragraph>
+    <paragraph>1. pysentation - TUI for displaying Python presentations</paragraph>
+    <paragraph>1. qq - A jq inspired interoperable config format transcoder with interactive querying.</paragraph>
+    <paragraph>1. qrc - A QR code generator for text terminals.</paragraph>
+    <paragraph>1. qrtool - A utility for encoding or decoding QR codes.</paragraph>
+    <paragraph>1. qsv - Blazing-fast CSV data-wrangling toolkit</paragraph>
+    <paragraph>1. radare2 - unix-like reverse engineering framework and command-line toolset.</paragraph>
+    <paragraph>1. rainfrog - A database management TUI for postgres.</paragraph>
+    <paragraph>1. ranger - A vim-inspired file manager for the console.</paragraph>
+    <paragraph>1. rclone - rsync for cloud storage</paragraph>
+    <paragraph>1. reader - Readability for the command line.</paragraph>
+    <paragraph>1. recoverpy - A TUI to interactively recover overwritten or deleted data.</paragraph>
+    <paragraph>1. redu - ncdu for your restic repository.</paragraph>
+    <paragraph>1. restic - Fast, secure, efficient backup program.</paragraph>
+    <paragraph>1. rexi - A terminal UI for regex testing.</paragraph>
+    <paragraph>1. rga - Ripgrep, but can also search in docs, PDFs, E-Books, zip, tar.gz, etc.</paragraph>
+    <paragraph>1. rhit - A nginx log explorer.</paragraph>
+    <paragraph>1. ripgrep - A recursive directory search tool using regex patterns.</paragraph>
+    <paragraph>1. rizin - open source reverse engineering tool based on radare2.</paragraph>
+    <paragraph>1. rssnix - filesystem-based rss/atom/json feed fetcher and reader</paragraph>
+    <paragraph>1. rsync - A fast and extraordinarily versatile file copying tool for both remote and local files.</paragraph>
+    <paragraph>1. rsyncy - A status/progress bar for rsync.</paragraph>
+    <paragraph>1. rucola - A terminal based markdown note manager.</paragraph>
+    <paragraph>1. rustscan - The Modern Port Scanner.</paragraph>
+    <paragraph>1. s-tui - terminal-based CPU stress and monitoring utility.</paragraph>
+    <paragraph>1. s3scanner - A tool to scan for misconfigured S3 buckets.</paragraph>
+    <paragraph>1. sake - A task runner for local and remote hosts.</paragraph>
+    <paragraph>1. sampler - Visualization for any shell command.</paragraph>
+    <paragraph>1. sc-im - An ncurses spreadsheet program for terminal</paragraph>
+    <paragraph>1. scc - A very fast accurate code counter with complexity calculations.</paragraph>
+    <paragraph>1. scli - simple terminal user interface (TUI) for Signal.</paragraph>
+    <paragraph>1. sd - Intuitive find &amp; replace CLI (sed alternative)</paragraph>
+    <paragraph>1. sen - Terminal User Interface for containers.</paragraph>
+    <paragraph>1. senpai - Your everyday IRC student.</paragraph>
+    <paragraph>1. serie - A rich git commit graph in your terminal, like magic!</paragraph>
+    <paragraph>1. servitor - A fediverse client with a terminal interface</paragraph>
+    <paragraph>1. shellcheck - A static analysis tool for shell scripts.</paragraph>
+    <paragraph>1. sherlock - Hunt down social media accounts by username across social networks.</paragraph>
+    <paragraph>1. sig - interactive grep. (for streaming)</paragraph>
+    <paragraph>1. silicon - create beautiful image of your source code.</paragraph>
+    <paragraph>1. sizeof - A command-line tool to calculate the size of data structures</paragraph>
+    <paragraph>1. slack-term - A Slack client for your terminal.</paragraph>
+    <paragraph>1. slides - A terminal based presentation tool</paragraph>
+    <paragraph>1. slumber - Terminal-based HTTP/REST client.</paragraph>
+    <paragraph>1. slurm - Realtime traffic statistics for network interfaces</paragraph>
+    <paragraph>1. smartcat - Putting a brain behind cat(1).</paragraph>
+    <paragraph>1. snowmachine - Make it snow in the terminal!</paragraph>
+    <paragraph>1. sntop - A simple network top for monitoring connectivity</paragraph>
+    <paragraph>1. sou - A tool for exploring files in container image layers.</paragraph>
+    <paragraph>1. spiel - Display richly-styled presentations using your terminal.</paragraph>
+    <paragraph>1. spotify-player - A Spotify player in the terminal with full feature parity.</paragraph>
+    <paragraph>1. spotify-tui - Spotify for the terminal written in Rust</paragraph>
+    <paragraph>1. sq - The missing swiss-army knife tool for wrangling data.</paragraph>
+    <paragraph>1. sqly - Easily execute SQL against CSV/TSV/LTSV/JSON and Excel with shell.</paragraph>
+    <paragraph>1. ssh-para - Parallel SSH jobs manager interactive CLI.</paragraph>
+    <paragraph>1. sshclick - Terminal based assisted management of your SSH config files.</paragraph>
+    <paragraph>1. sshs - Terminal user interface for SSH</paragraph>
+    <paragraph>1. stew - An independent package manager for compiled binaries.</paragraph>
+    <paragraph>1. stree - A simple directory tree command for listing AWS S3 bucket</paragraph>
+    <paragraph>1. sttr - A CLI/TUI tool to perform 30+ string transformations on text.</paragraph>
+    <paragraph>1. stu - A TUI application for AWS S3 written in Rust.</paragraph>
+    <paragraph>1. sunbeam - A general purpose command-line launcher.</paragraph>
+    <paragraph>1. superfile - fancy, modern file manager in the terminal.</paragraph>
+    <paragraph>1. systemctl-tui - A fast, simple TUI for interacting with systemd services and their logs.</paragraph>
+    <paragraph>1. t-rec - Blazingly fast terminal recorder that generates animated gif images.</paragraph>
+    <paragraph>1. tabiew - A lightweight TUI application to view and query tabular data files.</paragraph>
+    <paragraph>1. tailspin - A log file highlighter</paragraph>
+    <paragraph>1. tasktimer - A dead simple TUI task timer.</paragraph>
+    <paragraph>1. taskwarrior-tui - A terminal user interface for taskwarrior</paragraph>
+    <paragraph>1. tcping - A cross-platform ping program for TCP ports.</paragraph>
+    <paragraph>1. tcpterm - A terminal-based TCP dump viewer.</paragraph>
+    <paragraph>1. tealdeer - A very fast implementation of tldr in Rust.</paragraph>
+    <paragraph>1. tegratop - A TUI monitoring tool for Nvidia jetson boards.</paragraph>
+    <paragraph>1. television - A blazingly fast general purpose fuzzy finder TUI.</paragraph>
+    <paragraph>1. tempy - A simple TUI for displaying the current weather in the terminal</paragraph>
+    <paragraph>1. tenere - A TUI interface for LLMs.</paragraph>
+    <paragraph>1. tere - A faster alternative to cd + ls.</paragraph>
+    <paragraph>1. termdbms - A terminal UI for editing database files</paragraph>
+    <paragraph>1. terminaltexteffects - Inline Visual Effects in the Terminal.</paragraph>
+    <paragraph>1. termpicker - A color picker for the terminal.</paragraph>
+    <paragraph>1. termscp - A feature rich terminal file transfer tool.</paragraph>
+    <paragraph>1. termshark - A terminal UI (TUI) for tshark, inspired by Wireshark.</paragraph>
+    <paragraph>1. terraform-tui - A powerful terraform textual TUI.</paragraph>
+    <paragraph>1. tewi - Text-based interface for the Transmission BitTorrent daemon.</paragraph>
+    <paragraph>1. textql - Execute SQL against structured text like CSV or TSV</paragraph>
+    <paragraph>1. textual-astview - A Textual-based Python AST viewing widget library and application</paragraph>
+    <paragraph>1. textual-paint - MS Paint in your terminal.</paragraph>
+    <paragraph>1. tgpt - AI Chatbots in the terminal without needing API keys.</paragraph>
+    <paragraph>1. tgt - A simple TUI for Telegram.</paragraph>
+    <paragraph>1. tickrs - Realtime ticker data in your terminal</paragraph>
+    <paragraph>1. tig - Text-mode interface for git</paragraph>
+    <paragraph>1. tinboard - A terminal-based client for pinboard.in</paragraph>
+    <paragraph>1. tiptop - Command-line system monitoring</paragraph>
+    <paragraph>1. tmux - An open-source terminal multiplexer.</paragraph>
+    <paragraph>1. tokei - Count your code, quickly.</paragraph>
+    <paragraph>1. toolong - A terminal application to view, tail, merge, and search log files (plus JSONL).</paragraph>
+    <paragraph>1. toot - Interact with Mastodon directly in the terminal.</paragraph>
+    <paragraph>1. topgrade - Upgrade all the things</paragraph>
+    <paragraph>1. tproxy - A cli tool to proxy and analyze TCP connections.</paragraph>
+    <paragraph>1. tracexec - A small utility for tracing/debugging program execution.</paragraph>
+    <paragraph>1. tran - Securely transfer and send anything between computers with a TUI</paragraph>
+    <paragraph>1. tre - A modern and improved alternative to the tree(1) command.</paragraph>
+    <paragraph>1. trippy - A TUI network diagnostics tool</paragraph>
+    <paragraph>1. ttyper - A terminal-based typing test</paragraph>
+    <paragraph>1. ttyplot - A realtime terminal plotting utility with data input from stdin.</paragraph>
+    <paragraph>1. tufw - Terminal UI for ufw.</paragraph>
+    <paragraph>1. tui-journal - Your journal app if you live in a terminal.</paragraph>
+    <paragraph>1. tuime - A colorful and customizable TUI clock written in Rust.</paragraph>
+    <paragraph>1. tuisky - A TUI client for Bluesky.</paragraph>
+    <paragraph>1. tuistash - A terminal user interface for Logstash.</paragraph>
+    <paragraph>1. tukai - Terminal based touch typing application.</paragraph>
+    <paragraph>1. tuptime - Like uptime(1), but preserves shutdown / restart stats.</paragraph>
+    <paragraph>1. tut - A TUI for Mastodon with vim inspired keys</paragraph>
+    <paragraph>1. twitch-tui - A Twitch chat TUI client for the terminal</paragraph>
+    <paragraph>1. typeinc - A cool ncurses based typing speed test tool.</paragraph>
+    <paragraph>1. typespeed - Test your typing speed, and challenge your friends</paragraph>
+    <paragraph>1. typioca - Cozy typing speed tester in terminal.</paragraph>
+    <paragraph>1. tz - A terminal based timezone helper</paragraph>
+    <paragraph>1. tzupdate - Set the system timezone based on IP geolocation.</paragraph>
+    <paragraph>1. ugm - A TUI to view information about UNIX users and groups</paragraph>
+    <paragraph>1. updo - Uptime monitoring CLI tool with alerting and advanced settings.</paragraph>
+    <paragraph>1. uuinfo - A tool to debug unique identifiers. (UUID, ULID, Snowflake, etc)</paragraph>
+    <paragraph>1. viddy - A modern watch command, time machine and pager.</paragraph>
+    <paragraph>1. vifm - A file manager with curses interface.</paragraph>
+    <paragraph>1. vignore - A powerful tool to visualize ignored files.</paragraph>
+    <paragraph>1. vim - The ubiquitous text editor</paragraph>
+    <paragraph>1. visidata - A terminal spreadsheet multitool for discovering and arranging data.</paragraph>
+    <paragraph>1. vscli - A CLI/TUI making it easy to launch Visual Studio Code (vscode) projects.</paragraph>
+    <paragraph>1. vtop - Wow such top. So stats. More better than regular top</paragraph>
+    <paragraph>1. w3m - A pager and/or text-based browser.</paragraph>
+    <paragraph>1. weechat - The extensible chat client</paragraph>
+    <paragraph>1. wg-cmd - TUI for managing WireGuard configuration files</paragraph>
+    <paragraph>1. wget - A utility for non-interactive download of files from the web.</paragraph>
+    <paragraph>1. wiki-tui - A fast Wikipedia CLI/TUI client</paragraph>
+    <paragraph>1. wiper - A TUI disk analyser and cleanup tool.</paragraph>
+    <paragraph>1. wireman - A TUI gRPC client.</paragraph>
+    <paragraph>1. wordgrinder - A cross-platform word processor for the terminal</paragraph>
+    <paragraph>1. wtf - The personal information dashboard for your terminal.</paragraph>
+    <paragraph>1. wut - A CLI that explains the output of your last command.</paragraph>
+    <paragraph>1. wuzz - An interactive TUI tool for HTTP inspection.</paragraph>
+    <paragraph>1. xbps-tui - A TUI-wrapper for xbps package manager on Void Linux.</paragraph>
+    <paragraph>1. xh - Friendly and fast tool for sending HTTP requests.</paragraph>
+    <paragraph>1. xplr - A hackable, minimal, fast TUI file explorer</paragraph>
+    <paragraph>1. yai - Your AI powered terminal assistant</paragraph>
+    <paragraph>1. yazi - Blazing fast terminal file manager written in Rust, based on async I/O.</paragraph>
+    <paragraph>1. youplot - A command line tool that draw plots on the terminal.</paragraph>
+    <paragraph>1. youtube-dl - Download videos from YouTube and other video sites.</paragraph>
+    <paragraph>1. youtube-tui - An aesthetically pleasing YouTube TUI written in Rust</paragraph>
+    <paragraph>1. yr - Get the weather delivered to your command-line.</paragraph>
+    <paragraph>1. yt-dlp - A youtube-dl fork with additional features and fixes.</paragraph>
+    <paragraph>1. zeit - A simple command-line tool to track your time</paragraph>
+    <paragraph>1. zeitfetch - Instantaneous snapshots of system information.</paragraph>
+    <paragraph>1. zellij - A terminal workspace with batteries included.</paragraph>
+    <paragraph>1. zenith - A terminal UI (TUI) for monitoring system resources</paragraph>
+    <paragraph>1. zoxide - A smarter cd command. Supports all major shells.</paragraph>
+    <paragraph>1. zrok - a next-generation peer-to-peer sharing platform</paragraph>
+  </paragraphs>
+</document>

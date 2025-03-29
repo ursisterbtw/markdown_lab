@@ -2,6 +2,7 @@
 
 # Cached Files
 *cache*
+!cache.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

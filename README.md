@@ -1,4 +1,4 @@
-![Markdown Lab](github-banner.svg)
+![Markdown Lab](docs/assets/github-banner.svg)
 
 # Markdown Lab 🔄📝
 
@@ -48,31 +48,31 @@ cargo build --release
 
 ```bash
 # Convert to Markdown (default)
-python main.py https://www.example.com -o output.md
+python -m markdown_lab https://www.example.com -o output.md
 
 # Convert to JSON
-python main.py https://www.example.com -o output.json -f json
+python -m markdown_lab https://www.example.com -o output.json -f json
 
 # Convert to XML
-python main.py https://www.example.com -o output.xml -f xml
+python -m markdown_lab https://www.example.com -o output.xml -f xml
 ```
 
 ### With RAG Chunking
 
 ```bash
-python main.py https://www.example.com -o output.md --save-chunks --chunk-dir my_chunks
+python -m markdown_lab https://www.example.com -o output.md --save-chunks --chunk-dir my_chunks
 ```
 
 ### Scraping with Sitemap
 
 ```bash
-python main.py https://www.example.com -o output_dir --use-sitemap --save-chunks
+python -m markdown_lab https://www.example.com -o output_dir --use-sitemap --save-chunks
 ```
 
 ### Advanced Sitemap Scraping
 
 ```bash
-python main.py https://www.example.com -o output_dir \
+python -m markdown_lab https://www.example.com -o output_dir \
     --use-sitemap \
     --min-priority 0.5 \
     --include "blog/*" "products/*" \
@@ -107,7 +107,7 @@ python main.py https://www.example.com -o output_dir \
 #### Basic Scraping and Conversion
 
 ```python
-from main import MarkdownScraper
+from markdown_lab.core.scraper import MarkdownScraper
 
 # Using default Markdown format
 scraper = MarkdownScraper()
@@ -116,7 +116,7 @@ markdown_content = scraper.convert_to_markdown(html_content, "https://example.co
 scraper.save_content(markdown_content, "output.md")
 
 # Using JSON or XML format with the Rust implementation
-from markdown_lab_rs import convert_html, OutputFormat
+from markdown_lab.markdown_lab_rs import convert_html, OutputFormat
 
 html_content = scraper.scrape_website("https://example.com")
 # Convert to JSON
@@ -130,7 +130,7 @@ scraper.save_content(xml_content, "output.xml")
 #### With Sitemap Discovery
 
 ```python
-from main import MarkdownScraper
+from markdown_lab.core.scraper import MarkdownScraper
 
 scraper = MarkdownScraper(requests_per_second=2.0)
 # Scrape using sitemap discovery
@@ -151,7 +151,7 @@ print(f"Successfully scraped {len(scraped_urls)} URLs")
 #### Direct Sitemap Access
 
 ```python
-from sitemap_utils import SitemapParser, discover_site_urls
+from markdown_lab.utils.sitemap_utils import SitemapParser, discover_site_urls
 
 # Quick discovery of URLs from sitemap
 urls = discover_site_urls(
@@ -213,7 +213,10 @@ RUST_LOG=debug cargo test -- --nocapture
 
 ```bash
 # Run Python binding tests
-pytest tests/test_python_bindings.py -v
+pytest tests/rust/test_python_bindings.py -v
+
+# Run all unit tests
+pytest tests/unit/
 ```
 
 ## Running Benchmarks
@@ -241,6 +244,19 @@ This will create a `benchmark_results.png` file with a bar chart showing the per
 
 ### Code Organization
 
+- `markdown_lab/`: Main Python package
+  - `__init__.py`: Package initialization
+  - `__main__.py`: Command-line entry point
+  - `core/`: Core functionality
+    - `scraper.py`: Main scraper implementation
+    - `cache.py`: Request caching
+    - `throttle.py`: Rate limiting for web requests
+  - `utils/`: Utility modules
+    - `chunk_utils.py`: Utilities for chunking text for RAG
+    - `sitemap_utils.py`: Sitemap parsing and URL discovery
+    - `version.py`: Version information
+  - `markdown_lab_rs.py`: Python interface to Rust components
+
 - `src/`: Rust source code
   - `lib.rs`: Main library and Python bindings
   - `html_parser.rs`: HTML parsing utilities
@@ -249,11 +265,20 @@ This will create a `benchmark_results.png` file with a bar chart showing the per
   - `js_renderer.rs`: JavaScript page rendering
 
 - `tests/`: Test files
-  - Rust integration tests
-  - Python binding tests
+  - `unit/`: Python unit tests
+  - `integration/`: Integration tests
+  - `rust/`: Rust and Python binding tests
 
 - `benches/`: Benchmark files
   - Performance tests for core operations
+
+- `examples/`: Example scripts and demos
+  - `demo_formats.py`: Demo of different output formats
+  - `hello.py`: Simple hello world example
+
+- `docs/`: Documentation
+  - Various documentation files and guides
+  - `assets/`: Documentation assets like images
 
 ### Running with Real JavaScript Rendering
 
@@ -262,6 +287,8 @@ To enable real JavaScript rendering with headless Chrome:
 ```bash
 cargo build --release --features real_rendering
 ```
+
+See `docs/JS_RENDERING.md` for more details.
 
 ## Performance Considerations
 
@@ -290,14 +317,6 @@ cargo build --release --features real_rendering
 
 This project is licensed under the MIT License - see the [LICENSE file](LICENSE) for details.
 
-## Project Structure
-
-- `main.py`: The main scraper implementation
-- `chunk_utils.py`: Utilities for chunking text for RAG
-- `sitemap_utils.py`: Sitemap parsing and URL discovery
-- `throttle.py`: Rate limiting for web requests
-- `test_*.py`: Unit tests
-
 ## Roadmap
 
 - [x] Add support for more HTML elements
@@ -321,7 +340,7 @@ This project is licensed under the MIT License - see the [LICENSE file](LICENSE)
 To create an official release, follow these steps:
 
 1. **Update Version Numbers**:
-   - Update the version number in `Cargo.toml` and `pyproject.toml` to the new release version.
+   - Update the version number in `Cargo.toml`, `pyproject.toml`, and `markdown_lab/__init__.py` to the new release version.
 
 2. **Commit Changes**:
    - Commit the changes to the version numbers and any other updates.
@@ -333,30 +352,14 @@ To create an official release, follow these steps:
      git push origin v1.0.0
      ```
 
-4. **Create Release Notes**:
-   - Create release notes that include the following updates and changes:
-     * Added `.editorconfig` file for consistent coding styles across different editors.
-     * Added GitHub Actions workflows for continuous integration:
-       * `CI.yml` (`.github/workflows/CI.yml`) for Python CI.
-       * `rust.yml` (`.github/workflows/rust.yml`) for Rust CI.
-     * Updated `.gitignore` to include various files and directories to be ignored by Git.
-     * Added `.python-version` file specifying Python version 3.12.
-     * Added `.vscode/settings.json` for VS Code settings.
-     * Added `Cargo.toml` for Rust project configuration.
-     * Added `CLAUDE.md` with commands and guidelines for the project.
-     * Added `demo_output/output.json`, `demo_output/output.md`, and `demo_output/output.xml` as examples of output formats.
-     * Added `JS_RENDERING.md` for JavaScript rendering support documentation.
-     * Updated `README.md` with project details, features, installation, usage, and more.
-     * Added `test_data/sample.md` as a sample markdown file for testing.
-
-5. **Push Changes**:
+4. **Push Changes**:
    - Push the changes to the main branch:
      ```bash
      git push origin main
      ```
 
-6. **Create GitHub Release**:
-   - Go to the GitHub repository and create a new release using the tag created in step 3. Include the release notes created in step 4.
+5. **Create GitHub Release**:
+   - Go to the GitHub repository and create a new release using the tag created in step 3.
 
-7. **Verify Release**:
-   - Verify that the release has been created successfully and that the release notes are accurate.
+6. **Verify Release**:
+   - Verify that the release has been created successfully and that all components are working as expected.

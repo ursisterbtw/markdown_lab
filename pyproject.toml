@@ -1,13 +1,39 @@
 [project]
 name = "markdown-lab"
 version = "1.0.0"
-description = "a markdown parser"
+description = "HTML to Markdown converter with support for multiple output formats"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "pytest",
-    "requests"
+    "requests>=2.31.0",
+    "beautifulsoup4>=4.12.2",
+    "psutil>=5.9.5;platform_system!='Linux'"
 ]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "black>=23.7.0",
+    "ruff>=0.0.280",
+    "mypy>=1.5.1",
+    "isort>=5.12.0",
+    "sourcery>=1.11.0",
+]
+test = [
+    "pytest>=7.4.0",
+    "pytest-benchmark>=4.0.0",
+]
+js = [
+    "playwright>=1.37.0",
+]
+
+[project.scripts]
+markdown-lab = "markdown_lab.__main__:main"
+
+[project.urls]
+Homepage = "https://github.com/ursisterbtw/markdown-lab"
+Documentation = "https://github.com/ursisterbtw/markdown-lab#readme"
+Issues = "https://github.com/ursisterbtw/markdown-lab/issues"
 
 [tool.pytest.ini_options]
 benchmark_min_rounds = 5
@@ -26,5 +52,31 @@ benchmark_only = false
 benchmark_max_iterations = 100000
 benchmark_min_time = 0.000005
 
+[tool.black]
+line-length = 88
+target-version = ["py312"]
+
+[tool.isort]
+profile = "black"
+line_length = 88
+
+[tool.ruff]
+target-version = "py312"
+line-length = 88
+select = ["E", "F", "I", "N", "W", "B", "C4", "SIM", "T20", "RET", "ERA", "PL"]
+ignore = ["E203", "E501"]
+
+[tool.mypy]
+python_version = "3.12"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+strict_optional = true
+
 [build-system]
-requires = ["setuptools", "wheel", "maturin"]
+requires = ["setuptools>=67.0.0", "wheel", "maturin>=1.0.0"]
+build-backend = "maturin"
