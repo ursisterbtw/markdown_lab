@@ -78,5 +78,9 @@ no_implicit_optional = true
 strict_optional = true
 
 [build-system]
-requires = ["setuptools>=67.0.0", "wheel", "maturin>=1.0.0"]
+requires = ["wheel","setuptools","maturin>=1.6,<2.0"]
 build-backend = "maturin"
+
+[tool.maturin]
+features = ["pyo3/extension-module"]
+module-name = "markdown_lab.markdown_lab_rs" # Adjust if your Rust module name is different in lib.rs

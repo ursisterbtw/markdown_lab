@@ -1,6 +1,7 @@
 {
     "github-actions.workflows.pinned.workflows": [
-        ".github/workflows/CI.yml"
+        ".github/workflows/CI.yml",
+        ".github/workflows/rust.yml"
     ],
     "python.analysis.extraPaths": [
         "/home/codespace/.vscode-remote/extensions/continue.continue-0.1.3"

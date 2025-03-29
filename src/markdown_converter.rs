@@ -318,9 +318,13 @@ pub fn document_to_json(document: &Document) -> Result<String, MarkdownError> {
 pub fn document_to_xml(document: &Document) -> Result<String, MarkdownError> {
     use quick_xml::se::to_string;
     
-    to_string(document).map_err(|e| {
-        MarkdownError::SerializationError(format!("Failed to serialize to XML: {}", e))
-    })
+    match to_string(document) {
+        Ok(xml) => Ok(xml),
+        Err(e) => {
+            eprintln!("Error serializing document to XML: {:?}", e);
+            Err(MarkdownError::SerializationError(format!("Failed to serialize to XML: {}", e)))
+        }
+    }
 }
 
 /// Convert HTML to the specified output format
