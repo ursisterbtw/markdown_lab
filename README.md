@@ -48,13 +48,13 @@ cargo build --release
 
 ```bash
 # Convert to Markdown (default)
-python -m markdown_lab https://www.example.com output.md
+python main.py https://www.example.com -o output.md
 
 # Convert to JSON
-python -m markdown_lab https://www.example.com output.json -f json
+python main.py https://www.example.com -o output.json -f json
 
 # Convert to XML
-python -m markdown_lab https://www.example.com output.xml -f xml
+python main.py https://www.example.com -o output.xml -f xml
 ```
 
 ### With RAG Chunking
@@ -107,7 +107,7 @@ python main.py https://www.example.com -o output_dir \
 #### Basic Scraping and Conversion
 
 ```python
-from markdown_lab.main import MarkdownScraper
+from main import MarkdownScraper
 
 # Using default Markdown format
 scraper = MarkdownScraper()
@@ -116,7 +116,7 @@ markdown_content = scraper.convert_to_markdown(html_content, "https://example.co
 scraper.save_content(markdown_content, "output.md")
 
 # Using JSON or XML format with the Rust implementation
-from markdown_lab.markdown_lab_rs import convert_html, OutputFormat
+from markdown_lab_rs import convert_html, OutputFormat
 
 html_content = scraper.scrape_website("https://example.com")
 # Convert to JSON
@@ -130,7 +130,7 @@ scraper.save_content(xml_content, "output.xml")
 #### With Sitemap Discovery
 
 ```python
-from markdown_lab.main import MarkdownScraper
+from main import MarkdownScraper
 
 scraper = MarkdownScraper(requests_per_second=2.0)
 # Scrape using sitemap discovery
@@ -151,7 +151,7 @@ print(f"Successfully scraped {len(scraped_urls)} URLs")
 #### Direct Sitemap Access
 
 ```python
-from markdown_lab.sitemap_utils import SitemapParser, discover_site_urls
+from sitemap_utils import SitemapParser, discover_site_urls
 
 # Quick discovery of URLs from sitemap
 urls = discover_site_urls(
@@ -241,15 +241,6 @@ This will create a `benchmark_results.png` file with a bar chart showing the per
 
 ### Code Organization
 
-- `markdown_lab/`: Python package
-  - `__init__.py`: Package initialization
-  - `__main__.py`: CLI entry point
-  - `main.py`: The main scraper implementation
-  - `chunk_utils.py`: Utilities for chunking text for RAG
-  - `sitemap_utils.py`: Sitemap parsing and URL discovery
-  - `throttle.py`: Rate limiting for web requests
-  - `markdown_lab_rs.py`: Python interface to Rust
-
 - `src/`: Rust source code
   - `lib.rs`: Main library and Python bindings
   - `html_parser.rs`: HTML parsing utilities
@@ -259,16 +250,10 @@ This will create a `benchmark_results.png` file with a bar chart showing the per
 
 - `tests/`: Test files
   - Rust integration tests
-  - Python tests
+  - Python binding tests
 
 - `benches/`: Benchmark files
   - Performance tests for core operations
-
-- `examples/`: Example scripts
-  - Demonstration of library features
-
-- `scripts/`: Utility scripts
-  - Visualization and development tools
 
 ### Running with Real JavaScript Rendering
 
@@ -307,14 +292,11 @@ This project is licensed under the MIT License - see the [LICENSE file](LICENSE)
 
 ## Project Structure
 
-- `markdown_lab/`: Python package
-- `src/`: Rust source code
-- `tests/`: Test files
-- `examples/`: Example scripts
-- `scripts/`: Utility scripts
-- `benches/`: Benchmark files
-- `test_data/`: Test data
-- `demo_output/`: Example outputs
+- `main.py`: The main scraper implementation
+- `chunk_utils.py`: Utilities for chunking text for RAG
+- `sitemap_utils.py`: Sitemap parsing and URL discovery
+- `throttle.py`: Rate limiting for web requests
+- `test_*.py`: Unit tests
 
 ## Roadmap
 
