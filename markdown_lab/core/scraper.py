@@ -140,22 +140,21 @@ class MarkdownScraper:
         """Start monitoring performance metrics."""
         import time
         import tracemalloc
-        
+
         start_time = time.time()
         tracemalloc.start()
-        
-        if psutil_available:
-            import psutil
-            process = psutil.Process()
-            return {
-                "start_time": start_time,
-                "process": process,
-            }
-        else:
+
+        if not psutil_available:
             return {
                 "start_time": start_time,
                 "process": None,
             }
+        import psutil
+        process = psutil.Process()
+        return {
+            "start_time": start_time,
+            "process": process,
+        }
 
     def _log_performance_metrics(self, url: str, monitor, psutil_available: bool):
         """Log performance metrics for the request."""
@@ -165,10 +164,10 @@ class MarkdownScraper:
         end_time = time.time()
         execution_time = end_time - monitor["start_time"]
         memory_usage = tracemalloc.get_traced_memory()
-        
+
         logger.info(f"Execution time for scraping {url}: {execution_time:.2f} seconds")
         logger.info(f"Memory usage for scraping {url}: {memory_usage[1] / 1024 / 1024:.2f} MB")
-        
+
         if psutil_available and monitor["process"] is not None:
             cpu_usage = monitor["process"].cpu_percent(interval=0.1)
             logger.info(f"CPU usage for scraping {url}: {cpu_usage:.2f}%")
@@ -552,6 +551,7 @@ class MarkdownScraper:
             save_chunks: Whether to save chunks for RAG
             chunk_dir: Directory to save chunks (defaults to output_dir/chunks)
             chunk_format: Format to save chunks (json or jsonl)
+            output_format: Format to save chunks (markdown, json, or xml)
 
         Returns:
             List of successfully scraped URLs
@@ -763,8 +763,20 @@ class MarkdownScraper:
         try:
             with open(links_file, "r", encoding="utf-8") as f:
                 links = [line.strip() for line in f if line.strip() and not line.startswith('#')]
+        except FileNotFoundError:
+            logger.error(f"Links file '{links_file}' not found.")
+            return []
+        except PermissionError:
+            logger.error(f"Permission denied when trying to read '{links_file}'.")
+            return []
+        except UnicodeDecodeError:
+            logger.error(f"Encoding error when reading '{links_file}'. Please ensure the file is UTF-8 encoded.")
+            return []
+        except IOError as e:
+            logger.error(f"I/O error when reading '{links_file}': {e}")
+            return []
         except Exception as e:
-            logger.error(f"Error reading links file {links_file}: {e}")
+            logger.error(f"Unexpected error reading links file '{links_file}': {e}")
             return []
 
         if not links:
@@ -779,11 +791,11 @@ class MarkdownScraper:
         # Process links either sequentially or in parallel
         successfully_scraped = []
         failed_urls = []
-        
+
         if parallel:
             try:
                 import concurrent.futures
-                
+
                 def process_url(args):
                     url, idx = args
                     try:
@@ -794,11 +806,11 @@ class MarkdownScraper:
                         return (True, url, None)
                     except Exception as e:
                         return (False, url, str(e))
-                
+
                 # Process URLs in parallel with a thread pool
                 with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
                     results = list(executor.map(process_url, [(url, i) for i, url in enumerate(links)]))
-                
+
                 # Process results
                 for success, url, error in results:
                     if success:
@@ -806,11 +818,11 @@ class MarkdownScraper:
                     else:
                         failed_urls.append((url, error))
                         logger.error(f"Error processing URL {url}: {error}")
-                
+
             except ImportError:
                 logger.warning("concurrent.futures module not available, falling back to sequential processing")
                 parallel = False
-        
+
         # Sequential processing (if parallel is False or concurrent.futures is not available)
         if not parallel:
             for i, url in enumerate(links):
@@ -829,14 +841,14 @@ class MarkdownScraper:
         logger.info(
             f"Successfully scraped {len(successfully_scraped)}/{len(links)} URLs"
         )
-        
+
         if failed_urls:
             logger.warning(f"Failed to scrape {len(failed_urls)} URLs:")
             for url, error in failed_urls[:5]:  # Show only first 5 failures to avoid log flooding
                 logger.warning(f"  - {url}: {error}")
             if len(failed_urls) > 5:
                 logger.warning(f"  - ... and {len(failed_urls) - 5} more")
-        
+
         return successfully_scraped
 
 
@@ -893,7 +905,7 @@ def main(
         # Parse command line arguments
         parser = _create_argument_parser()
         args = parser.parse_args(args_list)
-        
+
         # Set parameters from args
         url = args.url
         output_file = args.output
@@ -915,7 +927,7 @@ def main(
         links_file = args.links_file
         parallel = args.parallel
         max_workers = args.max_workers
-    
+
     # Setup
     validated_format = _validate_output_format(output_format)
     _check_rust_availability()
@@ -1179,7 +1191,7 @@ def _process_links_file_mode(
     if links_file is None:
         links_file = "links.txt"
         logger.info(f"No links file specified, using default: {links_file}")
-    
+
     # Get output directory from output_file
     output_path = Path(output_file)
     output_dir = str(output_path.parent) if output_path.is_file() else output_file

@@ -388,6 +388,7 @@ To create an official release, follow these steps:
 
 3. **Tag the Release**:
    - Create a new Git tag for the release:
+
      ```bash
      git tag -a v1.0.0 -m "Release version 1.0.0"
      git push origin v1.0.0
@@ -395,6 +396,7 @@ To create an official release, follow these steps:
 
 4. **Push Changes**:
    - Push the changes to the main branch:
+
      ```bash
      git push origin main
      ```
