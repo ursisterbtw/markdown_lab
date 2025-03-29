@@ -4,7 +4,7 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from sitemap_utils import SitemapParser, SitemapURL, discover_site_urls
+from markdown_lab.utils.sitemap_utils import SitemapParser, SitemapURL, discover_site_urls
 
 
 class TestSitemapUtils(unittest.TestCase):
@@ -15,7 +15,7 @@ class TestSitemapUtils(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(self.test_dir)
 
-    @mock.patch("sitemap_utils.SitemapParser._make_request")
+    @mock.patch("markdown_lab.utils.sitemap_utils.SitemapParser._make_request")
     def test_parse_sitemap(self, mock_make_request):
         # Mock a simple sitemap XML
         mock_make_request.return_value = """<?xml version="1.0" encoding="UTF-8"?>
@@ -61,7 +61,7 @@ class TestSitemapUtils(unittest.TestCase):
         self.assertEqual(urls[2].changefreq, "monthly")
         self.assertEqual(urls[2].priority, 0.5)
 
-    @mock.patch("sitemap_utils.SitemapParser._make_request")
+    @mock.patch("markdown_lab.utils.sitemap_utils.SitemapParser._make_request")
     def test_parse_sitemap_index(self, mock_make_request):
         # Setup mock responses for different URLs
         sitemap_responses = {
@@ -105,7 +105,7 @@ class TestSitemapUtils(unittest.TestCase):
             {"https://example.com/page1", "https://example.com/page2"},
         )
 
-    @mock.patch("sitemap_utils.SitemapParser._make_request")
+    @mock.patch("markdown_lab.utils.sitemap_utils.SitemapParser._make_request")
     def test_robots_txt_parser(self, mock_make_request):
         # Mock robots.txt and sitemap
         robots_sitemap_responses = {
@@ -210,8 +210,8 @@ class TestSitemapUtils(unittest.TestCase):
         self.assertEqual(lines[0].strip(), "https://example.com/page1,0.8,2023-05-17")
         self.assertEqual(lines[1].strip(), "https://example.com/page2,0.5")
 
-    @mock.patch("sitemap_utils.SitemapParser.parse_sitemap")
-    @mock.patch("sitemap_utils.SitemapParser.filter_urls")
+    @mock.patch("markdown_lab.utils.sitemap_utils.SitemapParser.parse_sitemap")
+    @mock.patch("markdown_lab.utils.sitemap_utils.SitemapParser.filter_urls")
     def test_discover_site_urls(self, mock_filter, mock_parse):
         # Set up mocks
         mock_parse.return_value = [

@@ -14,7 +14,7 @@ from xml.etree.ElementTree import ParseError
 
 import requests
 
-from throttle import RequestThrottler
+from markdown_lab.core.throttle import RequestThrottler
 
 logger = logging.getLogger("sitemap_parser")
 

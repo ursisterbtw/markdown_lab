@@ -1,5 +1,11 @@
-https://www.example.com/page1
-https://www.example.com/page2
-https://www.example.com/page3
-https://www.example.com/page4
-https://www.example.com/page5
+# URLs to scrape - one URL per line
+# Lines starting with # are comments and will be ignored
+
+# Example URLs (remove or replace with your own URLs)
+https://terminaltrove.com/list/
+https://github.com/rothgar/awesome-tuis
+https://news.ycombinator.com/item?id=40273177
+
+# You can add more URLs below
+# https://example.org/page1
+# https://example.org/page2

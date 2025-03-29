@@ -5,7 +5,8 @@ from unittest.mock import MagicMock, patch
 import pytest
 import requests
 
-from main import MarkdownScraper, RequestCache
+from markdown_lab.core.scraper import MarkdownScraper
+from markdown_lab.core.cache import RequestCache
 
 
 @pytest.fixture
@@ -13,7 +14,7 @@ def scraper():
     return MarkdownScraper(cache_enabled=False)
 
 
-@patch("main.requests.Session.get")
+@patch("markdown_lab.core.scraper.requests.Session.get")
 def test_scrape_website_success(mock_get, scraper):
     mock_response = MagicMock()
     mock_response.status_code = 200
@@ -25,7 +26,7 @@ def test_scrape_website_success(mock_get, scraper):
     assert result == "<html><head><title>Test</title></head><body></body></html>"
 
 
-@patch("main.requests.Session.get")
+@patch("markdown_lab.core.scraper.requests.Session.get")
 def test_scrape_website_http_error(mock_get, scraper):
     mock_response = MagicMock()
     mock_response.raise_for_status.side_effect = requests.exceptions.HTTPError(
@@ -37,7 +38,7 @@ def test_scrape_website_http_error(mock_get, scraper):
         scraper.scrape_website("http://example.com")
 
 
-@patch("main.requests.Session.get")
+@patch("markdown_lab.core.scraper.requests.Session.get")
 def test_scrape_website_general_error(mock_get, scraper):
     mock_get.side_effect = Exception("Connection error")
 
@@ -71,7 +72,7 @@ def test_convert_to_markdown(scraper):
     assert "Item 2" in result
 
 
-@patch("main.requests.Session.get")
+@patch("markdown_lab.core.scraper.requests.Session.get")
 def test_format_conversion(mock_get, scraper):
     mock_response = MagicMock()
     mock_response.status_code = 200
@@ -87,7 +88,7 @@ def test_format_conversion(mock_get, scraper):
     # Test the JSON output format
     try:
         # Try to use the Rust implementation first
-        from markdown_lab_rs import OutputFormat, convert_html
+        from markdown_lab.markdown_lab_rs import OutputFormat, convert_html
 
         # Convert to JSON
         json_content = convert_html(
@@ -115,7 +116,7 @@ def test_format_conversion(mock_get, scraper):
 
     except ImportError:
         # Fall back to Python implementation (import a helper)
-        from markdown_lab_rs import document_to_xml, parse_markdown_to_document
+        from markdown_lab.markdown_lab_rs import document_to_xml, parse_markdown_to_document
 
         # Convert to markdown first
         markdown_content = scraper.convert_to_markdown(mock_response.text)
@@ -183,7 +184,7 @@ def test_request_cache():
         assert (Path(temp_dir) / key).exists()
 
 
-@patch("main.requests.Session.get")
+@patch("markdown_lab.core.scraper.requests.Session.get")
 def test_scrape_website_with_cache(mock_get):
     with tempfile.TemporaryDirectory() as temp_dir:
         # Setup mock response

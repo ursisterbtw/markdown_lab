@@ -5,7 +5,7 @@ Demo script to showcase markdown_lab's multiple output formats.
 
 from pathlib import Path
 
-from markdown_lab_rs import OutputFormat, convert_html
+from markdown_lab.markdown_lab_rs import OutputFormat, convert_html
 
 # HTML sample for conversion testing
 SAMPLE_HTML = """
@@ -36,7 +36,7 @@ SAMPLE_HTML = """
     
     <pre><code>
 # Sample Python code
-from markdown_lab_rs import convert_html, OutputFormat
+from markdown_lab.markdown_lab_rs import convert_html, OutputFormat
 
 result = convert_html(html_content, url, OutputFormat.JSON)
     </code></pre>
@@ -48,8 +48,8 @@ result = convert_html(html_content, url, OutputFormat.JSON)
 def main():
     """Demo all three output formats."""
     base_url = "http://example.com"
-    output_dir = Path("demo_output")
-    output_dir.mkdir(exist_ok=True)
+    output_dir = Path("examples/demo_output")
+    output_dir.mkdir(parents=True, exist_ok=True)
 
     # Convert to all three formats
     formats = {
@@ -59,7 +59,7 @@ def main():
     }
 
     for name, format_enum in formats.items():
-        output_file = output_dir / f"demo.{name}"
+        output_file = output_dir / f"output.{name}"
         content = convert_html(SAMPLE_HTML, base_url, format_enum)
 
         with open(output_file, "w", encoding="utf-8") as f:
