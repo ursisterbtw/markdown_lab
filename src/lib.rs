@@ -66,7 +66,7 @@ fn convert_html_to_format(html: &str, base_url: &str, format: Option<String>) ->
         Some("xml") => markdown_converter::OutputFormat::Xml,
         _ => markdown_converter::OutputFormat::Markdown,
     };
-    
+
     let result = markdown_converter::convert_html(html, base_url, output_format)
         .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))?;
     Ok(result)
