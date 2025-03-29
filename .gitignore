@@ -1,4 +1,7 @@
+# Temporary files and directories
 .request_cache/
+tmp/
+markdown_scraper.log
 
 # Cached Files
 *cache*

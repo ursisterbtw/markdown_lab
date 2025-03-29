@@ -69,6 +69,27 @@ python -m markdown_lab https://www.example.com -o output.md --save-chunks --chun
 python -m markdown_lab https://www.example.com -o output_dir --use-sitemap --save-chunks
 ```
 
+### Scraping with a List of URLs
+
+The library automatically looks for a `links.txt` file in the current directory. This file should contain one URL per line (lines starting with # are treated as comments).
+
+```bash
+# Automatically use links.txt in the current directory
+python -m markdown_lab -o output_dir
+
+# Or specify a different file
+python -m markdown_lab -o output_dir --links-file my_urls.txt
+```
+
+### Parallel URL Processing
+
+For faster processing of multiple URLs, you can enable parallel processing:
+
+```bash
+# Process URLs from links.txt in parallel with 8 workers
+python -m markdown_lab -o output_dir --parallel --max-workers 8
+```
+
 ### Advanced Sitemap Scraping
 
 ```bash
@@ -101,6 +122,9 @@ python -m markdown_lab https://www.example.com -o output_dir \
 | `--include` | Regex patterns for URLs to include | None |
 | `--exclude` | Regex patterns for URLs to exclude | None |
 | `--limit` | Maximum number of URLs to scrape | None |
+| `--links-file` | Path to file with URLs to scrape | `links.txt` |
+| `--parallel` | Use parallel processing for multiple URLs | False |
+| `--max-workers` | Max parallel workers when using --parallel | 4 |
 
 ### As a Module
 
@@ -146,6 +170,23 @@ scraped_urls = scraper.scrape_by_sitemap(
     chunk_format="jsonl"               # Use JSONL format
 )
 print(f"Successfully scraped {len(scraped_urls)} URLs")
+```
+
+#### Using Links File
+
+```python
+from markdown_lab.core.scraper import MarkdownScraper
+
+scraper = MarkdownScraper(requests_per_second=2.0)
+# Scrape URLs from a links file
+scraper.scrape_by_links_file(
+    links_file="links.txt",        # File containing URLs to scrape
+    output_dir="output_dir",       # Directory to save output files
+    save_chunks=True,              # Enable chunking
+    output_format="markdown",      # Output format (markdown, json, xml)
+    parallel=True,                 # Enable parallel processing
+    max_workers=8                  # Use 8 parallel workers
+)
 ```
 
 #### Direct Sitemap Access

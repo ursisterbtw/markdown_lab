@@ -731,6 +731,8 @@ class MarkdownScraper:
         chunk_dir: Optional[str] = None,
         chunk_format: str = "jsonl",
         output_format: str = "markdown",
+        parallel: bool = False,
+        max_workers: int = 4
     ) -> List[str]:
         """
         Scrape multiple pages from a list of links in a file.
@@ -741,16 +743,32 @@ class MarkdownScraper:
             save_chunks: Whether to save chunks for RAG
             chunk_dir: Directory to save chunks (defaults to output_dir/chunks)
             chunk_format: Format to save chunks (json or jsonl)
+            parallel: Whether to use parallel processing for faster scraping
+            max_workers: Maximum number of parallel workers when parallel=True
 
         Returns:
             List of successfully scraped URLs
         """
+        # Check if links_file exists, if not try the default location
+        if not Path(links_file).exists():
+            default_path = "links.txt"
+            if Path(default_path).exists():
+                logger.info(f"Specified links file '{links_file}' not found, using default '{default_path}'")
+                links_file = default_path
+            else:
+                logger.error(f"Links file '{links_file}' not found and no default 'links.txt' exists")
+                return []
+
         # Read links from file
-        with open(links_file, "r", encoding="utf-8") as f:
-            links = [line.strip() for line in f if line.strip()]
+        try:
+            with open(links_file, "r", encoding="utf-8") as f:
+                links = [line.strip() for line in f if line.strip() and not line.startswith('#')]
+        except Exception as e:
+            logger.error(f"Error reading links file {links_file}: {e}")
+            return []
 
         if not links:
-            logger.warning(f"No links found in {links_file}")
+            logger.warning(f"No valid links found in {links_file}")
             return []
 
         # Prepare directories
@@ -758,22 +776,67 @@ class MarkdownScraper:
             output_dir, save_chunks, chunk_dir
         )
 
-        # Process each link
+        # Process links either sequentially or in parallel
         successfully_scraped = []
-        for i, url in enumerate(links):
+        failed_urls = []
+        
+        if parallel:
             try:
-                self._process_single_url(
-                    url, i, len(links), output_path, output_format,
-                    save_chunks, chunk_directory, chunk_format
-                )
-                successfully_scraped.append(url)
-            except Exception as e:
-                logger.error(f"Error processing URL {url}: {e}")
-                continue
+                import concurrent.futures
+                
+                def process_url(args):
+                    url, idx = args
+                    try:
+                        self._process_single_url(
+                            url, idx, len(links), output_path, output_format,
+                            save_chunks, chunk_directory, chunk_format
+                        )
+                        return (True, url, None)
+                    except Exception as e:
+                        return (False, url, str(e))
+                
+                # Process URLs in parallel with a thread pool
+                with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+                    results = list(executor.map(process_url, [(url, i) for i, url in enumerate(links)]))
+                
+                # Process results
+                for success, url, error in results:
+                    if success:
+                        successfully_scraped.append(url)
+                    else:
+                        failed_urls.append((url, error))
+                        logger.error(f"Error processing URL {url}: {error}")
+                
+            except ImportError:
+                logger.warning("concurrent.futures module not available, falling back to sequential processing")
+                parallel = False
+        
+        # Sequential processing (if parallel is False or concurrent.futures is not available)
+        if not parallel:
+            for i, url in enumerate(links):
+                try:
+                    self._process_single_url(
+                        url, i, len(links), output_path, output_format,
+                        save_chunks, chunk_directory, chunk_format
+                    )
+                    successfully_scraped.append(url)
+                except Exception as e:
+                    failed_urls.append((url, str(e)))
+                    logger.error(f"Error processing URL {url}: {e}")
+                    continue
 
+        # Log results
         logger.info(
             f"Successfully scraped {len(successfully_scraped)}/{len(links)} URLs"
         )
+        
+        if failed_urls:
+            logger.warning(f"Failed to scrape {len(failed_urls)} URLs:")
+            for url, error in failed_urls[:5]:  # Show only first 5 failures to avoid log flooding
+                logger.warning(f"  - {url}: {error}")
+            if len(failed_urls) > 5:
+                logger.warning(f"  - ... and {len(failed_urls) - 5} more")
+        
         return successfully_scraped
 
 
@@ -797,6 +860,8 @@ def main(
     cache_max_age: int = 3600,
     skip_cache: bool = False,
     links_file: Optional[str] = None,
+    parallel: bool = False,
+    max_workers: int = 4,
 ) -> None:
     """
     Main entry point for the scraper.
@@ -820,7 +885,9 @@ def main(
         cache_enabled: Whether to enable request caching
         cache_max_age: Maximum age of cached responses in seconds
         skip_cache: Whether to skip the cache and force new requests
-        links_file: Path to a file containing links to scrape
+        links_file: Path to a file containing links to scrape (defaults to links.txt if found)
+        parallel: Whether to use parallel processing for faster scraping
+        max_workers: Maximum number of parallel workers when parallel=True
     """
     if args_list is not None:
         # Parse command line arguments
@@ -846,6 +913,8 @@ def main(
         cache_max_age = args.cache_max_age
         skip_cache = args.skip_cache
         links_file = args.links_file
+        parallel = args.parallel
+        max_workers = args.max_workers
     
     # Setup
     validated_format = _validate_output_format(output_format)
@@ -860,15 +929,19 @@ def main(
     )
 
     try:
-        if links_file:
+        if links_file or Path("links.txt").exists():
+            # Use provided links_file or default to links.txt if it exists
+            links_file_path = links_file or "links.txt"
             _process_links_file_mode(
                 scraper=scraper,
-                links_file=links_file,
+                links_file=links_file_path,
                 output_file=output_file,
                 output_format=validated_format,
                 save_chunks=save_chunks,
                 chunk_dir=chunk_dir,
                 chunk_format=chunk_format,
+                parallel=parallel,
+                max_workers=max_workers
             )
         elif use_sitemap:
             _process_sitemap_mode(
@@ -990,7 +1063,18 @@ def _create_argument_parser():
     parser.add_argument(
         "--links-file",
         type=str,
-        help="Path to a file containing links to scrape",
+        help="Path to a file containing links to scrape (defaults to links.txt if found)",
+    )
+    parser.add_argument(
+        "--parallel",
+        action="store_true",
+        help="Use parallel processing for faster scraping of multiple URLs",
+    )
+    parser.add_argument(
+        "--max-workers",
+        type=int,
+        default=4,
+        help="Maximum number of parallel workers when using --parallel (default: 4)",
     )
     return parser
 
@@ -1087,8 +1171,15 @@ def _process_links_file_mode(
     save_chunks: bool,
     chunk_dir: str,
     chunk_format: str,
+    parallel: bool = False,
+    max_workers: int = 4
 ) -> None:
     """Process multiple URLs from a links file."""
+    # If links_file is None, use the default links.txt
+    if links_file is None:
+        links_file = "links.txt"
+        logger.info(f"No links file specified, using default: {links_file}")
+    
     # Get output directory from output_file
     output_path = Path(output_file)
     output_dir = str(output_path.parent) if output_path.is_file() else output_file
@@ -1103,6 +1194,8 @@ def _process_links_file_mode(
         chunk_dir=chunk_dir,
         chunk_format=chunk_format,
         output_format=output_format,
+        parallel=parallel,
+        max_workers=max_workers
     )
 
 def _ensure_correct_extension(
