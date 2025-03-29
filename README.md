@@ -2,7 +2,7 @@
 
 # Markdown Lab 🔄📝
 
-This is a web scraping and conversion tool called Markdown Lab that combines Python and Rust components to scrape websites and convert HTML content to markdown, JSON, or XML formats. It supports sitemap parsing, semantic chunking for RAG
+Markdown Lab combines Python and Rust components to scrape websites and convert HTML content to markdown, JSON, or XML formats. It supports sitemap parsing, semantic chunking for RAG
   (Retrieval-Augmented Generation), and includes performance optimizations through Rust integration.
 
   Key features include HTML-to-markdown/JSON/XML conversion with support for various elements (headers, links, images, lists, code blocks), intelligent content chunking that preserves document structure, and systematic content discovery
