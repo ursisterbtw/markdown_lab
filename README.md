@@ -36,6 +36,8 @@ Markdown Lab combines Python and Rust components to scrape websites and convert 
 ```bash
 git clone https://github.com/ursisterbtw/markdown_lab.git
 cd markdown_lab
+uv venv
+source .venv/bin/activate
 uv pip install -r requirements.txt
 
 # Build the Rust library
