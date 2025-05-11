@@ -8,6 +8,8 @@ Markdown Lab combines Python and Rust components to scrape websites and convert 
   Key features include HTML-to-markdown/JSON/XML conversion with support for various elements (headers, links, images, lists, code blocks), intelligent content chunking that preserves document structure, and systematic content discovery
   through sitemap parsing. The hybrid architecture uses Python for high-level operations and Rust for performance-critical tasks.
 
+  Check out [deepwiki](https://deepwiki.com/krljakob/RAGnificent/) for a detailed breakdown of the repository.
+
 [![Python CI](https://github.com/ursisterbtw/markdown_lab/actions/workflows/CI.yml/badge.svg)](https://github.com/ursisterbtw/markdown_lab/actions/workflows/CI.yml)
 [![Rust](https://github.com/ursisterbtw/markdown_lab/actions/workflows/rust.yml/badge.svg)](https://github.com/ursisterbtw/markdown_lab/actions/workflows/rust.yml)
 [![Release](https://github.com/ursisterbtw/markdown_lab/actions/workflows/release.yml/badge.svg)](https://github.com/ursisterbtw/markdown_lab/actions/workflows/release.yml)
