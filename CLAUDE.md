@@ -1,6 +1,36 @@
 # Commands & Guidelines for markdown_lab
 
-## Build & Test Commands
+## Justfile Workflow (Recommended)
+The project uses `justfile` for streamlined development workflows. Run `just` to see all available commands.
+
+### Essential Commands
+- `just setup` - Install dependencies and set up development environment
+- `just test` - Run all tests (Rust + Python + integration)
+- `just test-python` - Run Python tests only
+- `just test-rust` - Run Rust tests only
+- `just build-dev` - Build Rust components for development
+- `just build-release` - Build optimized Rust components
+- `just lint` - Run all linting and formatting
+- `just demo` - Run format conversion demo
+- `just status` - Show project status and environment info
+
+### Development Workflow
+- `just dev` - Quick development setup (build + activate environment)
+- `just dev-cycle` - Build + test bindings (for active development)
+- `just full-cycle` - Build + lint + test (comprehensive check)
+- `just fix` - Fix common issues (clear caches, rebuild components)
+
+### Testing & Quality
+- `just test-bindings` - Run Python binding tests specifically
+- `just test-integration` - Run integration tests
+- `just test-coverage` - Run tests with coverage reporting
+- `just typecheck` - Run type checking
+- `just bench` - Run all benchmarks
+
+## Raw Commands (Alternative)
+If you prefer direct commands without justfile:
+
+### Build & Test Commands
 - `cargo build` - Build Rust components
 - `cargo build --release --features real_rendering` - Build with JS rendering support
 - `uv sync` - Sync dependencies with uv package manager
@@ -16,7 +46,7 @@
 - `python demo_formats.py` - Demonstrate all output formats (markdown, JSON, XML)
 - `mypy *.py` - Type checking
 
-## Code Quality Commands
+### Code Quality Commands
 - `ruff check . --fix` - Run linter and auto-fix issues
 - `ruff check . --fix --unsafe-fixes` - Run linter with more aggressive fixes
 - `black .` - Format Python code

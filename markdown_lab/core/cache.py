@@ -25,9 +25,9 @@ class RequestCache:
         self.cache_dir = Path(cache_dir)
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         self.max_age = max_age
-        self.memory_cache: Dict[
-            str, Tuple[str, float]
-        ] = {}  # url -> (content, timestamp)
+        self.memory_cache: Dict[str, Tuple[str, float]] = (
+            {}
+        )  # url -> (content, timestamp)
 
     def _get_cache_key(self, url: str) -> str:
         """Generate a cache key from a URL."""

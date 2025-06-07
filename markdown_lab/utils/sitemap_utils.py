@@ -158,7 +158,9 @@ class SitemapParser:
         ns_match = re.search(r'xmlns\s*=\s*["\']([^"\']+)["\']', content)
         return ns_match[1] if ns_match else None
 
-    def _handle_sitemap_index(self, root: ET.Element, namespace: Optional[str], ns_map: Dict[str, str]) -> Tuple[List[SitemapURL], List[str]]:
+    def _handle_sitemap_index(
+        self, root: ET.Element, namespace: Optional[str], ns_map: Dict[str, str]
+    ) -> Tuple[List[SitemapURL], List[str]]:
         """Process a sitemap index, extracting child sitemap URLs."""
         sitemap_index_urls = [
             sitemap.text.strip()
@@ -172,7 +174,9 @@ class SitemapParser:
         logger.info(f"Found sitemap index with {len(sitemap_index_urls)} sitemaps")
         return [], sitemap_index_urls
 
-    def _handle_sitemap(self, root: ET.Element, namespace: Optional[str], ns_map: Dict[str, str]) -> Tuple[List[SitemapURL], List[str]]:
+    def _handle_sitemap(
+        self, root: ET.Element, namespace: Optional[str], ns_map: Dict[str, str]
+    ) -> Tuple[List[SitemapURL], List[str]]:
         """Process a regular sitemap, extracting URLs and their metadata."""
         sitemap_urls = []
 
@@ -183,7 +187,9 @@ class SitemapParser:
         logger.info(f"Parsed sitemap with {len(sitemap_urls)} URLs")
         return sitemap_urls, []
 
-    def _extract_url_data(self, url_elem: ET.Element, namespace: Optional[str], ns_map: Dict[str, str]) -> Optional[SitemapURL]:
+    def _extract_url_data(
+        self, url_elem: ET.Element, namespace: Optional[str], ns_map: Dict[str, str]
+    ) -> Optional[SitemapURL]:
         """Extract data for a single URL from a sitemap."""
         loc_elem = url_elem.find("sm:loc" if namespace else "loc", ns_map)
         if loc_elem is None or not loc_elem.text:
@@ -201,13 +207,21 @@ class SitemapParser:
             priority=priority,
         )
 
-    def _get_element_text(self, parent: ET.Element, element_name: str, namespace: Optional[str], ns_map: Dict[str, str]) -> Optional[str]:
+    def _get_element_text(
+        self,
+        parent: ET.Element,
+        element_name: str,
+        namespace: Optional[str],
+        ns_map: Dict[str, str],
+    ) -> Optional[str]:
         """Get text from a child element if it exists."""
         prefixed_name = f"sm:{element_name}" if namespace else element_name
         elem = parent.find(prefixed_name, ns_map)
         return elem.text.strip() if elem is not None and elem.text else None
 
-    def _get_priority(self, url_elem: ET.Element, namespace: Optional[str], ns_map: Dict[str, str]) -> Optional[float]:
+    def _get_priority(
+        self, url_elem: ET.Element, namespace: Optional[str], ns_map: Dict[str, str]
+    ) -> Optional[float]:
         """Extract and convert priority value."""
         priority_text = self._get_element_text(url_elem, "priority", namespace, ns_map)
         if not priority_text:

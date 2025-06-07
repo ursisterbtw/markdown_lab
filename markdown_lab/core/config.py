@@ -14,7 +14,7 @@ from typing import Any, Dict
 @dataclass
 class MarkdownLabConfig:
     """Centralized configuration for all markdown_lab operations.
-    
+
     This configuration class consolidates all settings that were previously
     scattered across multiple modules and classes.
     """
@@ -23,7 +23,9 @@ class MarkdownLabConfig:
     requests_per_second: float = 1.0
     timeout: int = 30
     max_retries: int = 3
-    user_agent: str = "MarkdownLab/1.0 (Python; +https://github.com/ursisterbtw/markdown_lab)"
+    user_agent: str = (
+        "MarkdownLab/1.0 (Python; +https://github.com/ursisterbtw/markdown_lab)"
+    )
 
     # Processing configuration
     chunk_size: int = 1000
@@ -34,8 +36,8 @@ class MarkdownLabConfig:
     # Cache configuration
     cache_enabled: bool = True
     cache_dir: str = ".request_cache"
-    cache_max_memory: int = 100_000_000   # 100MB
-    cache_max_disk: int = 1_000_000_000   # 1GB
+    cache_max_memory: int = 100_000_000  # 100MB
+    cache_max_disk: int = 1_000_000_000  # 1GB
     cache_ttl: int = 3600  # 1 hour
 
     # Performance configuration
@@ -88,7 +90,9 @@ class MarkdownLabConfig:
             raise ValueError("cache_max_disk must be positive")
 
         if self.default_output_format not in ["markdown", "json", "xml"]:
-            raise ValueError("default_output_format must be 'markdown', 'json', or 'xml'")
+            raise ValueError(
+                "default_output_format must be 'markdown', 'json', or 'xml'"
+            )
 
     def _apply_environment_overrides(self) -> None:
         """Apply environment variable overrides."""
@@ -98,10 +102,16 @@ class MarkdownLabConfig:
             "MARKDOWN_LAB_MAX_RETRIES": ("max_retries", int),
             "MARKDOWN_LAB_CHUNK_SIZE": ("chunk_size", int),
             "MARKDOWN_LAB_CHUNK_OVERLAP": ("chunk_overlap", int),
-            "MARKDOWN_LAB_CACHE_ENABLED": ("cache_enabled", lambda x: x.lower() == "true"),
+            "MARKDOWN_LAB_CACHE_ENABLED": (
+                "cache_enabled",
+                lambda x: x.lower() == "true",
+            ),
             "MARKDOWN_LAB_CACHE_DIR": ("cache_dir", str),
             "MARKDOWN_LAB_PARALLEL_WORKERS": ("parallel_workers", int),
-            "MARKDOWN_LAB_RUST_BACKEND": ("rust_backend_enabled", lambda x: x.lower() == "true"),
+            "MARKDOWN_LAB_RUST_BACKEND": (
+                "rust_backend_enabled",
+                lambda x: x.lower() == "true",
+            ),
         }
 
         for env_var, (attr_name, type_converter) in env_mappings.items():
@@ -110,7 +120,9 @@ class MarkdownLabConfig:
                 try:
                     setattr(self, attr_name, type_converter(env_value))
                 except (ValueError, TypeError) as e:
-                    raise ValueError(f"Invalid environment variable {env_var}={env_value}: {e}")
+                    raise ValueError(
+                        f"Invalid environment variable {env_var}={env_value}: {e}"
+                    )
 
     @classmethod
     def from_dict(cls, config_dict: Dict[str, Any]) -> "MarkdownLabConfig":
@@ -125,25 +137,30 @@ class MarkdownLabConfig:
         if not config_path.exists():
             raise FileNotFoundError(f"Configuration file not found: {config_path}")
 
-        if config_path.suffix.lower() == '.json':
+        if config_path.suffix.lower() == ".json":
             import json
-            with open(config_path, 'r') as f:
+
+            with open(config_path, "r") as f:
                 config_dict = json.load(f)
-        elif config_path.suffix.lower() in ['.yml', '.yaml']:
+        elif config_path.suffix.lower() in [".yml", ".yaml"]:
             try:
                 import yaml
-                with open(config_path, 'r') as f:
+
+                with open(config_path, "r") as f:
                     config_dict = yaml.safe_load(f)
             except ImportError:
                 raise ImportError("PyYAML is required to load YAML configuration files")
         else:
-            raise ValueError(f"Unsupported configuration file format: {config_path.suffix}")
+            raise ValueError(
+                f"Unsupported configuration file format: {config_path.suffix}"
+            )
 
         return cls.from_dict(config_dict)
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert configuration to dictionary."""
         from dataclasses import asdict
+
         return asdict(self)
 
     def save_to_file(self, config_path: str) -> None:
@@ -151,19 +168,23 @@ class MarkdownLabConfig:
         config_path = Path(config_path)
         config_dict = self.to_dict()
 
-        if config_path.suffix.lower() == '.json':
+        if config_path.suffix.lower() == ".json":
             import json
-            with open(config_path, 'w') as f:
+
+            with open(config_path, "w") as f:
                 json.dump(config_dict, f, indent=2)
-        elif config_path.suffix.lower() in ['.yml', '.yaml']:
+        elif config_path.suffix.lower() in [".yml", ".yaml"]:
             try:
                 import yaml
-                with open(config_path, 'w') as f:
+
+                with open(config_path, "w") as f:
                     yaml.dump(config_dict, f, default_flow_style=False)
             except ImportError:
                 raise ImportError("PyYAML is required to save YAML configuration files")
         else:
-            raise ValueError(f"Unsupported configuration file format: {config_path.suffix}")
+            raise ValueError(
+                f"Unsupported configuration file format: {config_path.suffix}"
+            )
 
     def update(self, **kwargs) -> "MarkdownLabConfig":
         """Create new configuration with updated values."""

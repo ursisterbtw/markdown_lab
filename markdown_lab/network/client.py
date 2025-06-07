@@ -22,14 +22,14 @@ logger = logging.getLogger(__name__)
 
 class HttpClient:
     """Unified HTTP client with retry logic, rate limiting, and error handling.
-    
+
     This client consolidates all HTTP request functionality that was previously
     duplicated across scraper.py and sitemap_utils.py modules.
     """
 
     def __init__(self, config: MarkdownLabConfig):
         """Initialize HTTP client with configuration.
-        
+
         Args:
             config: MarkdownLab configuration object
         """
@@ -37,27 +37,31 @@ class HttpClient:
         self.throttler = RequestThrottler(config.requests_per_second)
         self.session = self._create_session()
 
-        logger.debug(f"Initialized HTTP client with {config.requests_per_second} req/sec limit")
+        logger.debug(
+            f"Initialized HTTP client with {config.requests_per_second} req/sec limit"
+        )
 
     def _create_session(self) -> requests.Session:
         """Create configured requests session with connection pooling and retry strategy."""
         session = requests.Session()
 
         # Configure headers
-        session.headers.update({
-            "User-Agent": self.config.user_agent,
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-            "Accept-Language": "en-US,en;q=0.5",
-            "Accept-Encoding": "gzip, deflate",
-            "Connection": "keep-alive",
-            "Upgrade-Insecure-Requests": "1",
-        })
+        session.headers.update(
+            {
+                "User-Agent": self.config.user_agent,
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                "Accept-Language": "en-US,en;q=0.5",
+                "Accept-Encoding": "gzip, deflate",
+                "Connection": "keep-alive",
+                "Upgrade-Insecure-Requests": "1",
+            }
+        )
 
         # Configure connection pooling
         adapter = HTTPAdapter(
             pool_connections=self.config.max_concurrent_requests,
             pool_maxsize=self.config.max_concurrent_requests * 2,
-            max_retries=0  # We handle retries manually for better control
+            max_retries=0,  # We handle retries manually for better control
         )
         session.mount("http://", adapter)
         session.mount("https://", adapter)
@@ -66,14 +70,14 @@ class HttpClient:
 
     def get(self, url: str, **kwargs) -> str:
         """Make GET request with retry logic and error handling.
-        
+
         Args:
             url: URL to request
             **kwargs: Additional arguments passed to requests.get()
-            
+
         Returns:
             Response text content
-            
+
         Raises:
             NetworkError: For all network-related failures
         """
@@ -81,27 +85,28 @@ class HttpClient:
 
     def head(self, url: str, **kwargs) -> requests.Response:
         """Make HEAD request with retry logic.
-        
+
         Args:
             url: URL to request
             **kwargs: Additional arguments passed to requests.head()
-            
+
         Returns:
             Response object (for accessing headers, status, etc.)
-            
+
         Raises:
             NetworkError: For all network-related failures
         """
-        response = self._request_with_retries("HEAD", url, return_response=True, **kwargs)
-        return response
+        return self._request_with_retries(
+            "HEAD", url, return_response=True, **kwargs
+        )
 
     def get_many(self, urls: List[str], **kwargs) -> Dict[str, str]:
         """Make multiple GET requests sequentially with rate limiting.
-        
+
         Args:
             urls: List of URLs to request
             **kwargs: Additional arguments passed to each request
-            
+
         Returns:
             Dictionary mapping URLs to response content
         """
@@ -119,23 +124,19 @@ class HttpClient:
         return results
 
     def _request_with_retries(
-        self,
-        method: str,
-        url: str,
-        return_response: bool = False,
-        **kwargs
+        self, method: str, url: str, return_response: bool = False, **kwargs
     ) -> str | requests.Response:
         """Make HTTP request with retry logic and exponential backoff.
-        
+
         Args:
             method: HTTP method (GET, HEAD, etc.)
             url: URL to request
             return_response: If True, return Response object instead of text
             **kwargs: Additional arguments passed to session.request()
-            
+
         Returns:
             Response text content or Response object
-            
+
         Raises:
             NetworkError: For all network-related failures
         """
@@ -173,7 +174,7 @@ class HttpClient:
 
                 # Log the attempt
                 if attempt < self.config.max_retries:
-                    wait_time = 2 ** attempt  # Exponential backoff
+                    wait_time = 2**attempt  # Exponential backoff
                     logger.warning(
                         f"Request failed for {url} on attempt {attempt + 1}/{self.config.max_retries + 1}: "
                         f"{network_error.message}. Retrying in {wait_time}s..."
@@ -192,7 +193,7 @@ class HttpClient:
         raise NetworkError(
             f"Failed to retrieve {url} after {self.config.max_retries + 1} attempts",
             url=url,
-            error_code="MAX_RETRIES_EXCEEDED"
+            error_code="MAX_RETRIES_EXCEEDED",
         )
 
     def close(self) -> None:
@@ -212,14 +213,14 @@ class HttpClient:
 
 class CachedHttpClient(HttpClient):
     """HTTP client with caching capabilities.
-    
+
     Extends the base HttpClient to add request/response caching for improved
     performance when processing multiple similar requests.
     """
 
     def __init__(self, config: MarkdownLabConfig, cache=None):
         """Initialize cached HTTP client.
-        
+
         Args:
             config: MarkdownLab configuration object
             cache: Optional cache instance (defaults to creating one from config)
@@ -228,20 +229,23 @@ class CachedHttpClient(HttpClient):
 
         if cache is None:
             from ..core.cache import RequestCache
+
             self.cache = RequestCache() if config.cache_enabled else None
         else:
             self.cache = cache
 
-        logger.debug(f"Initialized cached HTTP client (cache_enabled: {config.cache_enabled})")
+        logger.debug(
+            f"Initialized cached HTTP client (cache_enabled: {config.cache_enabled})"
+        )
 
     def get(self, url: str, use_cache: bool = True, **kwargs) -> str:
         """Make GET request with optional caching.
-        
+
         Args:
             url: URL to request
             use_cache: Whether to check cache before making request
             **kwargs: Additional arguments passed to requests.get()
-            
+
         Returns:
             Response text content
         """
@@ -281,8 +285,7 @@ def create_http_client(config: Optional[MarkdownLabConfig] = None) -> HttpClient
 
 
 def create_cached_http_client(
-    config: Optional[MarkdownLabConfig] = None,
-    cache=None
+    config: Optional[MarkdownLabConfig] = None, cache=None
 ) -> CachedHttpClient:
     """Create a cached HTTP client with default or provided configuration."""
     from ..core.config import get_config

@@ -42,7 +42,10 @@ Markdown Lab combines Python and Rust components to scrape websites and convert 
 git clone https://github.com/ursisterbtw/markdown_lab.git
 cd markdown_lab
 
-# Using UV (recommended)
+# Quick setup with justfile (recommended)
+just setup
+
+# Or manual setup using UV
 uv sync
 source .venv/bin/activate
 maturin develop
@@ -252,56 +255,94 @@ The library implements intelligent chunking designed specifically for RAG (Retri
 
 ## Testing
 
-The project includes comprehensive unit tests. To run them:
+### Using Justfile (Recommended)
 
 ```bash
+# Run all tests (Rust + Python + integration)
+just test
+
+# Run specific test suites
+just test-python          # Python tests only
+just test-rust            # Rust tests only
+just test-bindings        # Python binding tests
+just test-integration     # Integration tests
+just test-coverage        # Tests with coverage reporting
+
+# Development workflow
+just dev-cycle            # Quick build + test cycle
+just full-cycle           # Complete build + lint + test
+```
+
+### Raw Commands
+
+```bash
+# All tests
 pytest
-```
 
-## Running Tests
-
-### Rust Tests
-
-```bash
-# Run unit and integration tests
+# Rust tests
 cargo test
-
-# Run tests with logging
 RUST_LOG=debug cargo test -- --nocapture
-```
 
-### Python Tests
-
-```bash
-# Run Python binding tests
+# Python binding tests
 pytest tests/rust/test_python_bindings.py -v
 
-# Run all unit tests
+# Unit tests
 pytest tests/unit/
 ```
 
 ## Running Benchmarks
 
 ```bash
-# Run all benchmarks
-cargo bench
+# Using justfile
+just bench                # All benchmarks
+just bench-html          # HTML parsing benchmark
+just bench-chunk         # Chunking benchmark
+just bench-viz           # Visualize results
 
-# Run specific benchmark
+# Raw commands
+cargo bench
 cargo bench html_to_markdown
 cargo bench chunk_markdown
-```
 
-## Visualizing Benchmark Results
-
-After running the benchmarks, you can visualize the results:
-
-```bash
+# Visualize results
 python scripts/visualize_benchmarks.py
 ```
 
-This will create a `benchmark_results.png` file with a bar chart showing the performance of each operation.
-
 ## Development
+
+### Justfile Commands
+
+The project uses `justfile` for development workflows. Run `just` to see all commands:
+
+```bash
+# Setup and environment
+just setup               # Complete development setup
+just status              # Check project status
+just clean               # Clean build artifacts
+just update              # Update dependencies
+
+# Building
+just build-dev           # Development build
+just build-release       # Optimized build
+just build-js            # Build with JavaScript support
+
+# Development workflows  
+just dev                 # Quick development mode
+just dev-cycle           # Build + test bindings
+just full-cycle          # Build + lint + test
+just fix                 # Fix common issues
+
+# Code quality
+just lint                # Run all linting
+just lint-python         # Python linting only
+just lint-rust           # Rust linting only
+just typecheck           # Type checking
+
+# Demos and examples
+just demo                # Format conversion demo
+just hello               # Hello world example
+just cli-test            # Test CLI functionality
+```
 
 ### Code Organization
 

@@ -94,7 +94,7 @@ class TestSitemapUtils(unittest.TestCase):
                         <priority>0.7</priority>
                     </url>
                 </urlset>
-                """
+                """,
         }
 
         # Configure the mock to return appropriate content based on the URL
@@ -126,7 +126,7 @@ class TestSitemapUtils(unittest.TestCase):
                         <priority>1.0</priority>
                     </url>
                 </urlset>
-                """
+                """,
         }
 
         # Configure the mock to return appropriate content based on the URL

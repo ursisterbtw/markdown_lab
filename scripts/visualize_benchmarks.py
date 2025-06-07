@@ -10,7 +10,6 @@ def load_benchmark_data():
     """Load benchmark data from Criterion output directory."""
     criterion_dir = Path("target/criterion")
     if not criterion_dir.exists():
-        print("No benchmark data found. Run 'cargo bench' first.")
         return None
 
     data = []
@@ -49,7 +48,7 @@ def create_benchmark_plot(df):
             name="Execution Time",
             x=df["benchmark"],
             y=df["mean_time"],
-            error_y=dict(type="data", array=df["std_dev"]),
+            error_y={"type": "data", "array": df["std_dev"]},
             marker_color="rgb(55, 83, 109)",
         )
     )
@@ -66,7 +65,6 @@ def create_benchmark_plot(df):
 
     # Save the plot
     fig.write_html("target/criterion/benchmark_results.html")
-    print("Benchmark visualization saved to target/criterion/benchmark_results.html")
 
 
 def main():

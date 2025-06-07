@@ -127,18 +127,36 @@ test-rust-verbose:
 
 # Run Python tests
 test-python:
-    @echo "🐍 Running Python tests..."
-    @just _activate_venv && python -m pytest tests/ -v --color=yes
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🐍 Running Python tests..."
+    if [ ! -f ".venv/bin/activate" ]; then
+        echo "Error: Virtual environment not found at .venv/bin/activate" >&2
+        exit 1
+    fi
+    source .venv/bin/activate && python -m pytest tests/ -v --color=yes
 
 # Run Python binding tests specifically
 test-bindings:
-    @echo "🔗 Running Python binding tests..."
-    @just _activate_venv && python -m pytest tests/rust/test_python_bindings.py -v --color=yes
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔗 Running Python binding tests..."
+    if [ ! -f ".venv/bin/activate" ]; then
+        echo "Error: Virtual environment not found at .venv/bin/activate" >&2
+        exit 1
+    fi
+    source .venv/bin/activate && python -m pytest tests/rust/test_python_bindings.py -v --color=yes
 
 # Run integration tests
 test-integration:
-    @echo "🔧 Running integration tests..."
-    @just _activate_venv && python -m pytest tests/integration/ -v --color=yes
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔧 Running integration tests..."
+    if [ ! -f ".venv/bin/activate" ]; then
+        echo "Error: Virtual environment not found at .venv/bin/activate" >&2
+        exit 1
+    fi
+    source .venv/bin/activate && python -m pytest tests/integration/ -v --color=yes
 
 # Run tests with coverage
 test-coverage:
@@ -194,14 +212,14 @@ lint: lint-python lint-rust
 # Lint Python code
 lint-python:
     @echo "🔍 Linting Python code..."
-    @$(VENV_ACTIVATE) ruff check . --fix
-    @$(VENV_ACTIVATE) black .
-    @$(VENV_ACTIVATE) isort .
+    @just _activate_venv && ruff check . --fix
+    @just _activate_venv && black .
+    @just _activate_venv && isort .
 
 # Lint Python with unsafe fixes
 lint-python-unsafe:
     @echo "🔍 Linting Python code with unsafe fixes..."
-    @$(VENV_ACTIVATE) ruff check . --fix --unsafe-fixes
+    @just _activate_venv && ruff check . --fix --unsafe-fixes
 
 # Lint Rust code
 lint-rust:
@@ -212,13 +230,13 @@ lint-rust:
 # Type checking
 typecheck:
     @echo "🔍 Running type checks..."
-    @$(VENV_ACTIVATE) mypy markdown_lab/
+    @just _activate_venv && mypy markdown_lab/
 
 # Security audit
 security-audit:
     @echo "🔒 Running security audit..."
     @cargo audit
-    @$(VENV_ACTIVATE) safety check --full-report
+    @just _activate_venv && safety check --full-report
 
 # Full code quality check
 quality: lint typecheck security-audit test
@@ -434,9 +452,9 @@ status:
     # Python environment
     echo -e "\n${GREEN}🐍 Python Environment:${NC}"
     if [ -d ".venv" ]; then
-        $(VENV_ACTIVATE) python --version
+        source .venv/bin/activate && python --version
         echo -e "\n${GREEN}📦 Installed Packages:${NC}"
-        $(VENV_ACTIVATE) pip list | grep -E "(markdown-lab|pytest|requests|beautifulsoup4|pyo3|maturin|ruff|black|isort|mypy)" | sort
+        source .venv/bin/activate && pip list | grep -E "(markdown-lab|pytest|requests|beautifulsoup4|pyo3|maturin|ruff|black|isort|mypy)" | sort
     else
         echo -e "${RED}❌ Virtual environment not found. Run 'just setup' first.${NC}"
     fi
@@ -459,7 +477,7 @@ status:
     # Quick test
     echo -e "\n${GREEN}🧪 Quick Test:${NC}"
     if [ -d ".venv" ]; then
-        if $(VENV_ACTIVATE) python -c "import markdown_lab.markdown_lab_rs; print('✅ Rust bindings working')"; then
+        if source .venv/bin/activate && python -c "import markdown_lab.markdown_lab_rs; print('✅ Rust bindings working')"; then
             echo -e "${GREEN}✅ Basic imports working${NC}"
         else
             echo -e "${RED}❌ Error importing module${NC}"
@@ -516,7 +534,7 @@ fix:
     cargo clean 2>/dev/null || true
     
     if [ -d ".venv" ]; then
-        $(VENV_ACTIVATE) maturin develop
+        source .venv/bin/activate && maturin develop
     else
         echo "⚠️  Virtual environment not found. Run 'just setup' first."
     fi

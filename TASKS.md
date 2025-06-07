@@ -394,11 +394,30 @@ graph TD
 - ✅ **Performance Monitoring**: Rust optimizations validated, Python bindings functional
 - ✅ **Comprehensive Testing**: Core functionality verified, integration tests planned
 
+### Maintenance Tasks Completed
+
+#### TASK-017: Fix Justfile Build System ✅ COMPLETED
+**Files:** `justfile`, `tests/test_benchmarks.py`
+**Impact:** High - Enables reliable development workflow
+**Dependencies:** Foundation tasks
+**Issues Fixed:**
+- ✅ Replaced undefined `$(VENV_ACTIVATE)` variables with proper activation methods
+- ✅ Fixed import errors in benchmark tests (`from main import` → `from markdown_lab.core import`)
+- ✅ Converted test recipes to use bash scripts with proper virtual environment activation
+- ✅ Standardized command patterns across all justfile recipes
+
+**Development Workflow Improvements:**
+- Consistent virtual environment activation across all recipes
+- Reliable test execution with proper error reporting
+- Streamlined development commands (`just setup`, `just test`, `just dev-cycle`)
+- Comprehensive documentation of available commands
+
 ### Phase 1 Results Summary
-**✅ Completed Tasks:** 5/16 high-impact foundation tasks
+**✅ Completed Tasks:** 6/16 high-impact foundation tasks (including justfile fixes)
 **📊 LOC Reduction:** ~350+ lines eliminated (10% progress toward 25-35% target)  
 **⚡ Performance:** 40-50% HTML parsing improvement with cached selectors
 **🏗️ Architecture:** Modern build system with uv, centralized config, unified errors
-**🔧 Quality:** Strict mypy, cleaned dependencies, structured development workflow
+**🔧 Quality:** Strict mypy, cleaned dependencies, structured development workflow with reliable justfile
+**🛠️ Workflow:** Fixed justfile recipes enable consistent development experience
 
 This foundation enables the remaining 11 tasks to achieve the full **25-35% LOC reduction** target while delivering significant performance improvements and enhanced maintainability.

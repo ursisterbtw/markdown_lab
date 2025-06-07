@@ -60,7 +60,6 @@ def test_convert_to_markdown(scraper):
     # Get the result and check that it contains the expected elements
     # The exact format might vary, so we check for key content instead of exact matching
     result = scraper.convert_to_markdown(html_content)
-    print(f"Conversion result: {result}")  # Debugging output
 
     assert "# Test" in result
     assert "Header 1" in result

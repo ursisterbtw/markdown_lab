@@ -99,6 +99,7 @@ class MarkdownScraper:
         """
         try:
             import psutil  # type: ignore
+
             psutil_available = True
         except ImportError:
             psutil_available = False
@@ -146,6 +147,7 @@ class MarkdownScraper:
                 "process": None,
             }
         import psutil
+
         process = psutil.Process()
         return {
             "start_time": start_time,
@@ -161,7 +163,9 @@ class MarkdownScraper:
         memory_usage = tracemalloc.get_traced_memory()
 
         logger.info(f"Execution time for scraping {url}: {execution_time:.2f} seconds")
-        logger.info(f"Memory usage for scraping {url}: {memory_usage[1] / 1024 / 1024:.2f} MB")
+        logger.info(
+            f"Memory usage for scraping {url}: {memory_usage[1] / 1024 / 1024:.2f} MB"
+        )
 
         if psutil_available and monitor["process"] is not None:
             cpu_usage = monitor["process"].cpu_percent(interval=0.1)
@@ -183,28 +187,38 @@ class MarkdownScraper:
                 response = self.session.get(url, timeout=self.timeout)
                 response.raise_for_status()
 
-                logger.info(f"Successfully retrieved the website content (status code: {response.status_code}).")
-                logger.info(f"Network latency: {response.elapsed.total_seconds():.2f} seconds")
+                logger.info(
+                    f"Successfully retrieved the website content (status code: {response.status_code})."
+                )
+                logger.info(
+                    f"Network latency: {response.elapsed.total_seconds():.2f} seconds"
+                )
 
                 return response.text
 
             except requests.exceptions.HTTPError as http_err:
                 self._handle_request_error(
-                    url, attempt, http_err,
+                    url,
+                    attempt,
+                    http_err,
                     f"HTTP error on attempt {attempt+1}/{self.max_retries}: {http_err}",
-                    f"Failed to retrieve {url} after {self.max_retries} attempts."
+                    f"Failed to retrieve {url} after {self.max_retries} attempts.",
                 )
             except requests.exceptions.ConnectionError as conn_err:
                 self._handle_request_error(
-                    url, attempt, conn_err,
+                    url,
+                    attempt,
+                    conn_err,
                     f"Connection error on attempt {attempt+1}/{self.max_retries}: {conn_err}",
-                    f"Connection error persisted for {url} after {self.max_retries} attempts."
+                    f"Connection error persisted for {url} after {self.max_retries} attempts.",
                 )
             except requests.exceptions.Timeout as timeout_err:
                 self._handle_request_error(
-                    url, attempt, timeout_err,
+                    url,
+                    attempt,
+                    timeout_err,
                     f"Timeout on attempt {attempt+1}/{self.max_retries}: {timeout_err}",
-                    f"Request to {url} timed out after {self.max_retries} attempts."
+                    f"Request to {url} timed out after {self.max_retries} attempts.",
                 )
             except Exception as err:
                 logger.error(f"An unexpected error occurred: {err}")
@@ -216,7 +230,9 @@ class MarkdownScraper:
             f"Failed to retrieve {url} after {self.max_retries} attempts"
         )
 
-    def _handle_request_error(self, url: str, attempt: int, error, warning_msg: str, error_msg: str) -> None:
+    def _handle_request_error(
+        self, url: str, attempt: int, error, warning_msg: str, error_msg: str
+    ) -> None:
         """Handle request errors with appropriate logging and retries."""
 
         logger.warning(warning_msg)
@@ -569,8 +585,14 @@ class MarkdownScraper:
             url = url_info.loc
             try:
                 self._process_single_url(
-                    url, i, len(filtered_urls), output_path, output_format,
-                    save_chunks, chunk_directory, chunk_format
+                    url,
+                    i,
+                    len(filtered_urls),
+                    output_path,
+                    output_format,
+                    save_chunks,
+                    chunk_directory,
+                    chunk_format,
                 )
                 successfully_scraped.append(url)
             except Exception as e:
@@ -588,7 +610,7 @@ class MarkdownScraper:
         min_priority: Optional[float] = None,
         include_patterns: Optional[List[str]] = None,
         exclude_patterns: Optional[List[str]] = None,
-        limit: Optional[int] = None
+        limit: Optional[int] = None,
     ) -> List:
         """Discover and filter URLs from a sitemap."""
         # Create sitemap parser
@@ -617,10 +639,7 @@ class MarkdownScraper:
         return filtered_urls
 
     def _prepare_directories(
-        self,
-        output_dir: str,
-        save_chunks: bool,
-        chunk_dir: Optional[str] = None
+        self, output_dir: str, save_chunks: bool, chunk_dir: Optional[str] = None
     ) -> Tuple[Path, Optional[str]]:
         """Prepare output and chunk directories."""
         # Create output directory
@@ -673,7 +692,7 @@ class MarkdownScraper:
         output_format: str,
         save_chunks: bool,
         chunk_dir: Optional[str],
-        chunk_format: str
+        chunk_format: str,
     ) -> None:
         """Process a single URL: scrape, convert, save content and chunks."""
         # Generate filename for this URL
@@ -708,13 +727,17 @@ class MarkdownScraper:
         url: str,
         chunk_dir: str,
         filename: str,
-        chunk_format: str
+        chunk_format: str,
     ) -> None:
         """Process chunking for a single document."""
         chunks = self.create_chunks(markdown_content, url)
 
         # Create URL-specific chunk directory to prevent filename collisions
-        url_chunk_dir = f"{chunk_dir}/{filename.split('.')[-2]}"
+        from pathlib import (
+            Path,  # Ensure import is present (safe to add multiple times)
+        )
+
+        url_chunk_dir = f"{chunk_dir}/{Path(filename).stem}"
         self.save_chunks(chunks, url_chunk_dir, chunk_format)
 
     def scrape_by_links_file(
@@ -726,7 +749,7 @@ class MarkdownScraper:
         chunk_format: str = "jsonl",
         output_format: str = "markdown",
         parallel: bool = False,
-        max_workers: int = 4
+        max_workers: int = 4,
     ) -> List[str]:
         """
         Scrape multiple pages from a list of links in a file.
@@ -747,16 +770,24 @@ class MarkdownScraper:
         if not Path(links_file).exists():
             default_path = "links.txt"
             if Path(default_path).exists():
-                logger.info(f"Specified links file '{links_file}' not found, using default '{default_path}'")
+                logger.info(
+                    f"Specified links file '{links_file}' not found, using default '{default_path}'"
+                )
                 links_file = default_path
             else:
-                logger.error(f"Links file '{links_file}' not found and no default 'links.txt' exists")
+                logger.error(
+                    f"Links file '{links_file}' not found and no default 'links.txt' exists"
+                )
                 return []
 
         # Read links from file
         try:
             with open(links_file, "r", encoding="utf-8") as f:
-                links = [line.strip() for line in f if line.strip() and not line.startswith('#')]
+                links = [
+                    line.strip()
+                    for line in f
+                    if line.strip() and not line.startswith("#")
+                ]
         except FileNotFoundError:
             logger.error(f"Links file '{links_file}' not found.")
             return []
@@ -764,7 +795,9 @@ class MarkdownScraper:
             logger.error(f"Permission denied when trying to read '{links_file}'.")
             return []
         except UnicodeDecodeError:
-            logger.error(f"Encoding error when reading '{links_file}'. Please ensure the file is UTF-8 encoded.")
+            logger.error(
+                f"Encoding error when reading '{links_file}'. Please ensure the file is UTF-8 encoded."
+            )
             return []
         except IOError as e:
             logger.error(f"I/O error when reading '{links_file}': {e}")
@@ -794,16 +827,28 @@ class MarkdownScraper:
                     url, idx = args
                     try:
                         self._process_single_url(
-                            url, idx, len(links), output_path, output_format,
-                            save_chunks, chunk_directory, chunk_format
+                            url,
+                            idx,
+                            len(links),
+                            output_path,
+                            output_format,
+                            save_chunks,
+                            chunk_directory,
+                            chunk_format,
                         )
                         return (True, url, None)
                     except Exception as e:
                         return (False, url, str(e))
 
                 # Process URLs in parallel with a thread pool
-                with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-                    results = list(executor.map(process_url, [(url, i) for i, url in enumerate(links)]))
+                with concurrent.futures.ThreadPoolExecutor(
+                    max_workers=max_workers
+                ) as executor:
+                    results = list(
+                        executor.map(
+                            process_url, [(url, i) for i, url in enumerate(links)]
+                        )
+                    )
 
                 # Process results
                 for success, url, error in results:
@@ -814,7 +859,9 @@ class MarkdownScraper:
                         logger.error(f"Error processing URL {url}: {error}")
 
             except ImportError:
-                logger.warning("concurrent.futures module not available, falling back to sequential processing")
+                logger.warning(
+                    "concurrent.futures module not available, falling back to sequential processing"
+                )
                 parallel = False
 
         # Sequential processing (if parallel is False or concurrent.futures is not available)
@@ -822,8 +869,14 @@ class MarkdownScraper:
             for i, url in enumerate(links):
                 try:
                     self._process_single_url(
-                        url, i, len(links), output_path, output_format,
-                        save_chunks, chunk_directory, chunk_format
+                        url,
+                        i,
+                        len(links),
+                        output_path,
+                        output_format,
+                        save_chunks,
+                        chunk_directory,
+                        chunk_format,
                     )
                     successfully_scraped.append(url)
                 except Exception as e:
@@ -838,7 +891,9 @@ class MarkdownScraper:
 
         if failed_urls:
             logger.warning(f"Failed to scrape {len(failed_urls)} URLs:")
-            for url, error in failed_urls[:5]:  # Show only first 5 failures to avoid log flooding
+            for url, error in failed_urls[
+                :5
+            ]:  # Show only first 5 failures to avoid log flooding
                 logger.warning(f"  - {url}: {error}")
             if len(failed_urls) > 5:
                 logger.warning(f"  - ... and {len(failed_urls) - 5} more")
@@ -947,7 +1002,7 @@ def main(
                 chunk_dir=chunk_dir,
                 chunk_format=chunk_format,
                 parallel=parallel,
-                max_workers=max_workers
+                max_workers=max_workers,
             )
         elif use_sitemap:
             _process_sitemap_mode(
@@ -981,6 +1036,7 @@ def main(
     except Exception as e:
         logger.error(f"An error occurred during the process: {e}", exc_info=True)
         raise
+
 
 def _create_argument_parser():
     """Create the argument parser for the command line interface."""
@@ -1084,6 +1140,7 @@ def _create_argument_parser():
     )
     return parser
 
+
 def _validate_output_format(output_format: str) -> str:
     """Validate and normalize output format."""
     normalized_format = output_format.lower()
@@ -1094,12 +1151,15 @@ def _validate_output_format(output_format: str) -> str:
         return "markdown"
     return normalized_format
 
+
 def _check_rust_availability() -> None:
     """Check if Rust implementation is available."""
     with contextlib.suppress(ImportError):
         import importlib.util
+
         if importlib.util.find_spec("markdown_lab.markdown_lab_rs") is not None:
             pass  # Rust implementation is available
+
 
 def _process_sitemap_mode(
     scraper: MarkdownScraper,
@@ -1139,6 +1199,7 @@ def _process_sitemap_mode(
         output_format=output_format,
     )
 
+
 def _process_single_url_mode(
     scraper: MarkdownScraper,
     url: str,
@@ -1159,7 +1220,9 @@ def _process_single_url_mode(
     )
 
     # Ensure correct output filename
-    output_file = _ensure_correct_extension(output_file, output_format, content, markdown_content)
+    output_file = _ensure_correct_extension(
+        output_file, output_format, content, markdown_content
+    )
 
     # Save the content
     scraper.save_content(content, output_file)
@@ -1168,6 +1231,7 @@ def _process_single_url_mode(
     if save_chunks:
         chunks = scraper.create_chunks(markdown_content, url)
         scraper.save_chunks(chunks, chunk_dir, chunk_format)
+
 
 def _process_links_file_mode(
     scraper: MarkdownScraper,
@@ -1178,7 +1242,7 @@ def _process_links_file_mode(
     chunk_dir: str,
     chunk_format: str,
     parallel: bool = False,
-    max_workers: int = 4
+    max_workers: int = 4,
 ) -> None:
     """Process multiple URLs from a links file."""
     # If links_file is None, use the default links.txt
@@ -1201,14 +1265,12 @@ def _process_links_file_mode(
         chunk_format=chunk_format,
         output_format=output_format,
         parallel=parallel,
-        max_workers=max_workers
+        max_workers=max_workers,
     )
 
+
 def _ensure_correct_extension(
-    output_file: str,
-    output_format: str,
-    content: str,
-    markdown_content: str
+    output_file: str, output_format: str, content: str, markdown_content: str
 ) -> str:
     """Ensure the output file has the correct extension."""
     # Set correct extension
@@ -1216,7 +1278,9 @@ def _ensure_correct_extension(
 
     # If file doesn't have the correct extension, add it
     if not output_file.endswith(output_ext):
-        base_output = output_file.rsplit(".", 1)[0] if "." in output_file else output_file
+        base_output = (
+            output_file.rsplit(".", 1)[0] if "." in output_file else output_file
+        )
         output_file = f"{base_output}{output_ext}"
 
     # If we had to fall back to markdown, adjust the extension

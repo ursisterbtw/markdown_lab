@@ -10,7 +10,7 @@ from typing import Any, Dict, Optional
 
 class MarkdownLabError(Exception):
     """Base exception for all markdown_lab operations.
-    
+
     This exception provides structured error information including error codes
     and context data for better debugging and error handling.
     """
@@ -20,7 +20,7 @@ class MarkdownLabError(Exception):
         message: str,
         error_code: Optional[str] = None,
         context: Optional[Dict[str, Any]] = None,
-        cause: Optional[Exception] = None
+        cause: Optional[Exception] = None,
     ):
         super().__init__(message)
         self.message = message
@@ -44,7 +44,7 @@ class MarkdownLabError(Exception):
             "error_code": self.error_code,
             "message": self.message,
             "context": self.context,
-            "cause": str(self.cause) if self.cause else None
+            "cause": str(self.cause) if self.cause else None,
         }
 
 
@@ -57,7 +57,7 @@ class NetworkError(MarkdownLabError):
         url: Optional[str] = None,
         status_code: Optional[int] = None,
         retry_count: Optional[int] = None,
-        **kwargs
+        **kwargs,
     ):
         context = kwargs.get("context", {})
         if url:
@@ -79,7 +79,7 @@ class ParsingError(MarkdownLabError):
         url: Optional[str] = None,
         parser_type: Optional[str] = None,
         element_selector: Optional[str] = None,
-        **kwargs
+        **kwargs,
     ):
         context = kwargs.get("context", {})
         if url:
@@ -101,7 +101,7 @@ class ConversionError(MarkdownLabError):
         source_format: Optional[str] = None,
         target_format: Optional[str] = None,
         conversion_stage: Optional[str] = None,
-        **kwargs
+        **kwargs,
     ):
         context = kwargs.get("context", {})
         if source_format:
@@ -122,7 +122,7 @@ class ConfigurationError(MarkdownLabError):
         message: str,
         config_key: Optional[str] = None,
         config_value: Optional[Any] = None,
-        **kwargs
+        **kwargs,
     ):
         context = kwargs.get("context", {})
         if config_key:
@@ -142,7 +142,7 @@ class ResourceError(MarkdownLabError):
         resource_type: Optional[str] = None,
         current_usage: Optional[int] = None,
         limit: Optional[int] = None,
-        **kwargs
+        **kwargs,
     ):
         context = kwargs.get("context", {})
         if resource_type:
@@ -163,7 +163,7 @@ class CacheError(MarkdownLabError):
         message: str,
         cache_key: Optional[str] = None,
         cache_operation: Optional[str] = None,
-        **kwargs
+        **kwargs,
     ):
         context = kwargs.get("context", {})
         if cache_key:
@@ -183,7 +183,7 @@ class ChunkingError(MarkdownLabError):
         content_length: Optional[int] = None,
         chunk_size: Optional[int] = None,
         chunk_overlap: Optional[int] = None,
-        **kwargs
+        **kwargs,
     ):
         context = kwargs.get("context", {})
         if content_length is not None:
@@ -204,7 +204,7 @@ class RustIntegrationError(MarkdownLabError):
         message: str,
         rust_function: Optional[str] = None,
         fallback_available: bool = True,
-        **kwargs
+        **kwargs,
     ):
         context = kwargs.get("context", {})
         if rust_function:
@@ -221,29 +221,33 @@ def network_timeout_error(url: str, timeout: int, retry_count: int = 0) -> Netwo
         f"Request to {url} timed out after {timeout} seconds",
         url=url,
         error_code="NETWORK_TIMEOUT",
-        context={"timeout": timeout, "retry_count": retry_count}
+        context={"timeout": timeout, "retry_count": retry_count},
     )
 
 
-def parsing_element_not_found_error(url: str, selector: str, parser_type: str = "html") -> ParsingError:
+def parsing_element_not_found_error(
+    url: str, selector: str, parser_type: str = "html"
+) -> ParsingError:
     """Create a parsing error for missing elements."""
     return ParsingError(
         f"Element with selector '{selector}' not found in {parser_type}",
         url=url,
         parser_type=parser_type,
         element_selector=selector,
-        error_code="ELEMENT_NOT_FOUND"
+        error_code="ELEMENT_NOT_FOUND",
     )
 
 
-def conversion_format_error(source_format: str, target_format: str, stage: str) -> ConversionError:
+def conversion_format_error(
+    source_format: str, target_format: str, stage: str
+) -> ConversionError:
     """Create a conversion error with format context."""
     return ConversionError(
         f"Failed to convert from {source_format} to {target_format} at stage: {stage}",
         source_format=source_format,
         target_format=target_format,
         conversion_stage=stage,
-        error_code="CONVERSION_FAILED"
+        error_code="CONVERSION_FAILED",
     )
 
 
@@ -253,7 +257,7 @@ def config_validation_error(key: str, value: Any, reason: str) -> ConfigurationE
         f"Invalid configuration for '{key}': {reason}",
         config_key=key,
         config_value=value,
-        error_code="CONFIG_INVALID"
+        error_code="CONFIG_INVALID",
     )
 
 
@@ -264,12 +268,14 @@ def memory_limit_error(current: int, limit: int) -> ResourceError:
         resource_type="memory",
         current_usage=current,
         limit=limit,
-        error_code="MEMORY_LIMIT_EXCEEDED"
+        error_code="MEMORY_LIMIT_EXCEEDED",
     )
 
 
 # Error handling utilities
-def handle_request_exception(exception: Exception, url: str, retry_count: int = 0) -> NetworkError:
+def handle_request_exception(
+    exception: Exception, url: str, retry_count: int = 0
+) -> NetworkError:
     """Convert various request exceptions to standardized NetworkError."""
     import requests
 
@@ -279,7 +285,7 @@ def handle_request_exception(exception: Exception, url: str, retry_count: int = 
             url=url,
             retry_count=retry_count,
             error_code="REQUEST_TIMEOUT",
-            cause=exception
+            cause=exception,
         )
     if isinstance(exception, requests.exceptions.ConnectionError):
         return NetworkError(
@@ -287,17 +293,17 @@ def handle_request_exception(exception: Exception, url: str, retry_count: int = 
             url=url,
             retry_count=retry_count,
             error_code="CONNECTION_FAILED",
-            cause=exception
+            cause=exception,
         )
     if isinstance(exception, requests.exceptions.HTTPError):
-        status_code = getattr(exception.response, 'status_code', None)
+        status_code = getattr(exception.response, "status_code", None)
         return NetworkError(
             f"HTTP error {status_code} for {url}",
             url=url,
             status_code=status_code,
             retry_count=retry_count,
             error_code="HTTP_ERROR",
-            cause=exception
+            cause=exception,
         )
     if isinstance(exception, requests.exceptions.RequestException):
         return NetworkError(
@@ -305,23 +311,25 @@ def handle_request_exception(exception: Exception, url: str, retry_count: int = 
             url=url,
             retry_count=retry_count,
             error_code="REQUEST_ERROR",
-            cause=exception
+            cause=exception,
         )
     return NetworkError(
         f"Unexpected error for {url}: {str(exception)}",
         url=url,
         retry_count=retry_count,
         error_code="UNEXPECTED_ERROR",
-        cause=exception
+        cause=exception,
     )
 
 
-def handle_parsing_exception(exception: Exception, url: str, parser_type: str = "html") -> ParsingError:
+def handle_parsing_exception(
+    exception: Exception, url: str, parser_type: str = "html"
+) -> ParsingError:
     """Convert parsing exceptions to standardized ParsingError."""
     return ParsingError(
         f"Failed to parse {parser_type} content from {url}: {str(exception)}",
         url=url,
         parser_type=parser_type,
         error_code="PARSING_FAILED",
-        cause=exception
+        cause=exception,
     )

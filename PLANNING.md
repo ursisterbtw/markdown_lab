@@ -205,11 +205,12 @@ class BaseConverter(ABC):
 - [ ] **Parallel Throughput**: 3x improvement for multi-URL processing
 
 ### Maintainability Gains
-- [x] **Build System**: Updated to use uv and modern Python tooling
+- [x] **Build System**: Updated to use uv and modern Python tooling with justfile workflows
 - [x] **Documentation**: Updated for new architecture and command structure
 - [x] **Dependency Health**: Cleaned requirements.txt and fixed version conflicts
 - [x] **Configuration Complexity**: Single MarkdownLabConfig class with validation
 - [x] **Error Diagnostics**: Structured error messages with context and debugging info
+- [x] **Development Workflow**: Fixed justfile recipes and standardized command patterns
 - [ ] **Module Structure**: New architecture planned but not yet implemented
 
 ### Quantitative Benchmarks
@@ -254,6 +255,7 @@ Conversion Rate: 1,200+ docs/second
 - ✅ Extract common HTTP client (consolidated request handling)
 - ✅ Remove dead dependencies and fix version conflicts
 - ✅ Optimize HTML processing pipeline (cached selectors, 40-50% improvement)
+- ✅ Fix justfile recipe errors and standardize development workflow
 
 ### Phase 2: Network & I/O Optimization (Week 3-4)
 - Implement async HTTP client
