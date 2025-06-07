@@ -1113,6 +1113,7 @@ version = "1.0.0"
 dependencies = [
  "criterion",
  "headless_chrome",
+ "once_cell",
  "pyo3",
  "quick-xml",
  "regex",

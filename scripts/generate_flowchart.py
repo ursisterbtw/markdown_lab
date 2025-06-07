@@ -307,9 +307,8 @@ def add_svg_animation(svg_content: str) -> str:
         insert_pos = svg_tag_match.end()
         # Inject the CSS styles right after the opening <svg> tag
         return svg_content[:insert_pos] + SVG_ANIMATION_CSS + svg_content[insert_pos:]
-    else:
-        log.warning("Could not find <svg> tag to inject CSS animations.")
-        return svg_content  # Return unmodified content if tag not found
+    log.warning("Could not find <svg> tag to inject CSS animations.")
+    return svg_content  # Return unmodified content if tag not found
 
 
 def check_dependencies() -> bool:

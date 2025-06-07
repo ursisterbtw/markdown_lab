@@ -5,7 +5,7 @@ Demo script to showcase markdown_lab's multiple output formats.
 
 from pathlib import Path
 
-from markdown_lab.markdown_lab_rs import OutputFormat, convert_html
+from markdown_lab.markdown_lab_rs import convert_html_to_format
 
 # HTML sample for conversion testing
 SAMPLE_HTML = """
@@ -36,9 +36,9 @@ SAMPLE_HTML = """
     
     <pre><code>
 # Sample Python code
-from markdown_lab.markdown_lab_rs import convert_html, OutputFormat
+from markdown_lab.markdown_lab_rs import convert_html_to_format
 
-result = convert_html(html_content, url, OutputFormat.JSON)
+result = convert_html_to_format(html_content, url, "json")
     </code></pre>
 </body>
 </html>
@@ -52,24 +52,20 @@ def main():
     output_dir.mkdir(parents=True, exist_ok=True)
 
     # Convert to all three formats
-    formats = {
-        "markdown": OutputFormat.MARKDOWN,
-        "json": OutputFormat.JSON,
-        "xml": OutputFormat.XML,
-    }
+    formats = ["markdown", "json", "xml"]
 
-    for name, format_enum in formats.items():
-        output_file = output_dir / f"output.{name}"
-        content = convert_html(SAMPLE_HTML, base_url, format_enum)
+    for format_name in formats:
+        output_file = output_dir / f"output.{format_name}"
+        content = convert_html_to_format(SAMPLE_HTML, base_url, format_name)
 
         with open(output_file, "w", encoding="utf-8") as f:
             f.write(content)
 
-        print(f"Generated {name} output in {output_file}")
+        print(f"Generated {format_name} output in {output_file}")
 
         # Show a preview of each format
         preview = content.split("\n")[:5]
-        print(f"\n{name.upper()} PREVIEW:")
+        print(f"\n{format_name.upper()} PREVIEW:")
         print("-" * 40)
         print("\n".join(preview))
         print("-" * 40)

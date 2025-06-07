@@ -5,8 +5,8 @@ from unittest.mock import MagicMock, patch
 import pytest
 import requests
 
-from markdown_lab.core.scraper import MarkdownScraper
 from markdown_lab.core.cache import RequestCache
+from markdown_lab.core.scraper import MarkdownScraper
 
 
 @pytest.fixture
@@ -116,7 +116,10 @@ def test_format_conversion(mock_get, scraper):
 
     except ImportError:
         # Fall back to Python implementation (import a helper)
-        from markdown_lab.markdown_lab_rs import document_to_xml, parse_markdown_to_document
+        from markdown_lab.markdown_lab_rs import (
+            document_to_xml,
+            parse_markdown_to_document,
+        )
 
         # Convert to markdown first
         markdown_content = scraper.convert_to_markdown(mock_response.text)

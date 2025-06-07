@@ -4,21 +4,20 @@ Main module for scraping websites and converting content to markdown, JSON, or X
 
 import argparse
 import contextlib
-import hashlib
 import logging
 import re
 import time
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import List, Optional, Tuple
 from urllib.parse import urljoin, urlparse
 
 import requests
 from bs4 import BeautifulSoup, Tag
 
-from markdown_lab.utils.chunk_utils import ContentChunker, create_semantic_chunks
-from markdown_lab.utils.sitemap_utils import SitemapParser
 from markdown_lab.core.cache import RequestCache
 from markdown_lab.core.throttle import RequestThrottler
+from markdown_lab.utils.chunk_utils import ContentChunker, create_semantic_chunks
+from markdown_lab.utils.sitemap_utils import SitemapParser
 
 # Configure logging with more detailed formatting
 logging.basicConfig(
@@ -98,8 +97,6 @@ class MarkdownScraper:
         Raises:
             requests.exceptions.RequestException: If the request fails after retries
         """
-        import time
-        import tracemalloc
         try:
             import psutil  # type: ignore
             psutil_available = True
@@ -138,7 +135,6 @@ class MarkdownScraper:
 
     def _start_performance_monitoring(self, psutil_available: bool):
         """Start monitoring performance metrics."""
-        import time
         import tracemalloc
 
         start_time = time.time()
@@ -158,7 +154,6 @@ class MarkdownScraper:
 
     def _log_performance_metrics(self, url: str, monitor, psutil_available: bool):
         """Log performance metrics for the request."""
-        import time
         import tracemalloc
 
         end_time = time.time()
@@ -181,7 +176,6 @@ class MarkdownScraper:
 
     def _fetch_with_retries(self, url: str) -> str:
         """Fetch URL content with retry logic."""
-        import time
 
         for attempt in range(self.max_retries):
             try:
@@ -224,7 +218,6 @@ class MarkdownScraper:
 
     def _handle_request_error(self, url: str, attempt: int, error, warning_msg: str, error_msg: str) -> None:
         """Handle request errors with appropriate logging and retries."""
-        import time
 
         logger.warning(warning_msg)
 
@@ -249,22 +242,21 @@ class MarkdownScraper:
         # Dispatch to specific handler methods based on element type
         if element_type in ["h1", "h2", "h3", "h4", "h5", "h6"]:
             return self._convert_heading(element)
-        elif element_type == "p":
+        if element_type == "p":
             return self._convert_paragraph(element)
-        elif element_type == "a" and element.get("href"):
+        if element_type == "a" and element.get("href"):
             return self._convert_link(element, base_url)
-        elif element_type == "img" and element.get("src"):
+        if element_type == "img" and element.get("src"):
             return self._convert_image(element, base_url)
-        elif element_type == "ul":
+        if element_type == "ul":
             return self._convert_unordered_list(element)
-        elif element_type == "ol":
+        if element_type == "ol":
             return self._convert_ordered_list(element)
-        elif element_type == "blockquote":
+        if element_type == "blockquote":
             return self._convert_blockquote(element)
-        elif element_type in ["pre", "code"]:
+        if element_type in ["pre", "code"]:
             return self._convert_code(element)
-        else:
-            return self._get_text_from_element(element)
+        return self._get_text_from_element(element)
 
     def _convert_heading(self, element: Tag) -> str:
         """Convert heading elements to markdown."""
@@ -502,8 +494,10 @@ class MarkdownScraper:
             # Then convert to the requested format
             try:
                 # Try to use functions from markdown_lab_rs for conversion
-                from markdown_lab.markdown_lab_rs import (document_to_xml,
-                                         parse_markdown_to_document)
+                from markdown_lab.markdown_lab_rs import (
+                    document_to_xml,
+                    parse_markdown_to_document,
+                )
 
                 document = parse_markdown_to_document(markdown_content, url)
 

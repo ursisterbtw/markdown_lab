@@ -9,10 +9,10 @@ To build the Rust extension:
 
 import json
 import logging
-import xml.dom.minidom as minidom
 import xml.etree.ElementTree as ET
 from enum import Enum
 from typing import Dict, List, Optional
+from xml.dom import minidom
 
 logger = logging.getLogger(__name__)
 
@@ -28,8 +28,7 @@ class OutputFormat(str, Enum):
 # Try to import the Rust extension
 try:
     from .markdown_lab_rs import chunk_markdown as _rs_chunk_markdown
-    from .markdown_lab_rs import \
-        convert_html_to_format as _rs_convert_html_to_format
+    from .markdown_lab_rs import convert_html_to_format as _rs_convert_html_to_format
     from .markdown_lab_rs import render_js_page as _rs_render_js_page
 
     RUST_AVAILABLE = True
@@ -86,7 +85,7 @@ def convert_html(
 
     if output_format == OutputFormat.MARKDOWN:
         return scraper.convert_to_markdown(html, base_url)
-    
+
     # For JSON and XML, first convert to markdown to get structured content
     # This is a simplified implementation - the real one would parse the HTML directly
     markdown_content = scraper.convert_to_markdown(html, base_url)

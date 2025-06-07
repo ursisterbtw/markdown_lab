@@ -156,12 +156,11 @@ class ContentChunker:
                 for chunk in chunks:
                     f.write(json.dumps(asdict(chunk)) + "\n")
             return
-        else:
-            # Save each chunk as a separate JSON file
-            for chunk in chunks:
-                output_file = chunk_dir / f"{chunk.id}.json"
-                with open(output_file, "w", encoding="utf-8") as f:
-                    json.dump(asdict(chunk), f, indent=2)
+        # Save each chunk as a separate JSON file
+        for chunk in chunks:
+            output_file = chunk_dir / f"{chunk.id}.json"
+            with open(output_file, "w", encoding="utf-8") as f:
+                json.dump(asdict(chunk), f, indent=2)
 
 
 def create_semantic_chunks(

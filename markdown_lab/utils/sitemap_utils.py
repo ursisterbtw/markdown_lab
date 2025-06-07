@@ -140,25 +140,24 @@ class SitemapParser:
             namespace = self._extract_namespace(content)
             ns_map = {"sm": namespace} if namespace else {}
             root = ET.fromstring(content)
-            
+
             # Determine if this is a sitemap index or a regular sitemap
             if root.tag.endswith("sitemapindex"):
                 return self._handle_sitemap_index(root, namespace, ns_map)
-            else:
-                return self._handle_sitemap(root, namespace, ns_map)
-                
+            return self._handle_sitemap(root, namespace, ns_map)
+
         except ParseError as e:
             logger.error(f"XML parsing error: {e}")
             return [], []
         except Exception as e:
             logger.error(f"Error parsing sitemap XML: {e}")
             return [], []
-            
+
     def _extract_namespace(self, content: str) -> Optional[str]:
         """Extract XML namespace from content."""
         ns_match = re.search(r'xmlns\s*=\s*["\']([^"\']+)["\']', content)
         return ns_match[1] if ns_match else None
-        
+
     def _handle_sitemap_index(self, root: ET.Element, namespace: Optional[str], ns_map: Dict[str, str]) -> Tuple[List[SitemapURL], List[str]]:
         """Process a sitemap index, extracting child sitemap URLs."""
         sitemap_index_urls = [
@@ -169,51 +168,51 @@ class SitemapParser:
             )
             if sitemap is not None and sitemap.text is not None
         ]
-        
+
         logger.info(f"Found sitemap index with {len(sitemap_index_urls)} sitemaps")
         return [], sitemap_index_urls
-        
+
     def _handle_sitemap(self, root: ET.Element, namespace: Optional[str], ns_map: Dict[str, str]) -> Tuple[List[SitemapURL], List[str]]:
         """Process a regular sitemap, extracting URLs and their metadata."""
         sitemap_urls = []
-        
+
         for url in root.findall(".//sm:url" if namespace else ".//url", ns_map):
             if sitemap_url := self._extract_url_data(url, namespace, ns_map):
                 sitemap_urls.append(sitemap_url)
-                
+
         logger.info(f"Parsed sitemap with {len(sitemap_urls)} URLs")
         return sitemap_urls, []
-        
+
     def _extract_url_data(self, url_elem: ET.Element, namespace: Optional[str], ns_map: Dict[str, str]) -> Optional[SitemapURL]:
         """Extract data for a single URL from a sitemap."""
         loc_elem = url_elem.find("sm:loc" if namespace else "loc", ns_map)
         if loc_elem is None or not loc_elem.text:
             return None
-            
+
         url_loc = loc_elem.text.strip()
         lastmod = self._get_element_text(url_elem, "lastmod", namespace, ns_map)
         changefreq = self._get_element_text(url_elem, "changefreq", namespace, ns_map)
         priority = self._get_priority(url_elem, namespace, ns_map)
-        
+
         return SitemapURL(
             loc=url_loc,
             lastmod=lastmod,
             changefreq=changefreq,
             priority=priority,
         )
-        
+
     def _get_element_text(self, parent: ET.Element, element_name: str, namespace: Optional[str], ns_map: Dict[str, str]) -> Optional[str]:
         """Get text from a child element if it exists."""
         prefixed_name = f"sm:{element_name}" if namespace else element_name
         elem = parent.find(prefixed_name, ns_map)
         return elem.text.strip() if elem is not None and elem.text else None
-        
+
     def _get_priority(self, url_elem: ET.Element, namespace: Optional[str], ns_map: Dict[str, str]) -> Optional[float]:
         """Extract and convert priority value."""
         priority_text = self._get_element_text(url_elem, "priority", namespace, ns_map)
         if not priority_text:
             return None
-            
+
         try:
             return float(priority_text)
         except (ValueError, TypeError):

@@ -30,6 +30,7 @@ else:
         RUST_AVAILABLE = False
 
 from .chunk_utils import Chunk, ContentChunker, create_semantic_chunks
+
 # Import public API
 from .main import MarkdownScraper
 from .sitemap_utils import SitemapParser, SitemapURL, discover_site_urls

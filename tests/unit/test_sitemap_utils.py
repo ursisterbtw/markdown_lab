@@ -4,7 +4,11 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from markdown_lab.utils.sitemap_utils import SitemapParser, SitemapURL, discover_site_urls
+from markdown_lab.utils.sitemap_utils import (
+    SitemapParser,
+    SitemapURL,
+    discover_site_urls,
+)
 
 
 class TestSitemapUtils(unittest.TestCase):
@@ -92,7 +96,7 @@ class TestSitemapUtils(unittest.TestCase):
                 </urlset>
                 """
         }
-        
+
         # Configure the mock to return appropriate content based on the URL
         mock_make_request.side_effect = lambda url: sitemap_responses.get(url)
 
@@ -124,7 +128,7 @@ class TestSitemapUtils(unittest.TestCase):
                 </urlset>
                 """
         }
-        
+
         # Configure the mock to return appropriate content based on the URL
         mock_make_request.side_effect = lambda url: robots_sitemap_responses.get(url)
 
