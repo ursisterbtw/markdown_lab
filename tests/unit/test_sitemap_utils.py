@@ -68,6 +68,9 @@ class TestSitemapUtils(unittest.TestCase):
     @mock.patch("markdown_lab.utils.sitemap_utils.SitemapParser._make_request")
     def test_parse_sitemap_index(self, mock_make_request):
         # Setup mock responses for different URLs
+        """
+        Tests parsing of a sitemap index XML, ensuring URLs from all referenced child sitemaps are discovered and returned.
+        """
         sitemap_responses = {
             "https://example.com/sitemap.xml": """<?xml version="1.0" encoding="UTF-8"?>
                 <sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
@@ -112,6 +115,11 @@ class TestSitemapUtils(unittest.TestCase):
     @mock.patch("markdown_lab.utils.sitemap_utils.SitemapParser._make_request")
     def test_robots_txt_parser(self, mock_make_request):
         # Mock robots.txt and sitemap
+        """
+        Tests that the parser respects robots.txt sitemap declarations and correctly parses URLs from a custom sitemap.
+        
+        Mocks responses for robots.txt and a custom sitemap, enables robots.txt handling, and verifies that URLs from the declared sitemap are discovered.
+        """
         robots_sitemap_responses = {
             "https://example.com/robots.txt": """
                 User-agent: *

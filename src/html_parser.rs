@@ -60,7 +60,17 @@ static SELECTOR_CACHE: Lazy<HashMap<&'static str, Selector>> = Lazy::new(|| {
 });
 
 /// Extracts the main content from an HTML document by identifying and
-/// cleaning up the most relevant section. Uses cached selectors for better performance.
+/// Extracts the main content section from an HTML document using cached CSS selectors.
+///
+/// Attempts to locate the primary content container by first using a combined selector for common main content elements. If not found, falls back to individual selectors in a preferred order. Returns the extracted fragment as an `Html` object, or the entire document if no specific section is found.
+///
+/// # Examples
+///
+/// ```
+/// let html = r#"<html><body><main><p>Hello</p></main></body></html>"#;
+/// let main_content = extract_main_content(html).unwrap();
+/// assert!(main_content.root_element().html().contains("Hello"));
+/// ```
 pub fn extract_main_content(html: &str) -> Result<Html, ParserError> {
     let document = Html::parse_document(html);
 
@@ -87,7 +97,21 @@ pub fn extract_main_content(html: &str) -> Result<Html, ParserError> {
 }
 
 /// Cleans up HTML by removing unwanted elements like scripts, ads, etc.
-/// Uses cached selectors and more efficient element removal.
+/// Removes unwanted elements from the HTML using cached CSS selectors.
+///
+/// Unwanted elements such as scripts, ads, banners, and navigation are identified using a cached selector and removed from the HTML. If the selector cache is unavailable, returns the original HTML.
+///
+/// # Returns
+/// A cleaned HTML string with unwanted elements removed.
+///
+/// # Examples
+///
+/// ```
+/// let html = r#"<body><script>bad()</script><main>Content</main></body>"#;
+/// let cleaned = clean_html(html).unwrap();
+/// assert!(cleaned.contains("Content"));
+/// assert!(!cleaned.contains("<script>"));
+/// ```
 pub fn clean_html(html: &str) -> Result<String, ParserError> {
     let document = Html::parse_document(html);
 
@@ -113,7 +137,18 @@ pub fn clean_html(html: &str) -> Result<String, ParserError> {
 }
 
 /// More efficient version that works directly with the DOM structure
-/// (Alternative implementation for future optimization)
+/// Cleans HTML content by removing unwanted elements, with a placeholder for future DOM-based optimization.
+///
+/// Currently delegates to `clean_html`, but intended for future enhancement to perform more efficient DOM manipulation when supported.
+///
+/// # Examples
+///
+/// ```
+/// let html = r#"<html><body><script>bad()</script><main>Good Content</main></body></html>"#;
+/// let cleaned = clean_html_advanced(html).unwrap();
+/// assert!(cleaned.contains("Good Content"));
+/// assert!(!cleaned.contains("<script>"));
+/// ```
 pub fn clean_html_advanced(html: &str) -> Result<String, ParserError> {
     // In a future optimization, we could manipulate the DOM tree directly
     // rather than using string replacement, but scraper crate has limited
@@ -123,7 +158,30 @@ pub fn clean_html_advanced(html: &str) -> Result<String, ParserError> {
     clean_html(html)
 }
 
-/// Extracts all unique links from the HTML document using cached selectors
+/// Extracts all unique absolute URLs from anchor elements in the HTML document.
+///
+/// Parses the HTML and uses a cached selector to find all anchor tags with `href` attributes. Filters out JavaScript, fragment-only, and empty links. Resolves relative URLs against the provided base URL, returning a sorted vector of unique absolute URLs.
+///
+/// # Parameters
+/// - `html`: The HTML content to parse.
+/// - `base_url`: The base URL used to resolve relative links.
+///
+/// # Returns
+/// A vector of unique absolute URLs found in the document.
+///
+/// # Errors
+/// Returns `ParserError::UrlError` if the base URL is invalid, or `ParserError::SelectorError` if the link selector is missing from the cache.
+///
+/// # Examples
+///
+/// ```
+/// let html = r#"<a href="/about">About</a><a href="https://example.com/contact">Contact</a>"#;
+/// let links = extract_links(html, "https://example.com").unwrap();
+/// assert_eq!(links, vec![
+///     "https://example.com/about".to_string(),
+///     "https://example.com/contact".to_string()
+/// ]);
+/// ```
 pub fn extract_links(html: &str, base_url: &str) -> Result<Vec<String>, ParserError> {
     let document = Html::parse_document(html);
     let base_url = url::Url::parse(base_url).map_err(|e| ParserError::UrlError(e.to_string()))?;
@@ -164,7 +222,19 @@ pub fn extract_links(html: &str, base_url: &str) -> Result<Vec<String>, ParserEr
     Ok(links)
 }
 
-/// Fast URL resolution utility with error handling
+/// Resolves a relative URL against a base URL, returning the absolute URL as a string.
+///
+/// If the relative URL is already absolute, it is returned unchanged. Otherwise, the function parses the base URL and joins it with the relative URL. Returns an error if URL parsing or joining fails.
+///
+/// # Examples
+///
+/// ```
+/// let abs = resolve_url("https://example.com/path/", "subpage.html").unwrap();
+/// assert_eq!(abs, "https://example.com/path/subpage.html");
+///
+/// let abs2 = resolve_url("https://example.com", "https://other.com/page").unwrap();
+/// assert_eq!(abs2, "https://other.com/page");
+/// ```
 pub fn resolve_url(base_url: &str, relative_url: &str) -> Result<String, ParserError> {
     if relative_url.starts_with("http://") || relative_url.starts_with("https://") {
         Ok(relative_url.to_string())
@@ -175,7 +245,18 @@ pub fn resolve_url(base_url: &str, relative_url: &str) -> Result<String, ParserE
     }
 }
 
-/// Utility function to get text content of an element, cleaning up whitespace
+/// Extracts and normalizes the text content from an HTML element, collapsing consecutive whitespace into single spaces.
+///
+/// # Examples
+///
+/// ```
+/// use scraper::{Html, Selector};
+/// let html = Html::parse_fragment("<div>Hello   <b>world</b>!</div>");
+/// let selector = Selector::parse("div").unwrap();
+/// let element = html.select(&selector).next().unwrap();
+/// let text = get_element_text(&element);
+/// assert_eq!(text, "Hello world !");
+/// ```
 pub fn get_element_text(element: &scraper::ElementRef) -> String {
     element
         .text()

@@ -46,7 +46,11 @@ result = convert_html_to_format(html_content, url, "json")
 
 
 def main():
-    """Demo all three output formats."""
+    """
+    Converts a sample HTML string to Markdown, JSON, and XML formats and writes each result to a file in the output directory.
+    
+    Creates the output directory if it does not exist. For each format, the converted content is saved as `output.<format>` in the directory.
+    """
     base_url = "http://example.com"
     output_dir = Path("examples/demo_output")
     output_dir.mkdir(parents=True, exist_ok=True)

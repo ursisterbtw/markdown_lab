@@ -138,12 +138,12 @@ class ContentChunker:
         self, chunks: List[Chunk], output_dir: str, output_format: str = "jsonl"
     ) -> None:
         """
-        Save content chunks to files for RAG processing.
-
+        Saves a list of content chunks to disk in either JSON Lines or individual JSON files.
+        
         Args:
-            chunks: List of Chunk objects to save
-            output_dir: Directory to save the chunks
-            output_format: Format to save chunks in (json or jsonl)
+            chunks: The content chunks to save.
+            output_dir: Directory where the chunk files will be written.
+            output_format: File format for saving chunks; "jsonl" for a single JSON Lines file, "json" for separate JSON files per chunk.
         """
         # Create the output directory if it doesn't exist
         chunk_dir = Path(output_dir)
@@ -167,16 +167,16 @@ def create_semantic_chunks(
     content: str, source_url: str, chunk_size: int = 1000, chunk_overlap: int = 200
 ) -> List[Chunk]:
     """
-    Convenience function to create semantic chunks from any content.
-
+    Creates semantic chunks from content, handling both markdown and plain text.
+    
+    If the content contains markdown headers, it is split into chunks using markdown-aware logic. Otherwise, the content is divided into overlapping text chunks based on approximate word count. Each chunk includes metadata such as domain, position, word count, and character count.
+    
     Args:
-        content: The content to chunk
-        source_url: The source URL of the content
-        chunk_size: Maximum chunk size in characters
-        chunk_overlap: Overlap between chunks in characters
-
+        content: The text to be chunked.
+        source_url: The URL associated with the content.
+    
     Returns:
-        A list of Chunk objects
+        A list of Chunk objects representing the segmented content.
     """
     chunker = ContentChunker(chunk_size, chunk_overlap)
 

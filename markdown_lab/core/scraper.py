@@ -85,17 +85,19 @@ class MarkdownScraper:
 
     def scrape_website(self, url: str, skip_cache: bool = False) -> str:
         """
-        Scrape a website with retry logic, rate limiting, and caching.
-
+        Fetches the HTML content of a website with support for caching, rate limiting, and automatic retries.
+        
+        If caching is enabled and a valid cached response exists, returns it immediately unless `skip_cache` is True. Otherwise, performs an HTTP GET request with retry and backoff logic, monitors performance metrics, and caches the result if applicable.
+        
         Args:
-            url: The URL to scrape
-            skip_cache: Whether to skip the cache and force a new request
-
+            url: The URL of the website to scrape.
+            skip_cache: If True, bypasses the cache and forces a fresh request.
+        
         Returns:
-            The HTML content as a string
-
+            The HTML content of the requested URL as a string.
+        
         Raises:
-            requests.exceptions.RequestException: If the request fails after retries
+            requests.exceptions.RequestException: If all retry attempts fail to retrieve the content.
         """
         try:
             import psutil  # type: ignore
@@ -135,7 +137,17 @@ class MarkdownScraper:
         return None
 
     def _start_performance_monitoring(self, psutil_available: bool):
-        """Start monitoring performance metrics."""
+        """
+        Begins tracking execution time and memory usage for performance monitoring.
+        
+        If `psutil` is available, also prepares a process object for CPU usage tracking.
+        
+        Args:
+            psutil_available: Indicates whether the `psutil` library is available.
+        
+        Returns:
+            A dictionary containing the start time and, if applicable, a `psutil.Process` object.
+        """
         import tracemalloc
 
         start_time = time.time()
@@ -155,7 +167,14 @@ class MarkdownScraper:
         }
 
     def _log_performance_metrics(self, url: str, monitor, psutil_available: bool):
-        """Log performance metrics for the request."""
+        """
+        Logs execution time, memory usage, and CPU usage (if available) for a scraping request.
+        
+        Args:
+            url: The URL that was scraped.
+            monitor: Dictionary containing timing and process monitoring data.
+            psutil_available: Indicates if psutil is available for CPU usage tracking.
+        """
         import tracemalloc
 
         end_time = time.time()
@@ -179,7 +198,20 @@ class MarkdownScraper:
             self.request_cache.set(url, content)
 
     def _fetch_with_retries(self, url: str) -> str:
-        """Fetch URL content with retry logic."""
+        """
+        Attempts to fetch the content of a URL with retry logic for network-related errors.
+        
+        Retries the HTTP GET request up to the configured maximum number of attempts, applying throttling and timeout settings. Raises an exception if all attempts fail.
+        
+        Args:
+            url: The URL to fetch.
+        
+        Returns:
+            The response content as a string.
+        
+        Raises:
+            requests.exceptions.RequestException: If the URL cannot be retrieved after all retries.
+        """
 
         for attempt in range(self.max_retries):
             try:
@@ -233,7 +265,16 @@ class MarkdownScraper:
     def _handle_request_error(
         self, url: str, attempt: int, error, warning_msg: str, error_msg: str
     ) -> None:
-        """Handle request errors with appropriate logging and retries."""
+        """
+        Handles HTTP request errors by logging warnings, applying exponential backoff, and raising the error on the final retry attempt.
+        
+        Args:
+            url: The URL being requested.
+            attempt: The current retry attempt number.
+            error: The exception encountered during the request.
+            warning_msg: Warning message to log for non-final attempts.
+            error_msg: Error message to log and raise on the final attempt.
+        """
 
         logger.warning(warning_msg)
 
@@ -252,7 +293,11 @@ class MarkdownScraper:
         return re.sub(r"\s+", " ", element.get_text().strip())
 
     def _get_element_markdown(self, element: Tag, base_url: str) -> str:
-        """Convert a single HTML element to markdown."""
+        """
+        Converts a single HTML element to its Markdown representation.
+        
+        Dispatches the element to the appropriate conversion method based on its tag type. Falls back to extracting plain text if the element type is not specifically handled.
+        """
         element_type = element.name
 
         # Dispatch to specific handler methods based on element type
@@ -275,7 +320,15 @@ class MarkdownScraper:
         return self._get_text_from_element(element)
 
     def _convert_heading(self, element: Tag) -> str:
-        """Convert heading elements to markdown."""
+        """
+        Converts an HTML heading element to Markdown heading syntax.
+        
+        Args:
+            element: A BeautifulSoup Tag representing an HTML heading (e.g., <h1> to <h6>).
+        
+        Returns:
+            The Markdown-formatted heading as a string.
+        """
         level = int(element.name[1])
         return f"{'#' * level} {self._get_text_from_element(element)}"
 
@@ -478,17 +531,17 @@ class MarkdownScraper:
         self, html_content: str, url: str, output_format: str
     ) -> tuple:
         """
-        Convert HTML content to the specified output format.
-
+        Converts HTML content to the specified output format and returns both the converted and Markdown versions.
+        
+        If a Rust-based implementation is available, it is used for conversion. For JSON or XML output, the function attempts to convert Markdown to the requested format; if conversion is unavailable, it falls back to Markdown.
+        
         Args:
-            html_content: The HTML content to convert
-            url: The source URL for resolving relative links
-            output_format: The output format (markdown, json, or xml)
-
+            html_content: The HTML content to convert.
+            url: The source URL for resolving relative links.
+            output_format: The desired output format ("markdown", "json", or "xml").
+        
         Returns:
-            Tuple of (converted_content, markdown_content) where:
-            - converted_content is the content in the requested format
-            - markdown_content is always the markdown version (for chunking)
+            A tuple (converted_content, markdown_content), where converted_content is in the requested format and markdown_content is always the Markdown version.
         """
         if self.rust_available:
             # Use Rust implementation if available
@@ -549,22 +602,24 @@ class MarkdownScraper:
         output_format: str = "markdown",
     ) -> List[str]:
         """
-        Scrape multiple pages from a website based on its sitemap.
-
+        Scrapes multiple pages from a website using its sitemap and saves the content in the specified format.
+        
+        Filters sitemap URLs by priority and regex patterns, limits the number of pages if specified, and processes each URL by scraping, converting, and saving the content. Optionally creates and saves content chunks for retrieval-augmented generation workflows.
+        
         Args:
-            base_url: The base URL of the website
-            output_dir: Directory to save markdown files
-            min_priority: Minimum priority value for URLs (0.0-1.0)
-            include_patterns: List of regex patterns to include
-            exclude_patterns: List of regex patterns to exclude
-            limit: Maximum number of URLs to scrape
-            save_chunks: Whether to save chunks for RAG
-            chunk_dir: Directory to save chunks (defaults to output_dir/chunks)
-            chunk_format: Format to save chunks (json or jsonl)
-            output_format: Format to save chunks (markdown, json, or xml)
-
+            base_url: The root URL of the website whose sitemap will be parsed.
+            output_dir: Directory where the scraped content will be saved.
+            min_priority: If set, only URLs with a sitemap priority greater than or equal to this value are included.
+            include_patterns: Regex patterns; only URLs matching at least one are included.
+            exclude_patterns: Regex patterns; URLs matching any are excluded.
+            limit: Maximum number of URLs to process.
+            save_chunks: If True, splits content into chunks and saves them for downstream use.
+            chunk_dir: Directory for saving chunks; defaults to a subdirectory of output_dir if not specified.
+            chunk_format: Format for saved chunks ("json" or "jsonl").
+            output_format: Output format for scraped content ("markdown", "json", or "xml").
+        
         Returns:
-            List of successfully scraped URLs
+            A list of URLs that were successfully scraped and saved.
         """
         # Get URLs from sitemap
         filtered_urls = self._discover_urls_from_sitemap(
@@ -612,7 +667,11 @@ class MarkdownScraper:
         exclude_patterns: Optional[List[str]] = None,
         limit: Optional[int] = None,
     ) -> List:
-        """Discover and filter URLs from a sitemap."""
+        """
+        Parses a sitemap from the given base URL and returns a filtered list of URLs.
+        
+        Filters URLs based on minimum priority, inclusion and exclusion patterns, and an optional limit. Returns an empty list if no URLs are found.
+        """
         # Create sitemap parser
         sitemap_parser = SitemapParser(
             requests_per_second=self.requests_per_second,
@@ -641,7 +700,17 @@ class MarkdownScraper:
     def _prepare_directories(
         self, output_dir: str, save_chunks: bool, chunk_dir: Optional[str] = None
     ) -> Tuple[Path, Optional[str]]:
-        """Prepare output and chunk directories."""
+        """
+        Creates the output directory and, if chunking is enabled, creates the chunk directory.
+        
+        Args:
+            output_dir: Path to the main output directory.
+            save_chunks: Whether to create a directory for content chunks.
+            chunk_dir: Optional path for the chunk directory; defaults to 'chunks' within the output directory if not provided.
+        
+        Returns:
+            A tuple containing the Path object for the output directory and the path to the chunk directory (or None if not used).
+        """
         # Create output directory
         output_path = Path(output_dir)
         output_path.mkdir(parents=True, exist_ok=True)
@@ -694,7 +763,19 @@ class MarkdownScraper:
         chunk_dir: Optional[str],
         chunk_format: str,
     ) -> None:
-        """Process a single URL: scrape, convert, save content and chunks."""
+        """
+        Scrapes a single URL, converts its content to the specified format, saves the result, and optionally creates and saves content chunks.
+        
+        Args:
+            url: The URL to scrape.
+            index: The index of the URL in the current batch.
+            total: The total number of URLs being processed.
+            output_path: Directory path where the output file will be saved.
+            output_format: Desired output format ('markdown', 'json', or 'xml').
+            save_chunks: Whether to generate and save content chunks.
+            chunk_dir: Directory where chunks will be saved, if enabled.
+            chunk_format: Format for saved chunks (e.g., 'jsonl').
+        """
         # Generate filename for this URL
         filename = self._get_filename_from_url(url, output_format)
         output_file = str(output_path / filename)
@@ -729,7 +810,16 @@ class MarkdownScraper:
         filename: str,
         chunk_format: str,
     ) -> None:
-        """Process chunking for a single document."""
+        """
+        Splits Markdown content from a single document into semantic chunks and saves them to a URL-specific directory in the specified format.
+        
+        Args:
+            markdown_content: The Markdown content to be chunked.
+            url: The source URL of the content.
+            chunk_dir: The base directory where chunks will be saved.
+            filename: The filename used to derive a unique subdirectory for the chunks.
+            chunk_format: The format in which to save the chunks (e.g., "jsonl").
+        """
         chunks = self.create_chunks(markdown_content, url)
 
         # Create URL-specific chunk directory to prevent filename collisions
@@ -752,19 +842,9 @@ class MarkdownScraper:
         max_workers: int = 4,
     ) -> List[str]:
         """
-        Scrape multiple pages from a list of links in a file.
-
-        Args:
-            links_file: Path to the file containing links to scrape
-            output_dir: Directory to save markdown files
-            save_chunks: Whether to save chunks for RAG
-            chunk_dir: Directory to save chunks (defaults to output_dir/chunks)
-            chunk_format: Format to save chunks (json or jsonl)
-            parallel: Whether to use parallel processing for faster scraping
-            max_workers: Maximum number of parallel workers when parallel=True
-
-        Returns:
-            List of successfully scraped URLs
+        Scrapes multiple web pages from a list of URLs provided in a file and saves the results.
+        
+        Reads URLs from the specified file, processes each URL to scrape and convert its content, and saves the output in the desired format. Supports optional parallel processing and chunked content saving for RAG workflows. Returns a list of successfully scraped URLs; logs and skips URLs that fail to process.
         """
         # Check if links_file exists, if not try the default location
         if not Path(links_file).exists():
@@ -824,6 +904,16 @@ class MarkdownScraper:
                 import concurrent.futures
 
                 def process_url(args):
+                    """
+                    Processes a single URL for scraping and content conversion, capturing success or failure.
+                    
+                    Args:
+                        args: A tuple containing the URL to process and its index in the list.
+                    
+                    Returns:
+                        A tuple of (success, url, error_message), where success is True if processing
+                        succeeded, or False with an error message if an exception occurred.
+                    """
                     url, idx = args
                     try:
                         self._process_single_url(
@@ -925,30 +1015,9 @@ def main(
     max_workers: int = 4,
 ) -> None:
     """
-    Main entry point for the scraper.
-
-    Args:
-        args_list: Optional list of command line arguments
-        url: The URL to scrape
-        output_file: Path to save the output
-        output_format: Format of the output (markdown, json, or xml)
-        save_chunks: Whether to save chunks for RAG
-        chunk_dir: Directory to save chunks
-        chunk_format: Format to save chunks (json or jsonl)
-        chunk_size: Maximum chunk size in characters
-        chunk_overlap: Overlap between chunks in characters
-        requests_per_second: Maximum number of requests per second
-        use_sitemap: Whether to use sitemap.xml for discovering URLs
-        min_priority: Minimum priority value for sitemap URLs
-        include_patterns: Regex patterns for URLs to include
-        exclude_patterns: Regex patterns for URLs to exclude
-        limit: Maximum number of URLs to scrape from sitemap
-        cache_enabled: Whether to enable request caching
-        cache_max_age: Maximum age of cached responses in seconds
-        skip_cache: Whether to skip the cache and force new requests
-        links_file: Path to a file containing links to scrape (defaults to links.txt if found)
-        parallel: Whether to use parallel processing for faster scraping
-        max_workers: Maximum number of parallel workers when parallel=True
+    Main entry point for running the web scraper via CLI or programmatically.
+    
+    Depending on the provided arguments, this function scrapes a single URL, a list of URLs from a file, or multiple URLs discovered via sitemap, then converts and saves the content in the specified format. Supports chunking for RAG workflows, caching, parallel processing, and advanced filtering options.
     """
     if args_list is not None:
         # Parse command line arguments
@@ -1039,7 +1108,12 @@ def main(
 
 
 def _create_argument_parser():
-    """Create the argument parser for the command line interface."""
+    """
+    Creates and configures the argument parser for the command-line interface.
+    
+    Returns:
+        An argparse.ArgumentParser instance with all supported CLI options for scraping, output formatting, chunking, sitemap usage, caching, and parallel processing.
+    """
     parser = argparse.ArgumentParser(
         description="Scrape a website and convert it to Markdown, JSON, or XML with RAG chunking support."
     )
@@ -1142,7 +1216,11 @@ def _create_argument_parser():
 
 
 def _validate_output_format(output_format: str) -> str:
-    """Validate and normalize output format."""
+    """
+    Validates and normalizes the output format string.
+    
+    If the provided format is not one of "markdown", "json", or "xml", defaults to "markdown".
+    """
     normalized_format = output_format.lower()
     if normalized_format not in ["markdown", "json", "xml"]:
         logger.warning(
@@ -1153,7 +1231,11 @@ def _validate_output_format(output_format: str) -> str:
 
 
 def _check_rust_availability() -> None:
-    """Check if Rust implementation is available."""
+    """
+    Checks for the availability of the Rust-based implementation for HTML-to-Markdown conversion.
+    
+    Silently determines if the `markdown_lab.markdown_lab_rs` module can be imported, indicating Rust support.
+    """
     with contextlib.suppress(ImportError):
         import importlib.util
 
@@ -1174,7 +1256,11 @@ def _process_sitemap_mode(
     exclude_patterns: Optional[List[str]],
     limit: Optional[int],
 ) -> None:
-    """Process website using sitemap mode."""
+    """
+    Scrapes a website using its sitemap and saves the content in the specified format.
+    
+    Parses the base URL, determines the output directory, and invokes the scraper to process all sitemap-discovered URLs according to filtering and chunking options.
+    """
     # Parse base URL
     parsed_url = urlparse(url)
     base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
@@ -1210,7 +1296,11 @@ def _process_single_url_mode(
     chunk_format: str,
     skip_cache: bool,
 ) -> None:
-    """Process a single URL."""
+    """
+    Scrapes a single URL, converts its content to the specified format, and saves the result.
+    
+    If chunking is enabled, also creates and saves content chunks in the specified directory and format.
+    """
     # Scrape the URL
     html_content = scraper.scrape_website(url, skip_cache=skip_cache)
 
@@ -1244,7 +1334,11 @@ def _process_links_file_mode(
     parallel: bool = False,
     max_workers: int = 4,
 ) -> None:
-    """Process multiple URLs from a links file."""
+    """
+    Processes and scrapes multiple URLs listed in a links file using the provided scraper.
+    
+    If no links file is specified, defaults to 'links.txt'. Determines the output directory from the output file path and invokes the scraper to process all URLs, supporting optional chunking and parallel execution.
+    """
     # If links_file is None, use the default links.txt
     if links_file is None:
         links_file = "links.txt"
@@ -1272,7 +1366,12 @@ def _process_links_file_mode(
 def _ensure_correct_extension(
     output_file: str, output_format: str, content: str, markdown_content: str
 ) -> str:
-    """Ensure the output file has the correct extension."""
+    """
+    Ensures the output filename has the correct extension based on the content format.
+    
+    If the output format is not markdown but the content is markdown, the extension is set to `.md`.
+    Returns the adjusted filename.
+    """
     # Set correct extension
     output_ext = ".md" if output_format == "markdown" else f".{output_format}"
 
