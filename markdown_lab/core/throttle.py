@@ -19,7 +19,11 @@ class RequestThrottler:
         self.last_request_time: float = 0.0
 
     def throttle(self) -> None:
-        """Wait if necessary to maintain the rate limit."""
+        """
+        Enforces the configured rate limit by pausing execution if requests are made too quickly.
+        
+        Waits as needed to ensure that the minimum interval between requests is maintained.
+        """
         current_time = time.time()
         time_since_last = current_time - self.last_request_time
 

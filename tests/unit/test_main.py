@@ -48,6 +48,11 @@ def test_scrape_website_general_error(mock_get, scraper):
 
 
 def test_convert_to_markdown(scraper):
+    """
+    Tests that HTML content is correctly converted to markdown format by the scraper.
+    
+    Verifies that key elements such as headers, paragraphs, images, and list items are present in the markdown output.
+    """
     html_content = """<html><head><title>Test</title></head>
     <body>
     <h1>Header 1</h1>
@@ -73,6 +78,11 @@ def test_convert_to_markdown(scraper):
 
 @patch("markdown_lab.core.scraper.requests.Session.get")
 def test_format_conversion(mock_get, scraper):
+    """
+    Tests conversion of HTML content to JSON and XML formats using both Rust and Python implementations.
+    
+    Simulates an HTTP GET request returning sample HTML, then verifies that the content can be converted to JSON and XML formats. Attempts to use Rust-based conversion utilities if available, falling back to Python helpers otherwise. Asserts that key elements from the HTML are present in the converted outputs.
+    """
     mock_response = MagicMock()
     mock_response.status_code = 200
     mock_response.text = """<html><head><title>Format Test</title></head>

@@ -28,10 +28,10 @@ class HttpClient:
     """
 
     def __init__(self, config: MarkdownLabConfig):
-        """Initialize HTTP client with configuration.
-
-        Args:
-            config: MarkdownLab configuration object
+        """
+        Initializes the HTTP client with the provided configuration.
+        
+        Sets up rate limiting and prepares a requests session for making HTTP requests.
         """
         self.config = config
         self.throttler = RequestThrottler(config.requests_per_second)
@@ -42,7 +42,13 @@ class HttpClient:
         )
 
     def _create_session(self) -> requests.Session:
-        """Create configured requests session with connection pooling and retry strategy."""
+        """
+        Creates and configures a requests.Session with custom headers and connection pooling.
+        
+        The session is set up with a specific User-Agent, standard HTTP headers, and an HTTPAdapter
+        for connection pooling. Built-in retries are disabled to allow manual retry handling.
+        Returns the configured requests.Session instance.
+        """
         session = requests.Session()
 
         # Configure headers
@@ -69,46 +75,44 @@ class HttpClient:
         return session
 
     def get(self, url: str, **kwargs) -> str:
-        """Make GET request with retry logic and error handling.
-
+        """
+        Performs a GET request to the specified URL with retry logic and error handling.
+        
         Args:
-            url: URL to request
-            **kwargs: Additional arguments passed to requests.get()
-
+            url: The URL to send the GET request to.
+            **kwargs: Additional arguments forwarded to the underlying requests.get() call.
+        
         Returns:
-            Response text content
-
+            The response body as a string.
+        
         Raises:
-            NetworkError: For all network-related failures
+            NetworkError: If the request fails after all retry attempts.
         """
         return self._request_with_retries("GET", url, **kwargs)
 
     def head(self, url: str, **kwargs) -> requests.Response:
-        """Make HEAD request with retry logic.
-
+        """
+        Performs a HEAD request to the specified URL with retry and error handling.
+        
         Args:
-            url: URL to request
-            **kwargs: Additional arguments passed to requests.head()
-
+            url: The target URL for the HEAD request.
+            **kwargs: Additional arguments forwarded to the underlying requests.head() call.
+        
         Returns:
-            Response object (for accessing headers, status, etc.)
-
+            The Response object containing headers and status information.
+        
         Raises:
-            NetworkError: For all network-related failures
+            NetworkError: If the request fails after all retry attempts.
         """
         return self._request_with_retries(
             "HEAD", url, return_response=True, **kwargs
         )
 
     def get_many(self, urls: List[str], **kwargs) -> Dict[str, str]:
-        """Make multiple GET requests sequentially with rate limiting.
-
-        Args:
-            urls: List of URLs to request
-            **kwargs: Additional arguments passed to each request
-
-        Returns:
-            Dictionary mapping URLs to response content
+        """
+        Performs sequential GET requests on a list of URLs with rate limiting.
+        
+        Each URL is requested in order; if a request fails, the error is logged and processing continues with the next URL. Returns a dictionary mapping each URL to its response content for successful requests.
         """
         results = {}
 
@@ -126,19 +130,22 @@ class HttpClient:
     def _request_with_retries(
         self, method: str, url: str, return_response: bool = False, **kwargs
     ) -> str | requests.Response:
-        """Make HTTP request with retry logic and exponential backoff.
-
+        """
+        Performs an HTTP request with retry logic, exponential backoff, and rate limiting.
+        
+        Attempts the specified HTTP method on the given URL, retrying on failure up to the configured maximum number of retries. Applies exponential backoff between attempts and raises a NetworkError if all attempts fail. Optionally returns the full Response object if requested.
+        
         Args:
-            method: HTTP method (GET, HEAD, etc.)
-            url: URL to request
-            return_response: If True, return Response object instead of text
-            **kwargs: Additional arguments passed to session.request()
-
+            method: The HTTP method to use (e.g., "GET", "HEAD").
+            url: The target URL for the request.
+            return_response: If True, returns the Response object; otherwise, returns the response text.
+            **kwargs: Additional arguments passed to the underlying session.request().
+        
         Returns:
-            Response text content or Response object
-
+            The response text content, or the Response object if return_response is True.
+        
         Raises:
-            NetworkError: For all network-related failures
+            NetworkError: If the request fails after all retry attempts.
         """
         # Set default timeout if not provided
         kwargs.setdefault("timeout", self.config.timeout)
@@ -197,17 +204,23 @@ class HttpClient:
         )
 
     def close(self) -> None:
-        """Close the HTTP session and clean up resources."""
+        """
+        Closes the HTTP session and releases associated resources.
+        """
         if self.session:
             self.session.close()
             logger.debug("HTTP client session closed")
 
     def __enter__(self):
-        """Context manager entry."""
+        """
+        Enters the context manager and returns the HttpClient instance.
+        """
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        """Context manager exit."""
+        """
+        Closes the HTTP client session when exiting a context manager block.
+        """
         self.close()
 
 
@@ -219,11 +232,10 @@ class CachedHttpClient(HttpClient):
     """
 
     def __init__(self, config: MarkdownLabConfig, cache=None):
-        """Initialize cached HTTP client.
-
-        Args:
-            config: MarkdownLab configuration object
-            cache: Optional cache instance (defaults to creating one from config)
+        """
+        Initializes a CachedHttpClient with optional caching.
+        
+        If a cache instance is not provided and caching is enabled in the configuration, a new cache is created; otherwise, caching is disabled.
         """
         super().__init__(config)
 
@@ -239,15 +251,17 @@ class CachedHttpClient(HttpClient):
         )
 
     def get(self, url: str, use_cache: bool = True, **kwargs) -> str:
-        """Make GET request with optional caching.
-
+        """
+        Performs a GET request with optional caching.
+        
+        If caching is enabled and the response for the given URL is present in the cache, returns the cached content. Otherwise, performs the GET request, stores the result in the cache if applicable, and returns the response content.
+        
         Args:
-            url: URL to request
-            use_cache: Whether to check cache before making request
-            **kwargs: Additional arguments passed to requests.get()
-
+            url: The URL to request.
+            use_cache: If True, checks the cache before making the request and stores the result after retrieval.
+        
         Returns:
-            Response text content
+            The response text content.
         """
         if use_cache and self.cache:
             # Check cache first
@@ -267,7 +281,9 @@ class CachedHttpClient(HttpClient):
         return content
 
     def clear_cache(self) -> None:
-        """Clear the request cache."""
+        """
+        Clears all entries from the request cache if caching is enabled.
+        """
         if self.cache:
             self.cache.clear()
             logger.info("Request cache cleared")
@@ -275,7 +291,11 @@ class CachedHttpClient(HttpClient):
 
 # Convenience functions for creating pre-configured clients
 def create_http_client(config: Optional[MarkdownLabConfig] = None) -> HttpClient:
-    """Create a standard HTTP client with default or provided configuration."""
+    """
+    Creates and returns an HttpClient instance with the specified or default configuration.
+    
+    If no configuration is provided, the default MarkdownLabConfig is used.
+    """
     from ..core.config import get_config
 
     if config is None:
@@ -287,7 +307,14 @@ def create_http_client(config: Optional[MarkdownLabConfig] = None) -> HttpClient
 def create_cached_http_client(
     config: Optional[MarkdownLabConfig] = None, cache=None
 ) -> CachedHttpClient:
-    """Create a cached HTTP client with default or provided configuration."""
+    """
+    Creates a CachedHttpClient instance with optional configuration and cache.
+    
+    If no configuration is provided, the default MarkdownLabConfig is used. An optional cache instance can be supplied; otherwise, caching behavior is determined by the configuration.
+    
+    Returns:
+        A CachedHttpClient configured for HTTP requests with caching support.
+    """
     from ..core.config import get_config
 
     if config is None:

@@ -47,7 +47,11 @@ It also has multiple lines.
         self.assertEqual(chunks[0].chunk_type, "section")
 
     def test_create_large_chunks(self):
-        """Test handling of sections larger than chunk_size."""
+        """
+        Tests that large markdown sections are split into multiple chunks with consistent metadata.
+        
+        Creates a large markdown section and verifies that chunking produces multiple chunks, all sharing the same heading and source URL in their metadata.
+        """
         # Create a very large section
         large_section = "# Large Section\n" + "This is a word. " * 500
 
@@ -65,7 +69,9 @@ It also has multiple lines.
         self.assertTrue(all(chunk.source_url == self.test_url for chunk in chunks))
 
     def test_save_chunks_jsonl(self):
-        """Test saving chunks to JSONL format."""
+        """
+        Tests that chunks are correctly saved to a JSONL file and verifies file existence and content integrity.
+        """
         chunks = [
             Chunk(
                 id="123",
