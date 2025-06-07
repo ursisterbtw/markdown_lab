@@ -9,10 +9,10 @@ To build the Rust extension:
 
 import json
 import logging
-import xml.dom.minidom as minidom
 import xml.etree.ElementTree as ET
 from enum import Enum
 from typing import Dict, List, Optional
+from xml.dom import minidom
 
 logger = logging.getLogger(__name__)
 
@@ -28,8 +28,7 @@ class OutputFormat(str, Enum):
 # Try to import the Rust extension
 try:
     from .markdown_lab_rs import chunk_markdown as _rs_chunk_markdown
-    from .markdown_lab_rs import \
-        convert_html_to_format as _rs_convert_html_to_format
+    from .markdown_lab_rs import convert_html_to_format as _rs_convert_html_to_format
     from .markdown_lab_rs import render_js_page as _rs_render_js_page
 
     RUST_AVAILABLE = True
@@ -60,16 +59,17 @@ def convert_html(
     html: str, base_url: str = "", output_format: OutputFormat = OutputFormat.MARKDOWN
 ) -> str:
     """
-    Convert HTML to the specified format using the Rust implementation if available,
-    otherwise fall back to the Python implementation.
-
+    Converts HTML content to markdown, JSON, or XML format.
+    
+    Uses a Rust implementation for conversion if available; otherwise, falls back to a Python-based approach. For JSON and XML outputs, the HTML is first converted to markdown, then parsed into a structured document before serialization.
+    	
     Args:
-        html: HTML content to convert
-        base_url: Base URL for resolving relative links
-        output_format: Output format (markdown, json, or xml)
-
+    	html: The HTML content to convert.
+    	base_url: The base URL used for resolving relative links.
+    	output_format: The desired output format (markdown, json, or xml).
+    
     Returns:
-        Converted content in the specified format
+    	The converted content in the specified format as a string.
     """
     if RUST_AVAILABLE:
         try:
@@ -86,7 +86,7 @@ def convert_html(
 
     if output_format == OutputFormat.MARKDOWN:
         return scraper.convert_to_markdown(html, base_url)
-    
+
     # For JSON and XML, first convert to markdown to get structured content
     # This is a simplified implementation - the real one would parse the HTML directly
     markdown_content = scraper.convert_to_markdown(html, base_url)
@@ -259,16 +259,9 @@ def chunk_markdown(
 
 def render_js_page(url: str, wait_time_ms: Optional[int] = None) -> str:
     """
-    Render a JavaScript-enabled page and return the HTML content
-    using the Rust implementation if available, otherwise fall back
-    to a Python implementation.
-
-    Args:
-        url: URL to render
-        wait_time_ms: Time to wait for JavaScript execution in milliseconds
-
-    Returns:
-        HTML content after JavaScript execution
+    Renders a JavaScript-enabled web page and returns the resulting HTML content.
+    
+    If the Rust extension is available, uses it to render the page. Otherwise, logs a warning and returns None, as Python fallback is not implemented.
     """
     if RUST_AVAILABLE:
         try:

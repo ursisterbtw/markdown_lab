@@ -1,22 +1,25 @@
-requests>=2.32.3
-beautifulsoup4>=4.13.3
-pytest>=8.3.5
-markdownify>=0.11.0
-pytest-mock>=3.14.0
-argparse>=1.4.0
-typing-extensions>=4.12.2
-pathlib>=1.0.1
-python-dateutil>=2.9.0.post0
-psutil
+# Core dependencies (match pyproject.toml)
+requests>=2.31.0
+beautifulsoup4>=4.12.2
+psutil>=5.9.5
 patchelf
+# Development dependencies
+pytest>=7.4.0
+pytest-mock>=3.14.0
+pytest-benchmark>=3.4.1
+mypy>=1.5.1
+black>=23.7.0
+ruff>=0.0.280
+isort>=5.12.0
+
 # Type stubs for external libraries
 types-requests>=2.31.0
 types-beautifulsoup4>=4.12.0
-mypy>=1.4.1
-pytest-benchmark>=3.4.1
-pytest>=7.4.0
+
+# Optional visualization dependencies
 matplotlib>=3.8.0
 seaborn>=0.13.0
 pandas>=2.1.0
-# Optional dependencies for Rust integration
-maturin>=0.14.0
+
+# Build dependencies
+maturin>=1.6.0

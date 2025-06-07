@@ -27,4 +27,3 @@ html = """
 markdown = convert_html_to_markdown(html)
 
 # Print the result
-print(markdown)

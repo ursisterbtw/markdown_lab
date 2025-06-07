@@ -16,21 +16,21 @@ class RequestCache:
 
     def __init__(self, cache_dir: str = ".request_cache", max_age: int = 3600):
         """
-        Initialize the request cache.
-
-        Args:
-            cache_dir: Directory to store cached responses
-            max_age: Maximum age of cached responses in seconds (default: 1 hour)
+        Initializes a RequestCache instance with a specified cache directory and maximum cache age.
+        
+        Creates the cache directory if it does not exist and sets up an in-memory cache for HTTP responses.
         """
         self.cache_dir = Path(cache_dir)
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         self.max_age = max_age
-        self.memory_cache: Dict[
-            str, Tuple[str, float]
-        ] = {}  # url -> (content, timestamp)
+        self.memory_cache: Dict[str, Tuple[str, float]] = (
+            {}
+        )  # url -> (content, timestamp)
 
     def _get_cache_key(self, url: str) -> str:
-        """Generate a cache key from a URL."""
+        """
+        Generates an MD5 hash of the URL to use as a cache key.
+        """
         return hashlib.md5(url.encode()).hexdigest()
 
     def _get_cache_path(self, url: str) -> Path:
@@ -103,13 +103,13 @@ class RequestCache:
 
     def clear(self, max_age: Optional[int] = None) -> int:
         """
-        Clear expired cache entries.
-
+        Removes expired cache entries from both memory and disk.
+        
         Args:
-            max_age: Maximum age in seconds (defaults to instance max_age)
-
+            max_age: Maximum age in seconds for cache validity. If not provided, uses the instance's default.
+        
         Returns:
-            Number of cache entries removed
+            The total number of cache entries removed from memory and disk.
         """
         if max_age is None:
             max_age = self.max_age

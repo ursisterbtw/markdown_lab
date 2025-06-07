@@ -4,6 +4,7 @@ Command line interface for markdown_lab.
 """
 
 import sys
+
 from markdown_lab.core.scraper import main
 
 if __name__ == "__main__":

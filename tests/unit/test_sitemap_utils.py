@@ -4,7 +4,11 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from markdown_lab.utils.sitemap_utils import SitemapParser, SitemapURL, discover_site_urls
+from markdown_lab.utils.sitemap_utils import (
+    SitemapParser,
+    SitemapURL,
+    discover_site_urls,
+)
 
 
 class TestSitemapUtils(unittest.TestCase):
@@ -64,6 +68,9 @@ class TestSitemapUtils(unittest.TestCase):
     @mock.patch("markdown_lab.utils.sitemap_utils.SitemapParser._make_request")
     def test_parse_sitemap_index(self, mock_make_request):
         # Setup mock responses for different URLs
+        """
+        Tests parsing of a sitemap index XML, ensuring URLs from all referenced child sitemaps are discovered and returned.
+        """
         sitemap_responses = {
             "https://example.com/sitemap.xml": """<?xml version="1.0" encoding="UTF-8"?>
                 <sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
@@ -90,9 +97,9 @@ class TestSitemapUtils(unittest.TestCase):
                         <priority>0.7</priority>
                     </url>
                 </urlset>
-                """
+                """,
         }
-        
+
         # Configure the mock to return appropriate content based on the URL
         mock_make_request.side_effect = lambda url: sitemap_responses.get(url)
 
@@ -108,6 +115,11 @@ class TestSitemapUtils(unittest.TestCase):
     @mock.patch("markdown_lab.utils.sitemap_utils.SitemapParser._make_request")
     def test_robots_txt_parser(self, mock_make_request):
         # Mock robots.txt and sitemap
+        """
+        Tests that the parser respects robots.txt sitemap declarations and correctly parses URLs from a custom sitemap.
+        
+        Mocks responses for robots.txt and a custom sitemap, enables robots.txt handling, and verifies that URLs from the declared sitemap are discovered.
+        """
         robots_sitemap_responses = {
             "https://example.com/robots.txt": """
                 User-agent: *
@@ -122,9 +134,9 @@ class TestSitemapUtils(unittest.TestCase):
                         <priority>1.0</priority>
                     </url>
                 </urlset>
-                """
+                """,
         }
-        
+
         # Configure the mock to return appropriate content based on the URL
         mock_make_request.side_effect = lambda url: robots_sitemap_responses.get(url)
 

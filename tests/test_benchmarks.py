@@ -3,8 +3,8 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
-
-from main import MarkdownScraper, RequestCache
+from markdown_lab.core.scraper import MarkdownScraper
+from markdown_lab.core.cache import RequestCache
 
 
 @pytest.mark.benchmark(group="scrape_website")
@@ -49,9 +49,13 @@ def test_save_chunks_benchmark(benchmark, tmp_path):
 
 @pytest.mark.benchmark(group="caching")
 def test_benchmark_scrape_with_cache_enabled(benchmark):
-    """Benchmark scraping with cache enabled."""
+    """
+    Benchmarks the performance of scraping a website with caching enabled.
+    
+    This test uses a temporary cache directory and mocks HTTP GET requests to ensure consistent responses. The initial scrape populates the cache, and the benchmark measures subsequent scrapes that utilize the cache.
+    """
     with tempfile.TemporaryDirectory() as temp_dir:
-        with patch("main.requests.Session.get") as mock_get:
+        with patch("markdown_lab.network.client.requests.Session.get") as mock_get:
             # Setup mock response for first call
             mock_response = MagicMock()
             mock_response.status_code = 200
@@ -77,8 +81,12 @@ def test_benchmark_scrape_with_cache_enabled(benchmark):
 
 @pytest.mark.benchmark(group="caching")
 def test_benchmark_scrape_with_cache_disabled(benchmark):
-    """Benchmark scraping with cache disabled."""
-    with patch("main.requests.Session.get") as mock_get:
+    """
+    Benchmarks the performance of scraping a website with caching disabled.
+    
+    Mocks HTTP GET requests to return a fixed HTML response and measures the execution time of the `scrape_website` method in `MarkdownScraper` when cache is turned off.
+    """
+    with patch("markdown_lab.network.client.requests.Session.get") as mock_get:
         # Setup mock response
         mock_response = MagicMock()
         mock_response.status_code = 200

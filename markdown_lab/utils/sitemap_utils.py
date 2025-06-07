@@ -127,40 +127,54 @@ class SitemapParser:
 
     def _parse_sitemap_xml(self, content: str) -> Tuple[List[SitemapURL], List[str]]:
         """
-        Parse sitemap XML content.
-
+        Parses XML sitemap content and extracts URLs and sitemap index references.
+        
         Args:
-            content: The XML content to parse
-
+            content: The XML sitemap content as a string.
+        
         Returns:
-            Tuple containing list of SitemapURLs and list of sitemap index URLs
+            A tuple containing a list of SitemapURL objects and a list of sitemap index URLs.
         """
         try:
             # Setup XML parsing with namespace support
             namespace = self._extract_namespace(content)
             ns_map = {"sm": namespace} if namespace else {}
             root = ET.fromstring(content)
-            
+
             # Determine if this is a sitemap index or a regular sitemap
             if root.tag.endswith("sitemapindex"):
                 return self._handle_sitemap_index(root, namespace, ns_map)
-            else:
-                return self._handle_sitemap(root, namespace, ns_map)
-                
+            return self._handle_sitemap(root, namespace, ns_map)
+
         except ParseError as e:
             logger.error(f"XML parsing error: {e}")
             return [], []
         except Exception as e:
             logger.error(f"Error parsing sitemap XML: {e}")
             return [], []
-            
+
     def _extract_namespace(self, content: str) -> Optional[str]:
-        """Extract XML namespace from content."""
+        """
+        Extracts the XML namespace URI from the given XML content string.
+        
+        Args:
+            content: The XML content as a string.
+        
+        Returns:
+            The namespace URI if found, otherwise None.
+        """
         ns_match = re.search(r'xmlns\s*=\s*["\']([^"\']+)["\']', content)
         return ns_match[1] if ns_match else None
+
+    def _handle_sitemap_index(
+        self, root: ET.Element, namespace: Optional[str], ns_map: Dict[str, str]
+    ) -> Tuple[List[SitemapURL], List[str]]:
+        """
+        Extracts sitemap URLs from a sitemap index XML element.
         
-    def _handle_sitemap_index(self, root: ET.Element, namespace: Optional[str], ns_map: Dict[str, str]) -> Tuple[List[SitemapURL], List[str]]:
-        """Process a sitemap index, extracting child sitemap URLs."""
+        Returns:
+            A tuple containing an empty list of SitemapURL objects and a list of sitemap index URLs found within the sitemap index.
+        """
         sitemap_index_urls = [
             sitemap.text.strip()
             for sitemap in root.findall(
@@ -169,51 +183,93 @@ class SitemapParser:
             )
             if sitemap is not None and sitemap.text is not None
         ]
-        
+
         logger.info(f"Found sitemap index with {len(sitemap_index_urls)} sitemaps")
         return [], sitemap_index_urls
+
+    def _handle_sitemap(
+        self, root: ET.Element, namespace: Optional[str], ns_map: Dict[str, str]
+    ) -> Tuple[List[SitemapURL], List[str]]:
+        """
+        Extracts URLs and associated metadata from a regular sitemap XML element.
         
-    def _handle_sitemap(self, root: ET.Element, namespace: Optional[str], ns_map: Dict[str, str]) -> Tuple[List[SitemapURL], List[str]]:
-        """Process a regular sitemap, extracting URLs and their metadata."""
+        Args:
+            root: The root XML element of the sitemap.
+            namespace: The XML namespace URI, if present.
+            ns_map: Mapping of XML namespace prefixes to URIs.
+        
+        Returns:
+            A tuple containing a list of SitemapURL objects extracted from the sitemap and an empty list (since regular sitemaps do not contain sitemap indices).
+        """
         sitemap_urls = []
-        
+
         for url in root.findall(".//sm:url" if namespace else ".//url", ns_map):
             if sitemap_url := self._extract_url_data(url, namespace, ns_map):
                 sitemap_urls.append(sitemap_url)
-                
+
         logger.info(f"Parsed sitemap with {len(sitemap_urls)} URLs")
         return sitemap_urls, []
+
+    def _extract_url_data(
+        self, url_elem: ET.Element, namespace: Optional[str], ns_map: Dict[str, str]
+    ) -> Optional[SitemapURL]:
+        """
+        Extracts URL location and metadata from a sitemap URL element.
         
-    def _extract_url_data(self, url_elem: ET.Element, namespace: Optional[str], ns_map: Dict[str, str]) -> Optional[SitemapURL]:
-        """Extract data for a single URL from a sitemap."""
+        Parses a single <url> element from a sitemap XML, retrieving the URL, last modified date, change frequency, and priority if available. Returns a SitemapURL object or None if the location is missing.
+        """
         loc_elem = url_elem.find("sm:loc" if namespace else "loc", ns_map)
         if loc_elem is None or not loc_elem.text:
             return None
-            
+
         url_loc = loc_elem.text.strip()
         lastmod = self._get_element_text(url_elem, "lastmod", namespace, ns_map)
         changefreq = self._get_element_text(url_elem, "changefreq", namespace, ns_map)
         priority = self._get_priority(url_elem, namespace, ns_map)
-        
+
         return SitemapURL(
             loc=url_loc,
             lastmod=lastmod,
             changefreq=changefreq,
             priority=priority,
         )
+
+    def _get_element_text(
+        self,
+        parent: ET.Element,
+        element_name: str,
+        namespace: Optional[str],
+        ns_map: Dict[str, str],
+    ) -> Optional[str]:
+        """
+        Retrieves the stripped text content of a specified child element, considering XML namespace.
         
-    def _get_element_text(self, parent: ET.Element, element_name: str, namespace: Optional[str], ns_map: Dict[str, str]) -> Optional[str]:
-        """Get text from a child element if it exists."""
+        Args:
+            parent: The parent XML element.
+            element_name: The name of the child element to search for.
+            namespace: The XML namespace URI, if present.
+            ns_map: Mapping of namespace prefixes to URIs.
+        
+        Returns:
+            The stripped text content of the child element, or None if not found or empty.
+        """
         prefixed_name = f"sm:{element_name}" if namespace else element_name
         elem = parent.find(prefixed_name, ns_map)
         return elem.text.strip() if elem is not None and elem.text else None
+
+    def _get_priority(
+        self, url_elem: ET.Element, namespace: Optional[str], ns_map: Dict[str, str]
+    ) -> Optional[float]:
+        """
+        Extracts the priority value from a sitemap URL element as a float.
         
-    def _get_priority(self, url_elem: ET.Element, namespace: Optional[str], ns_map: Dict[str, str]) -> Optional[float]:
-        """Extract and convert priority value."""
+        Returns:
+            The priority as a float if present and valid, otherwise None.
+        """
         priority_text = self._get_element_text(url_elem, "priority", namespace, ns_map)
         if not priority_text:
             return None
-            
+
         try:
             return float(priority_text)
         except (ValueError, TypeError):
@@ -383,18 +439,20 @@ def discover_site_urls(
     respect_robots_txt: bool = True,
 ) -> List[str]:
     """
-    Convenience function to discover and filter URLs from a website.
-
+    Discovers and filters URLs from a website's sitemap based on specified criteria.
+    
+    Parses the website's sitemap(s), applies filtering by priority and regex patterns, and returns a list of URL strings. Optionally checks robots.txt for sitemap locations.
+    
     Args:
-        base_url: The base URL of the website
-        min_priority: Minimum priority value (0.0-1.0)
-        include_patterns: List of regex patterns to include
-        exclude_patterns: List of regex patterns to exclude
-        limit: Maximum number of URLs to return
-        respect_robots_txt: Whether to check robots.txt for sitemap location
-
+        base_url: The website's base URL to start sitemap discovery.
+        min_priority: Minimum priority value (0.0–1.0) for included URLs.
+        include_patterns: List of regex patterns; only URLs matching at least one are included.
+        exclude_patterns: List of regex patterns; URLs matching any are excluded.
+        limit: Maximum number of URLs to return.
+        respect_robots_txt: If True, attempts to discover sitemaps via robots.txt.
+    
     Returns:
-        List of filtered URL strings
+        A list of URL strings matching the filtering criteria.
     """
     parser = SitemapParser(respect_robots_txt=respect_robots_txt)
 
