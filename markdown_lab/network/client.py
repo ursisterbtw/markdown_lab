@@ -184,7 +184,7 @@ class HttpClient:
                         f"Request failed for {url} after {self.config.max_retries + 1} attempts: "
                         f"{network_error.message}"
                     )
-                    raise network_error
+                    raise network_error from e
 
         # This should never be reached, but just in case
         if last_exception:
