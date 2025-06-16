@@ -11,14 +11,15 @@ Software development has evolved significantly over the past decades. This guide
 Modern web development relies heavily on JavaScript frameworks:
 
 1. React
-   - Virtual DOM
-   - Component-based architecture
-   - Large ecosystem
+
+    - Virtual DOM
+    - Component-based architecture
+    - Large ecosystem
 
 2. Vue.js
-   - Progressive framework
-   - Easy learning curve
-   - Great documentation
+    - Progressive framework
+    - Easy learning curve
+    - Great documentation
 
 Here's an example React component:
 
@@ -49,7 +50,7 @@ Modern CSS practices include:
 RESTful API example:
 
 ```javascript
-app.get('/api/users/:id', async (req, res) => {
+app.get("/api/users/:id", async (req, res) => {
     try {
         const user = await User.findById(req.params.id);
         res.json(user);
@@ -97,14 +98,14 @@ Example GitHub Actions workflow:
 name: CI
 on: [push]
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-    - name: Run tests
-      run: |
-        npm install
-        npm test
+    build:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v2
+            - name: Run tests
+              run: |
+                  npm install
+                  npm test
 ```
 
 ### Container Orchestration
@@ -115,22 +116,22 @@ Kubernetes deployment example:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: web-app
+    name: web-app
 spec:
-  replicas: 3
-  selector:
-    matchLabels:
-      app: web
-  template:
-    metadata:
-      labels:
-        app: web
-    spec:
-      containers:
-      - name: web
-        image: nginx:latest
-        ports:
-        - containerPort: 80
+    replicas: 3
+    selector:
+        matchLabels:
+            app: web
+    template:
+        metadata:
+            labels:
+                app: web
+        spec:
+            containers:
+                - name: web
+                  image: nginx:latest
+                  ports:
+                      - containerPort: 80
 ```
 
 ## Testing Strategies
@@ -140,12 +141,12 @@ spec:
 Example Jest test:
 
 ```javascript
-describe('Calculator', () => {
-    it('should add two numbers correctly', () => {
+describe("Calculator", () => {
+    it("should add two numbers correctly", () => {
         expect(add(2, 3)).toBe(5);
     });
 
-    it('should handle negative numbers', () => {
+    it("should handle negative numbers", () => {
         expect(add(-1, 1)).toBe(0);
     });
 });
@@ -176,17 +177,17 @@ Example input validation:
 function validateUser(user: User): ValidationResult {
     const errors: string[] = [];
 
-    if (!user.email.includes('@')) {
-        errors.push('Invalid email format');
+    if (!user.email.includes("@")) {
+        errors.push("Invalid email format");
     }
 
     if (user.password.length < 8) {
-        errors.push('Password must be at least 8 characters');
+        errors.push("Password must be at least 8 characters");
     }
 
     return {
         isValid: errors.length === 0,
-        errors
+        errors,
     };
 }
 ```
@@ -196,13 +197,13 @@ function validateUser(user: User): ValidationResult {
 JWT implementation example:
 
 ```javascript
-const jwt = require('jsonwebtoken');
+const jwt = require("jsonwebtoken");
 
 function generateToken(user) {
     return jwt.sign(
         { id: user.id, email: user.email },
         process.env.JWT_SECRET,
-        { expiresIn: '24h' }
+        { expiresIn: "24h" },
     );
 }
 ```

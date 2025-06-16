@@ -1,121 +1,147 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Medium Test Article</title>
-    <style>
-        .ad { display: none; }
-        .social-share { float: right; }
-    </style>
-    <script>
-        function initPage() {
-            console.log("Page loaded");
-        }
-    </script>
-</head>
-<body>
-    <header>
-        <nav>
-            <ul>
-                <li><a href="/">Home</a></li>
-                <li><a href="/about">About</a></li>
-                <li><a href="/contact">Contact</a></li>
-            </ul>
-        </nav>
-    </header>
+    <head>
+        <meta charset="UTF-8" />
+        <title>Medium Test Article</title>
+        <style>
+            .ad {
+                display: none;
+            }
+            .social-share {
+                float: right;
+            }
+        </style>
+        <script>
+            function initPage() {
+                console.log("Page loaded");
+            }
+        </script>
+    </head>
+    <body>
+        <header>
+            <nav>
+                <ul>
+                    <li><a href="/">Home</a></li>
+                    <li><a href="/about">About</a></li>
+                    <li><a href="/contact">Contact</a></li>
+                </ul>
+            </nav>
+        </header>
 
-    <main>
-        <article>
-            <h1>Understanding Modern Web Development</h1>
+        <main>
+            <article>
+                <h1>Understanding Modern Web Development</h1>
 
-            <div class="metadata">
-                <span class="author">By John Doe</span>
-                <span class="date">March 15, 2024</span>
-            </div>
+                <div class="metadata">
+                    <span class="author">By John Doe</span>
+                    <span class="date">March 15, 2024</span>
+                </div>
 
-            <div class="ad">
-                <img src="/ads/banner.jpg" alt="Advertisement">
-            </div>
+                <div class="ad">
+                    <img src="/ads/banner.jpg" alt="Advertisement" />
+                </div>
 
-            <p>Modern web development has evolved significantly over the past decade. From simple static pages to complex applications, the journey has been remarkable.</p>
+                <p>
+                    Modern web development has evolved significantly over the
+                    past decade. From simple static pages to complex
+                    applications, the journey has been remarkable.
+                </p>
 
-            <h2>The Rise of JavaScript Frameworks</h2>
-            <p>JavaScript frameworks like <a href="https://reactjs.org">React</a>, <a href="https://vuejs.org">Vue</a>, and <a href="https://angular.io">Angular</a> have revolutionized how we build web applications. These tools provide:</p>
+                <h2>The Rise of JavaScript Frameworks</h2>
+                <p>
+                    JavaScript frameworks like
+                    <a href="https://reactjs.org">React</a>,
+                    <a href="https://vuejs.org">Vue</a>, and
+                    <a href="https://angular.io">Angular</a> have revolutionized
+                    how we build web applications. These tools provide:
+                </p>
 
-            <ul>
-                <li>Component-based architecture</li>
-                <li>Virtual DOM for improved performance</li>
-                <li>State management solutions</li>
-                <li>Rich ecosystem of plugins</li>
-            </ul>
+                <ul>
+                    <li>Component-based architecture</li>
+                    <li>Virtual DOM for improved performance</li>
+                    <li>State management solutions</li>
+                    <li>Rich ecosystem of plugins</li>
+                </ul>
 
-            <div class="code-example">
-                <pre><code class="language-javascript">
+                <div class="code-example">
+                    <pre><code class="language-javascript">
 // Example React component
 function Welcome({ name }) {
     return <h1>Hello, {name}</h1>;
 }
                 </code></pre>
-            </div>
+                </div>
 
-            <h2>CSS Evolution</h2>
-            <p>CSS has also seen significant improvements with features like:</p>
-            <ul>
-                <li>Flexbox and Grid layouts</li>
-                <li>CSS Variables</li>
-                <li>CSS Modules</li>
-                <li>PostCSS and preprocessors</li>
-            </ul>
+                <h2>CSS Evolution</h2>
+                <p>
+                    CSS has also seen significant improvements with features
+                    like:
+                </p>
+                <ul>
+                    <li>Flexbox and Grid layouts</li>
+                    <li>CSS Variables</li>
+                    <li>CSS Modules</li>
+                    <li>PostCSS and preprocessors</li>
+                </ul>
 
-            <div class="image-container">
-                <img src="/images/css-evolution.png" alt="CSS Evolution Timeline">
-                <figcaption>Evolution of CSS over the years</figcaption>
-            </div>
+                <div class="image-container">
+                    <img
+                        src="/images/css-evolution.png"
+                        alt="CSS Evolution Timeline"
+                    />
+                    <figcaption>Evolution of CSS over the years</figcaption>
+                </div>
 
-            <h2>Backend Technologies</h2>
-            <p>Backend development has embraced new paradigms:</p>
-            <ul>
-                <li>Microservices architecture</li>
-                <li>Serverless computing</li>
-                <li>GraphQL APIs</li>
-                <li>Container orchestration</li>
-            </ul>
+                <h2>Backend Technologies</h2>
+                <p>Backend development has embraced new paradigms:</p>
+                <ul>
+                    <li>Microservices architecture</li>
+                    <li>Serverless computing</li>
+                    <li>GraphQL APIs</li>
+                    <li>Container orchestration</li>
+                </ul>
 
-            <div class="code-example">
-                <pre><code class="language-python">
+                <div class="code-example">
+                    <pre><code class="language-python">
 # Example FastAPI endpoint
 @app.get("/items/{item_id}")
 async def read_item(item_id: int):
     return {"item_id": item_id}
                 </code></pre>
+                </div>
+
+                <div class="social-share">
+                    <a href="https://twitter.com/share">Share on Twitter</a>
+                    <a href="https://facebook.com/share">Share on Facebook</a>
+                    <a href="https://linkedin.com/share">Share on LinkedIn</a>
+                </div>
+            </article>
+
+            <aside class="related-articles">
+                <h3>Related Articles</h3>
+                <ul>
+                    <li>
+                        <a href="/web-security">Web Security Best Practices</a>
+                    </li>
+                    <li>
+                        <a href="/performance">Performance Optimization Tips</a>
+                    </li>
+                    <li>
+                        <a href="/accessibility">Web Accessibility Guide</a>
+                    </li>
+                </ul>
+            </aside>
+        </main>
+
+        <footer>
+            <div class="footer-content">
+                <p>&copy; 2024 Tech Blog. All rights reserved.</p>
+                <nav>
+                    <a href="/privacy">Privacy Policy</a>
+                    <a href="/terms">Terms of Service</a>
+                    <a href="/sitemap">Sitemap</a>
+                </nav>
             </div>
-
-            <div class="social-share">
-                <a href="https://twitter.com/share">Share on Twitter</a>
-                <a href="https://facebook.com/share">Share on Facebook</a>
-                <a href="https://linkedin.com/share">Share on LinkedIn</a>
-            </div>
-        </article>
-
-        <aside class="related-articles">
-            <h3>Related Articles</h3>
-            <ul>
-                <li><a href="/web-security">Web Security Best Practices</a></li>
-                <li><a href="/performance">Performance Optimization Tips</a></li>
-                <li><a href="/accessibility">Web Accessibility Guide</a></li>
-            </ul>
-        </aside>
-    </main>
-
-    <footer>
-        <div class="footer-content">
-            <p>&copy; 2024 Tech Blog. All rights reserved.</p>
-            <nav>
-                <a href="/privacy">Privacy Policy</a>
-                <a href="/terms">Terms of Service</a>
-                <a href="/sitemap">Sitemap</a>
-            </nav>
-        </div>
-    </footer>
-</body>
+        </footer>
+    </body>
 </html>

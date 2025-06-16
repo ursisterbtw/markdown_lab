@@ -9,7 +9,7 @@ import plotly.graph_objects as go
 def load_benchmark_data():
     """
     Loads benchmark results from Criterion's output directory and returns them as a DataFrame.
-    
+
     Scans the "target/criterion" directory for benchmark result subdirectories, extracts mean execution times and standard errors from "estimates.json" files, and compiles the data into a pandas DataFrame. Returns None if no benchmark data is found.
     """
     criterion_dir = Path("target/criterion")
@@ -42,7 +42,7 @@ def load_benchmark_data():
 def create_benchmark_plot(df):
     """
     Generates and saves an interactive bar chart visualizing benchmark execution times.
-    
+
     If the provided DataFrame is empty or None, the function returns without creating a plot. The resulting HTML file is saved to "target/criterion/benchmark_results.html".
     """
     if df is None or df.empty:

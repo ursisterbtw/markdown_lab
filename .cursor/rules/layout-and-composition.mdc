@@ -1,0 +1,332 @@
+# Layout and Composition for Professional SVG Graphics
+
+## Grid System Foundation
+
+### Standard Banner Dimensions
+```svg
+<!-- GitHub Banner Standard -->
+width="1280" height="640" viewBox="0 0 1280 640"
+
+<!-- Twitter Header -->
+width="1500" height="500" viewBox="0 0 1500 500"
+
+<!-- LinkedIn Banner -->
+width="1584" height="396" viewBox="0 0 1584 396"
+```
+
+### Grid Structure (1280x640 Reference)
+```css
+/* Layout Zones */
+--header-height: 200px    /* 0-200px */
+--content-height: 360px   /* 200-560px */
+--footer-height: 80px     /* 560-640px */
+
+/* Column Layout */
+--left-section: 0-400px     /* Feature section */
+--center-section: 400-880px /* Flow diagram */
+--right-section: 880-1280px /* Integration info */
+
+/* Margins and Padding */
+--edge-margin: 80px
+--section-padding: 20px
+--element-spacing: 20px
+```
+
+## Compositional Hierarchy
+
+### Visual Weight Distribution
+```
+┌─────────────────────────────────────┐
+│              HEADER (25%)           │  ← Brand, Title, Subtitle
+├─────────────────────────────────────┤
+│  LEFT     │   CENTER   │   RIGHT    │  ← Feature sections (50%)
+│  Tech     │   Flow     │   Eco      │
+│  (25%)    │   (38%)    │   (25%)    │
+├─────────────────────────────────────┤
+│             FOOTER (12%)            │  ← Stats, Social proof
+└─────────────────────────────────────┘
+```
+
+### Z-Index Layering Strategy
+```css
+/* Layer 1: Background (lowest) */
+z-index: 1    /* Gradients, patterns */
+
+/* Layer 2: Content Containers */
+z-index: 2    /* Section backgrounds, boxes */
+
+/* Layer 3: Primary Content */
+z-index: 3    /* Text, icons, main elements */
+
+/* Layer 4: Interactive Elements */
+z-index: 4    /* Buttons, hover states */
+
+/* Layer 5: Floating Accents */
+z-index: 5    /* Decorative animations, overlays */
+```
+
+## Section Layout Patterns
+
+### Header Section Template
+```svg
+<g id="header" transform="translate(0, 0)">
+  <!-- Background accent -->
+  <rect x="0" y="80" width="1280" height="120" 
+        fill="url(#accent-gradient)" opacity="0.1" />
+  
+  <!-- Main title (centered) -->
+  <text x="640" y="140" font-size="64" font-weight="700" 
+        text-anchor="middle" fill="url(#accent-gradient)">
+    Project Name
+  </text>
+  
+  <!-- Subtitle (centered, below title) -->
+  <text x="640" y="175" font-size="20" 
+        text-anchor="middle" fill="#8b949e">
+    Descriptive tagline here
+  </text>
+</g>
+```
+
+### Three-Column Content Layout
+```svg
+<!-- Left Feature Section -->
+<g id="left-feature" transform="translate(80, 250)">
+  <rect x="0" y="0" width="320" height="280" rx="12" 
+        fill="#21262d" stroke="#30363d"/>
+  <!-- Feature content here -->
+</g>
+
+<!-- Center Flow Section -->
+<g id="center-flow" transform="translate(440, 280)">
+  <rect x="0" y="0" width="400" height="200" rx="12" 
+        fill="#161b22" stroke="#21262d"/>
+  <!-- Flow diagram here -->
+</g>
+
+<!-- Right Integration Section -->
+<g id="right-integration" transform="translate(880, 250)">
+  <rect x="0" y="0" width="320" height="280" rx="12" 
+        fill="#21262d" stroke="#30363d"/>
+  <!-- Integration content here -->
+</g>
+```
+
+## Element Positioning System
+
+### Transform-Based Positioning
+```svg
+<!-- Primary container positioning -->
+<g transform="translate(80, 250)">
+  
+  <!-- Icon positioning within container -->
+  <g transform="translate(20, 20)">
+    <circle cx="25" cy="25" r="25" fill="url(#icon-gradient)"/>
+  </g>
+  
+  <!-- Text positioning relative to icon -->
+  <text x="80" y="35" font-size="22">Feature Title</text>
+  <text x="20" y="70" font-size="14">Description text</text>
+  
+</g>
+```
+
+### Alignment Guidelines
+```css
+/* Horizontal Alignment */
+--left-align: 20px       /* Standard left margin */
+--center-align: 50%      /* Center of container */
+--right-align: calc(100% - 20px) /* Right margin */
+
+/* Vertical Alignment */
+--top-align: 20px        /* Top margin */
+--middle-align: 50%      /* Vertical center */
+--baseline-align: varies /* Text baseline */
+```
+
+## Responsive Considerations
+
+### Scalable Units
+```svg
+<!-- Use viewBox for automatic scaling -->
+viewBox="0 0 1280 640"
+
+<!-- Percentage-based positioning -->
+x="50%" y="50%"
+
+<!-- Relative sizing -->
+width="25%" height="auto"
+```
+
+### Breakpoint Adaptations
+```css
+/* Large Displays (1280px+) */
+--section-width: 320px
+--font-size-hero: 64px
+--spacing-large: 80px
+
+/* Medium Displays (800-1279px) */
+--section-width: 280px
+--font-size-hero: 48px
+--spacing-large: 60px
+
+/* Small Displays (<800px) */
+--section-width: 100%
+--font-size-hero: 32px
+--spacing-large: 40px
+```
+
+## Content Flow Patterns
+
+### Information Hierarchy
+```
+1. Brand/Project Name (Primary)
+   ├── Tagline/Description (Secondary)
+   └── Key Benefits (Tertiary)
+
+2. Feature Sections (Primary)
+   ├── Feature Icons (Secondary)
+   ├── Feature Titles (Primary)
+   └── Feature Descriptions (Tertiary)
+
+3. Process Flow (Primary)
+   ├── Input/Output States (Secondary)
+   └── Process Steps (Tertiary)
+```
+
+### Reading Path Design
+```
+F-Pattern for Western Audiences:
+┌─→─→─→─→─→─→─→─→─→─→─→─┐
+│                        ↓
+├─→─→─→─→─→─→─→─┐        │
+│               ↓        │
+│               ↓        │
+│               ↓        │
+│               ↓        │
+└─→─→─→─→─→─→─→─→─→─→─→─┘
+```
+
+## Advanced Layout Techniques
+
+### Dynamic Spacing System
+```css
+/* Modular Scale (1.25 ratio) */
+--space-xs: 10px    /* 0.625rem */
+--space-sm: 16px    /* 1rem */
+--space-md: 20px    /* 1.25rem */
+--space-lg: 32px    /* 2rem */
+--space-xl: 40px    /* 2.5rem */
+--space-xxl: 64px   /* 4rem */
+--space-xxxl: 80px  /* 5rem */
+```
+
+### Container Relationships
+```svg
+<!-- Parent container defines coordinate system -->
+<g id="feature-section" transform="translate(80, 250)">
+  
+  <!-- Child elements use local coordinates -->
+  <rect x="0" y="0" width="320" height="280"/>
+  
+  <!-- Nested grouping for complex layouts -->
+  <g id="icon-group" transform="translate(20, 20)">
+    <circle cx="25" cy="25" r="25"/>
+  </g>
+  
+  <g id="text-group" transform="translate(20, 80)">
+    <text x="0" y="0">Title</text>
+    <text x="0" y="20">Description</text>
+  </g>
+  
+</g>
+```
+
+### Overlay and Floating Elements
+```svg
+<!-- Background layer -->
+<rect width="1280" height="640" fill="url(#bg-gradient)"/>
+
+<!-- Content layer -->
+<g id="main-content">
+  <!-- Section content here -->
+</g>
+
+<!-- Floating accent layer -->
+<g id="floating-accents" opacity="0.6">
+  <circle cx="100" cy="400" r="3" fill="#58a6ff">
+    <animate attributeName="cy" values="400;380;400" dur="4s" repeatCount="indefinite"/>
+  </circle>
+</g>
+```
+
+## Layout Quality Checklist
+
+### Visual Balance
+- [ ] Equal visual weight distribution across sections
+- [ ] Consistent spacing between similar elements
+- [ ] Proper hierarchy through size and positioning
+- [ ] Clear focal points and attention flow
+
+### Technical Implementation
+- [ ] Efficient use of transform groups
+- [ ] Minimal coordinate recalculation
+- [ ] Consistent coordinate systems
+- [ ] Proper z-index layering
+
+### Responsive Design
+- [ ] Scalable viewBox implementation
+- [ ] Flexible container sizing
+- [ ] Appropriate text scaling
+- [ ] Maintained proportions across sizes
+
+### Accessibility
+- [ ] Logical reading order
+- [ ] Sufficient spacing for touch targets
+- [ ] Clear visual hierarchy
+- [ ] Consistent navigation patterns
+
+## Common Layout Patterns
+
+### Hero Section Layout
+```svg
+<g id="hero">
+  <rect x="0" y="0" width="100%" height="200" fill="url(#hero-bg)"/>
+  <text x="50%" y="50%" text-anchor="middle">Main Title</text>
+  <text x="50%" y="70%" text-anchor="middle">Subtitle</text>
+</g>
+```
+
+### Card-Based Layout
+```svg
+<g id="cards" transform="translate(80, 250)">
+  <g class="card" transform="translate(0, 0)">
+    <rect width="300" height="200" rx="8" fill="#21262d"/>
+    <!-- Card content -->
+  </g>
+  <g class="card" transform="translate(320, 0)">
+    <rect width="300" height="200" rx="8" fill="#21262d"/>
+    <!-- Card content -->
+  </g>
+</g>
+```
+
+### Flow Diagram Layout
+```svg
+<g id="process-flow" transform="translate(400, 300)">
+  <!-- Input -->
+  <rect x="0" y="0" width="80" height="40" rx="6"/>
+  
+  <!-- Arrow -->
+  <path d="M90 20 L130 20" stroke="#58a6ff" marker-end="url(#arrow)"/>
+  
+  <!-- Process -->
+  <rect x="140" y="0" width="80" height="40" rx="6"/>
+  
+  <!-- Arrow -->
+  <path d="M230 20 L270 20" stroke="#58a6ff" marker-end="url(#arrow)"/>
+  
+  <!-- Output -->
+  <rect x="280" y="0" width="80" height="40" rx="6"/>
+</g>
+```

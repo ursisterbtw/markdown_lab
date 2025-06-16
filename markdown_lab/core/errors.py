@@ -24,7 +24,7 @@ class MarkdownLabError(Exception):
     ):
         """
         Initializes a MarkdownLabError with a message, error code, context, and optional cause.
-        
+
         Args:
             message: Description of the error.
             error_code: Optional error code; defaults to the uppercase class name if not provided.
@@ -52,7 +52,7 @@ class MarkdownLabError(Exception):
     def to_dict(self) -> Dict[str, Any]:
         """
         Converts the error instance into a dictionary suitable for structured logging.
-        
+
         Returns:
             A dictionary containing the error type, code, message, context, and cause.
         """
@@ -78,7 +78,7 @@ class NetworkError(MarkdownLabError):
     ):
         """
         Initializes a NetworkError with message and optional network context.
-        
+
         Args:
             message: Description of the network error.
             url: The URL associated with the network operation, if applicable.
@@ -109,13 +109,13 @@ class ParsingError(MarkdownLabError):
     ):
         """
         Initializes a ParsingError with a message and optional parsing context.
-        
+
         Args:
             message: Description of the parsing error.
             url: The URL of the content being parsed, if applicable.
             parser_type: The type of parser involved (e.g., "html", "xml").
             element_selector: The selector for the element related to the error, if any.
-        
+
         Additional context can be provided via keyword arguments and will be included in the error's context dictionary.
         """
         context = kwargs.get("context", {})
@@ -142,7 +142,7 @@ class ConversionError(MarkdownLabError):
     ):
         """
         Initializes a ConversionError with details about a format conversion failure.
-        
+
         Adds source format, target format, and conversion stage to the error context if provided.
         """
         context = kwargs.get("context", {})
@@ -168,7 +168,7 @@ class ConfigurationError(MarkdownLabError):
     ):
         """
         Initializes a ConfigurationError with an error message and optional configuration details.
-        
+
         Args:
             message: Description of the configuration error.
             config_key: The configuration key related to the error, if applicable.
@@ -196,7 +196,7 @@ class ResourceError(MarkdownLabError):
     ):
         """
         Initializes a ResourceError with details about a resource constraint violation.
-        
+
         Adds resource type, current usage, and limit to the error context if provided.
         """
         context = kwargs.get("context", {})
@@ -222,7 +222,7 @@ class CacheError(MarkdownLabError):
     ):
         """
         Initializes a CacheError with an optional cache key and operation.
-        
+
         Adds cache-specific context such as the cache key and operation type to the error details if provided.
         """
         context = kwargs.get("context", {})
@@ -247,13 +247,13 @@ class ChunkingError(MarkdownLabError):
     ):
         """
         Initializes a ChunkingError with details about content chunking parameters.
-        
+
         Args:
             message: Description of the chunking error.
             content_length: Total length of the content being chunked, if available.
             chunk_size: Size of each chunk, if specified.
             chunk_overlap: Overlap between chunks, if specified.
-        
+
         Additional context can be provided via keyword arguments and will be included in the error's context.
         """
         context = kwargs.get("context", {})
@@ -279,7 +279,7 @@ class RustIntegrationError(MarkdownLabError):
     ):
         """
         Initializes a RustIntegrationError with details about a Rust backend integration failure.
-        
+
         Args:
             message: Description of the integration error.
             rust_function: Name of the Rust function involved, if applicable.
@@ -297,12 +297,12 @@ class RustIntegrationError(MarkdownLabError):
 def network_timeout_error(url: str, timeout: int, retry_count: int = 0) -> NetworkError:
     """
     Creates a NetworkError representing a request timeout with contextual details.
-    
+
     Args:
         url: The URL where the timeout occurred.
         timeout: The timeout duration in seconds.
         retry_count: The number of retry attempts made before the timeout.
-    
+
     Returns:
         A NetworkError instance with a standardized message and context.
     """
@@ -319,12 +319,12 @@ def parsing_element_not_found_error(
 ) -> ParsingError:
     """
     Creates a ParsingError for a missing element identified by a selector in the specified parser type.
-    
+
     Args:
         url: The URL of the content being parsed.
         selector: The selector used to locate the element.
         parser_type: The type of parser used (default is "html").
-    
+
     Returns:
         A ParsingError indicating that the specified element was not found.
     """
@@ -342,12 +342,12 @@ def conversion_format_error(
 ) -> ConversionError:
     """
     Creates a ConversionError for failures during format conversion.
-    
+
     Args:
         source_format: The original format being converted from.
         target_format: The target format being converted to.
         stage: The stage at which the conversion failed.
-    
+
     Returns:
         A ConversionError instance with detailed context about the conversion failure.
     """
@@ -363,12 +363,12 @@ def conversion_format_error(
 def config_validation_error(key: str, value: Any, reason: str) -> ConfigurationError:
     """
     Creates a ConfigurationError for an invalid configuration entry.
-    
+
     Args:
         key: The configuration key that failed validation.
         value: The invalid value associated with the key.
         reason: Description of why the configuration is invalid.
-    
+
     Returns:
         A ConfigurationError instance with details about the invalid configuration.
     """
@@ -383,11 +383,11 @@ def config_validation_error(key: str, value: Any, reason: str) -> ConfigurationE
 def memory_limit_error(current: int, limit: int) -> ResourceError:
     """
     Creates a ResourceError indicating that memory usage has exceeded the specified limit.
-    
+
     Args:
         current: The current memory usage in bytes.
         limit: The memory usage limit in bytes.
-    
+
     Returns:
         A ResourceError instance with details about the exceeded memory limit.
     """
@@ -406,7 +406,7 @@ def handle_request_exception(
 ) -> NetworkError:
     """
     Converts a requests library exception into a standardized NetworkError.
-    
+
     Maps Timeout, ConnectionError, HTTPError, and other RequestException types to NetworkError
     with appropriate error codes and context, preserving the original exception as the cause.
     """
@@ -460,12 +460,12 @@ def handle_parsing_exception(
 ) -> ParsingError:
     """
     Converts a generic parsing exception into a standardized ParsingError.
-    
+
     Args:
         exception: The original exception raised during parsing.
         url: The URL of the content being parsed.
         parser_type: The type of parser used (e.g., "html", "xml"). Defaults to "html".
-    
+
     Returns:
         A ParsingError instance encapsulating the original exception and relevant context.
     """

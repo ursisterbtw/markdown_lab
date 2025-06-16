@@ -5,31 +5,33 @@ description = "HTML to Markdown converter with support for multiple output forma
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "requests>=2.31.0",
-    "beautifulsoup4>=4.12.2",
-    "psutil>=5.9.5;platform_system!='Linux'",
-    "pytest>=8.4.0",
+  "requests>=2.31.0",
+  "beautifulsoup4>=4.12.2",
+  "psutil>=5.9.5;platform_system!='Linux'",
+  "pytest>=8.4.0",
+  "typer>=0.9.0",
+  "rich>=13.0.0",
+  "textual>=3.0.0",
+  "click>=8.0.0",
 ]
 
 [project.optional-dependencies]
 dev = [
-    "pytest>=7.4.0",
-    "black>=23.7.0",
-    "ruff>=0.0.280",
-    "mypy>=1.5.1",
-    "isort>=5.12.0",
-    "sourcery>=1.11.0",
+  "pytest>=7.4.0",
+  "black>=23.7.0",
+  "ruff>=0.0.280",
+  "mypy>=1.5.1",
+  "isort>=5.12.0",
+  "sourcery>=1.11.0",
 ]
-test = [
-    "pytest>=7.4.0",
-    "pytest-benchmark>=4.0.0",
-]
-js = [
-    "playwright>=1.37.0",
-]
+test = ["pytest>=7.4.0", "pytest-benchmark>=4.0.0"]
+js = ["playwright>=1.37.0"]
 
 [project.scripts]
 markdown-lab = "markdown_lab.__main__:main"
+mlab = "markdown_lab.cli:cli_main"
+mlab-tui = "markdown_lab.tui:main"
+mlab-legacy = "markdown_lab.core.scraper:main"
 
 [project.urls]
 Homepage = "https://github.com/ursisterbtw/markdown-lab"
@@ -44,7 +46,17 @@ benchmark_save_data = true
 benchmark_enable = true
 benchmark_group_by = "group"
 benchmark_sort = "name"
-benchmark_columns = ["min", "max", "mean", "stddev", "median", "iqr", "outliers", "rounds", "iterations"]
+benchmark_columns = [
+  "min",
+  "max",
+  "mean",
+  "stddev",
+  "median",
+  "iqr",
+  "outliers",
+  "rounds",
+  "iterations",
+]
 benchmark_timer = "time.perf_counter"
 benchmark_disable_gc = true
 benchmark_warmup = true
@@ -79,7 +91,7 @@ no_implicit_optional = true
 strict_optional = true
 
 [build-system]
-requires = ["wheel","setuptools","maturin>=1.6,<2.0"]
+requires = ["wheel", "setuptools", "maturin>=1.6,<2.0"]
 build-backend = "maturin"
 
 [tool.maturin]

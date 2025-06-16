@@ -14,13 +14,13 @@ To use the JavaScript rendering feature:
 
 2. **Building the Rust Extension**:
 
-   ```bash
-   # Install maturin (build tool for Rust Python extensions)
-   pip install maturin
+    ```bash
+    # Install maturin (build tool for Rust Python extensions)
+    pip install maturin
 
-   # Build and install the extension
-   maturin develop --release
-   ```
+    # Build and install the extension
+    maturin develop --release
+    ```
 
 ## Usage
 
@@ -53,10 +53,10 @@ scraper.save_markdown(markdown_content, "output.md")
 1. The scraper first attempts to fetch the page normally.
 2. It analyzes the content to determine if JavaScript rendering is needed.
 3. If needed (and enabled), it uses a headless browser approach to:
-   - Load the page in a controlled browser environment
-   - Wait for the specified time for JavaScript to execute
-   - Extract the fully rendered HTML content
-   - Process the rendered content through the normal Markdown conversion pipeline
+    - Load the page in a controlled browser environment
+    - Wait for the specified time for JavaScript to execute
+    - Extract the fully rendered HTML content
+    - Process the rendered content through the normal Markdown conversion pipeline
 
 ## Performance Considerations
 

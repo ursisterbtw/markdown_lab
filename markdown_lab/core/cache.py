@@ -17,7 +17,7 @@ class RequestCache:
     def __init__(self, cache_dir: str = ".request_cache", max_age: int = 3600):
         """
         Initializes a RequestCache instance with a specified cache directory and maximum cache age.
-        
+
         Creates the cache directory if it does not exist and sets up an in-memory cache for HTTP responses.
         """
         self.cache_dir = Path(cache_dir)
@@ -104,10 +104,10 @@ class RequestCache:
     def clear(self, max_age: Optional[int] = None) -> int:
         """
         Removes expired cache entries from both memory and disk.
-        
+
         Args:
             max_age: Maximum age in seconds for cache validity. If not provided, uses the instance's default.
-        
+
         Returns:
             The total number of cache entries removed from memory and disk.
         """

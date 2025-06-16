@@ -1,6 +1,6 @@
+use once_cell::sync::Lazy;
 use scraper::{Html, Selector};
 use std::collections::HashMap;
-use once_cell::sync::Lazy;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -21,26 +21,26 @@ pub enum ParserError {
 // Cache commonly used selectors for better performance
 static SELECTOR_CACHE: Lazy<HashMap<&'static str, Selector>> = Lazy::new(|| {
     let mut cache = HashMap::new();
-    
+
     // Content container selectors
     if let Ok(selector) = Selector::parse("main, article, #content, .content") {
         cache.insert("main_content", selector);
     }
-    
+
     // Unwanted element selectors (combined for efficiency)
     if let Ok(selector) = Selector::parse(
         "script, style, iframe, noscript, .advertisement, .ad, .banner, \
          #cookie-notice, header, footer, nav, .sidebar, .menu, .comments, \
-         .related, .share, .social"
+         .related, .share, .social",
     ) {
         cache.insert("unwanted_elements", selector);
     }
-    
+
     // Link selector
     if let Ok(selector) = Selector::parse("a[href]") {
         cache.insert("links", selector);
     }
-    
+
     // Individual content selectors for fallback
     let selectors_to_cache = [
         ("main", "main"),
@@ -49,13 +49,13 @@ static SELECTOR_CACHE: Lazy<HashMap<&'static str, Selector>> = Lazy::new(|| {
         ("content_class", ".content"),
         ("body", "body"),
     ];
-    
+
     for (key, selector_str) in selectors_to_cache {
         if let Ok(selector) = Selector::parse(selector_str) {
             cache.insert(key, selector);
         }
     }
-    
+
     cache
 });
 
@@ -153,7 +153,7 @@ pub fn clean_html_advanced(html: &str) -> Result<String, ParserError> {
     // In a future optimization, we could manipulate the DOM tree directly
     // rather than using string replacement, but scraper crate has limited
     // DOM modification capabilities currently.
-    
+
     // For now, fall back to the cached selector approach
     clean_html(html)
 }
@@ -187,9 +187,9 @@ pub fn extract_links(html: &str, base_url: &str) -> Result<Vec<String>, ParserEr
     let base_url = url::Url::parse(base_url).map_err(|e| ParserError::UrlError(e.to_string()))?;
 
     // Use cached selector for better performance
-    let selector = SELECTOR_CACHE
-        .get("links")
-        .ok_or_else(|| ParserError::SelectorError("Links selector not found in cache".to_string()))?;
+    let selector = SELECTOR_CACHE.get("links").ok_or_else(|| {
+        ParserError::SelectorError("Links selector not found in cache".to_string())
+    })?;
 
     let mut links = Vec::new();
 
@@ -240,7 +240,9 @@ pub fn resolve_url(base_url: &str, relative_url: &str) -> Result<String, ParserE
         Ok(relative_url.to_string())
     } else {
         let base = url::Url::parse(base_url).map_err(|e| ParserError::UrlError(e.to_string()))?;
-        let resolved = base.join(relative_url).map_err(|e| ParserError::UrlError(e.to_string()))?;
+        let resolved = base
+            .join(relative_url)
+            .map_err(|e| ParserError::UrlError(e.to_string()))?;
         Ok(resolved.to_string())
     }
 }

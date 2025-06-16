@@ -30,7 +30,7 @@ class HttpClient:
     def __init__(self, config: MarkdownLabConfig):
         """
         Initializes the HTTP client with the provided configuration.
-        
+
         Sets up rate limiting and prepares a requests session for making HTTP requests.
         """
         self.config = config
@@ -44,7 +44,7 @@ class HttpClient:
     def _create_session(self) -> requests.Session:
         """
         Creates and configures a requests.Session with custom headers and connection pooling.
-        
+
         The session is set up with a specific User-Agent, standard HTTP headers, and an HTTPAdapter
         for connection pooling. Built-in retries are disabled to allow manual retry handling.
         Returns the configured requests.Session instance.
@@ -77,14 +77,14 @@ class HttpClient:
     def get(self, url: str, **kwargs) -> str:
         """
         Performs a GET request to the specified URL with retry logic and error handling.
-        
+
         Args:
             url: The URL to send the GET request to.
             **kwargs: Additional arguments forwarded to the underlying requests.get() call.
-        
+
         Returns:
             The response body as a string.
-        
+
         Raises:
             NetworkError: If the request fails after all retry attempts.
         """
@@ -93,25 +93,23 @@ class HttpClient:
     def head(self, url: str, **kwargs) -> requests.Response:
         """
         Performs a HEAD request to the specified URL with retry and error handling.
-        
+
         Args:
             url: The target URL for the HEAD request.
             **kwargs: Additional arguments forwarded to the underlying requests.head() call.
-        
+
         Returns:
             The Response object containing headers and status information.
-        
+
         Raises:
             NetworkError: If the request fails after all retry attempts.
         """
-        return self._request_with_retries(
-            "HEAD", url, return_response=True, **kwargs
-        )
+        return self._request_with_retries("HEAD", url, return_response=True, **kwargs)
 
     def get_many(self, urls: List[str], **kwargs) -> Dict[str, str]:
         """
         Performs sequential GET requests on a list of URLs with rate limiting.
-        
+
         Each URL is requested in order; if a request fails, the error is logged and processing continues with the next URL. Returns a dictionary mapping each URL to its response content for successful requests.
         """
         results = {}
@@ -132,18 +130,18 @@ class HttpClient:
     ) -> str | requests.Response:
         """
         Performs an HTTP request with retry logic, exponential backoff, and rate limiting.
-        
+
         Attempts the specified HTTP method on the given URL, retrying on failure up to the configured maximum number of retries. Applies exponential backoff between attempts and raises a NetworkError if all attempts fail. Optionally returns the full Response object if requested.
-        
+
         Args:
             method: The HTTP method to use (e.g., "GET", "HEAD").
             url: The target URL for the request.
             return_response: If True, returns the Response object; otherwise, returns the response text.
             **kwargs: Additional arguments passed to the underlying session.request().
-        
+
         Returns:
             The response text content, or the Response object if return_response is True.
-        
+
         Raises:
             NetworkError: If the request fails after all retry attempts.
         """
@@ -234,7 +232,7 @@ class CachedHttpClient(HttpClient):
     def __init__(self, config: MarkdownLabConfig, cache=None):
         """
         Initializes a CachedHttpClient with optional caching.
-        
+
         If a cache instance is not provided and caching is enabled in the configuration, a new cache is created; otherwise, caching is disabled.
         """
         super().__init__(config)
@@ -253,20 +251,18 @@ class CachedHttpClient(HttpClient):
     def get(self, url: str, use_cache: bool = True, **kwargs) -> str:
         """
         Performs a GET request with optional caching.
-        
+
         If caching is enabled and the response for the given URL is present in the cache, returns the cached content. Otherwise, performs the GET request, stores the result in the cache if applicable, and returns the response content.
-        
+
         Args:
             url: The URL to request.
             use_cache: If True, checks the cache before making the request and stores the result after retrieval.
-        
+
         Returns:
             The response text content.
         """
         if use_cache and self.cache:
-            # Check cache first
-            cached_content = self.cache.get(url)
-            if cached_content:
+            if cached_content := self.cache.get(url):
                 logger.debug(f"Cache hit for {url}")
                 return cached_content
 
@@ -293,7 +289,7 @@ class CachedHttpClient(HttpClient):
 def create_http_client(config: Optional[MarkdownLabConfig] = None) -> HttpClient:
     """
     Creates and returns an HttpClient instance with the specified or default configuration.
-    
+
     If no configuration is provided, the default MarkdownLabConfig is used.
     """
     from ..core.config import get_config
@@ -309,9 +305,9 @@ def create_cached_http_client(
 ) -> CachedHttpClient:
     """
     Creates a CachedHttpClient instance with optional configuration and cache.
-    
+
     If no configuration is provided, the default MarkdownLabConfig is used. An optional cache instance can be supplied; otherwise, caching behavior is determined by the configuration.
-    
+
     Returns:
         A CachedHttpClient configured for HTTP requests with caching support.
     """

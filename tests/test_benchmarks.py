@@ -3,8 +3,9 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
-from markdown_lab.core.scraper import MarkdownScraper
+
 from markdown_lab.core.cache import RequestCache
+from markdown_lab.core.scraper import MarkdownScraper
 
 
 @pytest.mark.benchmark(group="scrape_website")
@@ -51,7 +52,7 @@ def test_save_chunks_benchmark(benchmark, tmp_path):
 def test_benchmark_scrape_with_cache_enabled(benchmark):
     """
     Benchmarks the performance of scraping a website with caching enabled.
-    
+
     This test uses a temporary cache directory and mocks HTTP GET requests to ensure consistent responses. The initial scrape populates the cache, and the benchmark measures subsequent scrapes that utilize the cache.
     """
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -83,7 +84,7 @@ def test_benchmark_scrape_with_cache_enabled(benchmark):
 def test_benchmark_scrape_with_cache_disabled(benchmark):
     """
     Benchmarks the performance of scraping a website with caching disabled.
-    
+
     Mocks HTTP GET requests to return a fixed HTML response and measures the execution time of the `scrape_website` method in `MarkdownScraper` when cache is turned off.
     """
     with patch("markdown_lab.network.client.requests.Session.get") as mock_get:

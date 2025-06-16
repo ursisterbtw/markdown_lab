@@ -1,7 +1,0 @@
-<Document><title>Output Format Demo</title><base_url>http://example.com</base_url><headings><level>1</level><text>Markdown Lab Output Formats</text></headings><headings><level>2</level><text>Benefits of Multiple Formats</text></headings><paragraphs>This demo shows the three output formats supported by markdown_lab:</paragraphs><paragraphs>Having multiple output formats provides several advantages:</paragraphs><paragraphs>Format conversion is performed efficiently using Rust implementations.</paragraphs><lists><ordered>false</ordered><items>Markdown - Human-readable plain text format</items><items>JSON - Structured data format for programmatic usage</items><items>XML - Markup format for document interchange</items></lists><lists><ordered>true</ordered><items>Flexibility for different use cases</items><items>Integration with various systems</items><items>Easier data processing and transformation</items></lists><code_blocks><language/><code># Sample Python code
-from markdown_lab.markdown_lab_rs import convert_html_to_format
-
-result = convert_html_to_format(html_content, url, "json")</code></code_blocks><code_blocks><language/><code># Sample Python code
-from markdown_lab.markdown_lab_rs import convert_html_to_format
-
-result = convert_html_to_format(html_content, url, "json")</code></code_blocks><blockquotes>Format conversion is performed efficiently using Rust implementations.</blockquotes></Document>

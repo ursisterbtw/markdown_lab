@@ -65,7 +65,7 @@ class MarkdownLabConfig:
     def _validate_config(self) -> None:
         """
         Validates configuration parameters and raises ValueError if any constraints are violated.
-        
+
         Checks that numeric parameters are within valid ranges and that the default output format is supported.
         """
         if self.requests_per_second <= 0:
@@ -103,7 +103,7 @@ class MarkdownLabConfig:
     def _apply_environment_overrides(self) -> None:
         """
         Overrides configuration attributes with values from corresponding environment variables.
-        
+
         Reads predefined environment variables, converts their values to the appropriate types, and updates the configuration instance. Raises ValueError if an environment variable cannot be converted to the expected type.
         """
         env_mappings = {
@@ -132,16 +132,16 @@ class MarkdownLabConfig:
                 except (ValueError, TypeError) as e:
                     raise ValueError(
                         f"Invalid environment variable {env_var}={env_value}: {e}"
-                    )
+                    ) from e
 
     @classmethod
     def from_dict(cls, config_dict: Dict[str, Any]) -> "MarkdownLabConfig":
         """
         Creates a MarkdownLabConfig instance from a dictionary of configuration values.
-        
+
         Args:
             config_dict: A dictionary containing configuration parameters keyed by attribute name.
-        
+
         Returns:
             A MarkdownLabConfig instance initialized with the provided values.
         """
@@ -151,13 +151,13 @@ class MarkdownLabConfig:
     def from_file(cls, config_path: str) -> "MarkdownLabConfig":
         """
         Loads a MarkdownLabConfig instance from a JSON or YAML configuration file.
-        
+
         Args:
             config_path: Path to the configuration file.
-        
+
         Returns:
             A MarkdownLabConfig instance populated with values from the file.
-        
+
         Raises:
             FileNotFoundError: If the specified file does not exist.
             ImportError: If loading a YAML file without PyYAML installed.
@@ -173,14 +173,16 @@ class MarkdownLabConfig:
 
             with open(config_path, "r") as f:
                 config_dict = json.load(f)
-        elif config_path.suffix.lower() in [".yml", ".yaml"]:
+        elif config_path.suffix.lower() in {".yml", ".yaml"}:
             try:
                 import yaml
 
                 with open(config_path, "r") as f:
                     config_dict = yaml.safe_load(f)
-            except ImportError:
-                raise ImportError("PyYAML is required to load YAML configuration files")
+            except ImportError as e:
+                raise ImportError(
+                    "PyYAML is required to load YAML configuration files"
+                ) from e
         else:
             raise ValueError(
                 f"Unsupported configuration file format: {config_path.suffix}"
@@ -191,7 +193,7 @@ class MarkdownLabConfig:
     def to_dict(self) -> Dict[str, Any]:
         """
         Converts the configuration instance to a dictionary.
-        
+
         Returns:
             A dictionary representation of the configuration parameters.
         """
@@ -202,10 +204,10 @@ class MarkdownLabConfig:
     def save_to_file(self, config_path: str) -> None:
         """
         Saves the configuration to a JSON or YAML file.
-        
+
         Args:
             config_path: Path to the output configuration file. The file extension determines the format (.json, .yml, or .yaml).
-        
+
         Raises:
             ImportError: If saving as YAML and PyYAML is not installed.
             ValueError: If the file extension is not supported.
@@ -218,14 +220,16 @@ class MarkdownLabConfig:
 
             with open(config_path, "w") as f:
                 json.dump(config_dict, f, indent=2)
-        elif config_path.suffix.lower() in [".yml", ".yaml"]:
+        elif config_path.suffix.lower() in {".yml", ".yaml"}:
             try:
                 import yaml
 
                 with open(config_path, "w") as f:
                     yaml.dump(config_dict, f, default_flow_style=False)
-            except ImportError:
-                raise ImportError("PyYAML is required to save YAML configuration files")
+            except ImportError as e:
+                raise ImportError(
+                    "PyYAML is required to save YAML configuration files"
+                ) from e
         else:
             raise ValueError(
                 f"Unsupported configuration file format: {config_path.suffix}"
@@ -234,10 +238,10 @@ class MarkdownLabConfig:
     def update(self, **kwargs) -> "MarkdownLabConfig":
         """
         Returns a new configuration instance with updated values for specified parameters.
-        
+
         Args:
             **kwargs: Configuration fields to update.
-        
+
         Returns:
             A new MarkdownLabConfig instance with the specified fields updated.
         """
@@ -260,7 +264,7 @@ def get_config() -> MarkdownLabConfig:
 def set_config(config: MarkdownLabConfig) -> None:
     """
     Sets the global configuration instance for the markdown_lab project.
-    
+
     Replaces the current global configuration with the provided MarkdownLabConfig instance.
     """
     global DEFAULT_CONFIG
@@ -270,7 +274,7 @@ def set_config(config: MarkdownLabConfig) -> None:
 def load_config_from_env() -> MarkdownLabConfig:
     """
     Creates a new MarkdownLabConfig instance with environment variable overrides applied.
-    
+
     Returns:
         A MarkdownLabConfig object reflecting any relevant environment variable settings.
     """

@@ -49,7 +49,7 @@ It also has multiple lines.
     def test_create_large_chunks(self):
         """
         Tests that large markdown sections are split into multiple chunks with consistent metadata.
-        
+
         Creates a large markdown section and verifies that chunking produces multiple chunks, all sharing the same heading and source URL in their metadata.
         """
         # Create a very large section

@@ -139,7 +139,7 @@ class ContentChunker:
     ) -> None:
         """
         Saves a list of content chunks to disk in either JSON Lines or individual JSON files.
-        
+
         Args:
             chunks: The content chunks to save.
             output_dir: Directory where the chunk files will be written.
@@ -168,13 +168,13 @@ def create_semantic_chunks(
 ) -> List[Chunk]:
     """
     Creates semantic chunks from content, handling both markdown and plain text.
-    
+
     If the content contains markdown headers, it is split into chunks using markdown-aware logic. Otherwise, the content is divided into overlapping text chunks based on approximate word count. Each chunk includes metadata such as domain, position, word count, and character count.
-    
+
     Args:
         content: The text to be chunked.
         source_url: The URL associated with the content.
-    
+
     Returns:
         A list of Chunk objects representing the segmented content.
     """

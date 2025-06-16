@@ -50,7 +50,7 @@ def test_scrape_website_general_error(mock_get, scraper):
 def test_convert_to_markdown(scraper):
     """
     Tests that HTML content is correctly converted to markdown format by the scraper.
-    
+
     Verifies that key elements such as headers, paragraphs, images, and list items are present in the markdown output.
     """
     html_content = """<html><head><title>Test</title></head>
@@ -64,14 +64,16 @@ def test_convert_to_markdown(scraper):
 
     # Get the result and check that it contains the expected elements
     # The exact format might vary, so we check for key content instead of exact matching
-    result = scraper.convert_to_markdown(html_content)
+    result = scraper.convert_html_to_format(
+        html_content, "http://example.com", "markdown"
+    )
 
     assert "# Test" in result
     assert "Header 1" in result
     assert "Paragraph 1" in result
     # We see that links might not be processed in our implementation, so let's skip that check
     # assert "[Link](http://example.com)" in result
-    assert "![Test Image](image.jpg)" in result
+    assert "![Test Image](" in result and "image.jpg)" in result
     assert "Item 1" in result
     assert "Item 2" in result
 
@@ -80,7 +82,7 @@ def test_convert_to_markdown(scraper):
 def test_format_conversion(mock_get, scraper):
     """
     Tests conversion of HTML content to JSON and XML formats using both Rust and Python implementations.
-    
+
     Simulates an HTTP GET request returning sample HTML, then verifies that the content can be converted to JSON and XML formats. Attempts to use Rust-based conversion utilities if available, falling back to Python helpers otherwise. Asserts that key elements from the HTML are present in the converted outputs.
     """
     mock_response = MagicMock()
@@ -94,14 +96,11 @@ def test_format_conversion(mock_get, scraper):
     mock_response.elapsed.total_seconds.return_value = 0.1
     mock_get.return_value = mock_response
 
-    # Test the JSON output format
+    # Test the JSON output format using the scraper's Rust implementation
     try:
-        # Try to use the Rust implementation first
-        from markdown_lab.markdown_lab_rs import OutputFormat, convert_html
-
-        # Convert to JSON
-        json_content = convert_html(
-            mock_response.text, "http://example.com", OutputFormat.JSON
+        # Convert to JSON using the scraper's unified method
+        json_content = scraper.convert_html_to_format(
+            mock_response.text, "http://example.com", "json"
         )
 
         # Basic validation
@@ -112,8 +111,8 @@ def test_format_conversion(mock_get, scraper):
         assert "Item B" in json_content
 
         # XML output test
-        xml_content = convert_html(
-            mock_response.text, "http://example.com", OutputFormat.XML
+        xml_content = scraper.convert_html_to_format(
+            mock_response.text, "http://example.com", "xml"
         )
 
         # Basic validation

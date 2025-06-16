@@ -1,5 +1,8 @@
 """
 Main module for scraping websites and converting content to markdown, JSON, or XML.
+
+This module provides backwards compatibility with the original MarkdownScraper interface
+while using the new simplified Converter architecture internally.
 """
 
 import argparse
@@ -9,14 +12,13 @@ import re
 import time
 from pathlib import Path
 from typing import List, Optional, Tuple
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urlparse
 
 import requests
-from bs4 import BeautifulSoup, Tag
 
-from markdown_lab.core.cache import RequestCache
-from markdown_lab.core.throttle import RequestThrottler
-from markdown_lab.utils.chunk_utils import ContentChunker, create_semantic_chunks
+from markdown_lab.core.config import MarkdownLabConfig
+from markdown_lab.core.converter import Converter
+from markdown_lab.utils.chunk_utils import ContentChunker
 from markdown_lab.utils.sitemap_utils import SitemapParser
 
 # Configure logging with more detailed formatting
@@ -33,7 +35,12 @@ logger = logging.getLogger("markdown_scraper")
 
 
 class MarkdownScraper:
-    """Scrapes websites and converts content to markdown, JSON, or XML with chunking support."""
+    """
+    Legacy MarkdownScraper class that provides backwards compatibility.
+
+    This class now uses the simplified Converter architecture internally
+    while maintaining the original API for existing code.
+    """
 
     def __init__(
         self,
@@ -55,77 +62,56 @@ class MarkdownScraper:
             cache_enabled: Whether to enable request caching
             cache_max_age: Maximum age of cached responses in seconds
         """
-        self.session = requests.Session()
-        self.session.headers.update(
-            {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
-            }
+        # Create configuration from parameters
+        config = MarkdownLabConfig(
+            requests_per_second=requests_per_second,
+            timeout=timeout,
+            max_retries=max_retries,
+            chunk_size=chunk_size,
+            chunk_overlap=chunk_overlap,
+            cache_enabled=cache_enabled,
+            cache_ttl=cache_max_age,
         )
-        self.throttler = RequestThrottler(requests_per_second)
+
+        # Initialize the new Converter internally
+        self.converter = Converter(config)
+
+        # Store parameters for backwards compatibility
+        self.requests_per_second = requests_per_second
         self.timeout = timeout
         self.max_retries = max_retries
         self.chunker = ContentChunker(chunk_size, chunk_overlap)
-        self.requests_per_second = requests_per_second
-
-        # Initialize request cache
         self.cache_enabled = cache_enabled
-        self.request_cache = (
-            RequestCache(max_age=cache_max_age) if cache_enabled else None
+
+        # Legacy properties for compatibility
+        self.session = self.converter.client.session
+        self.rust_available = self.converter.rust_backend.is_available()
+        self.OutputFormat = None  # Legacy compatibility
+        self.convert_html_to_format = (
+            self.converter.rust_backend.convert_html_to_format
+            if self.rust_available
+            else None
         )
 
-        # Try to use the Rust implementation if available
-        try:
-            from markdown_lab.markdown_lab_rs import OutputFormat, convert_html
-
-            self.rust_available = True
-            self.OutputFormat = OutputFormat
-            self.convert_html = convert_html
-        except ImportError:
-            self.rust_available = False
+        # Legacy request_cache for backwards compatibility
+        self.request_cache = self.converter.client.cache
 
     def scrape_website(self, url: str, skip_cache: bool = False) -> str:
         """
         Fetches the HTML content of a website with support for caching, rate limiting, and automatic retries.
-        
-        If caching is enabled and a valid cached response exists, returns it immediately unless `skip_cache` is True. Otherwise, performs an HTTP GET request with retry and backoff logic, monitors performance metrics, and caches the result if applicable.
-        
+
         Args:
             url: The URL of the website to scrape.
             skip_cache: If True, bypasses the cache and forces a fresh request.
-        
+
         Returns:
             The HTML content of the requested URL as a string.
-        
+
         Raises:
             requests.exceptions.RequestException: If all retry attempts fail to retrieve the content.
         """
-        try:
-            import psutil  # type: ignore
-
-            psutil_available = True
-        except ImportError:
-            psutil_available = False
-
-        # Check cache first
-        cached_content = self._check_cache(url, skip_cache)
-        if cached_content is not None:
-            return cached_content
-
-        logger.info(f"Attempting to scrape the website: {url}")
-
-        # Start performance monitoring
-        performance_monitor = self._start_performance_monitoring(psutil_available)
-
-        # Attempt to fetch content with retries
-        html_content = self._fetch_with_retries(url)
-
-        # Stop performance monitoring and log results
-        self._log_performance_metrics(url, performance_monitor, psutil_available)
-
-        # Cache the response if enabled
-        self._cache_response(url, html_content)
-
-        return html_content
+        # Delegate to the new Converter's HTTP client
+        return self.converter.client.get(url, skip_cache=skip_cache)
 
     def _check_cache(self, url: str, skip_cache: bool) -> Optional[str]:
         """Check if content is available in cache."""
@@ -139,12 +125,12 @@ class MarkdownScraper:
     def _start_performance_monitoring(self, psutil_available: bool):
         """
         Begins tracking execution time and memory usage for performance monitoring.
-        
+
         If `psutil` is available, also prepares a process object for CPU usage tracking.
-        
+
         Args:
             psutil_available: Indicates whether the `psutil` library is available.
-        
+
         Returns:
             A dictionary containing the start time and, if applicable, a `psutil.Process` object.
         """
@@ -169,7 +155,7 @@ class MarkdownScraper:
     def _log_performance_metrics(self, url: str, monitor, psutil_available: bool):
         """
         Logs execution time, memory usage, and CPU usage (if available) for a scraping request.
-        
+
         Args:
             url: The URL that was scraped.
             monitor: Dictionary containing timing and process monitoring data.
@@ -200,15 +186,15 @@ class MarkdownScraper:
     def _fetch_with_retries(self, url: str) -> str:
         """
         Attempts to fetch the content of a URL with retry logic for network-related errors.
-        
+
         Retries the HTTP GET request up to the configured maximum number of attempts, applying throttling and timeout settings. Raises an exception if all attempts fail.
-        
+
         Args:
             url: The URL to fetch.
-        
+
         Returns:
             The response content as a string.
-        
+
         Raises:
             requests.exceptions.RequestException: If the URL cannot be retrieved after all retries.
         """
@@ -267,7 +253,7 @@ class MarkdownScraper:
     ) -> None:
         """
         Handles HTTP request errors by logging warnings, applying exponential backoff, and raising the error on the final retry attempt.
-        
+
         Args:
             url: The URL being requested.
             attempt: The current retry attempt number.
@@ -286,188 +272,6 @@ class MarkdownScraper:
         # Otherwise apply exponential backoff
         time.sleep(2**attempt)
 
-    def _get_text_from_element(self, element: Optional[Tag]) -> str:
-        """Extract clean text from a BeautifulSoup element."""
-        if element is None:
-            return ""
-        return re.sub(r"\s+", " ", element.get_text().strip())
-
-    def _get_element_markdown(self, element: Tag, base_url: str) -> str:
-        """
-        Converts a single HTML element to its Markdown representation.
-        
-        Dispatches the element to the appropriate conversion method based on its tag type. Falls back to extracting plain text if the element type is not specifically handled.
-        """
-        element_type = element.name
-
-        # Dispatch to specific handler methods based on element type
-        if element_type in ["h1", "h2", "h3", "h4", "h5", "h6"]:
-            return self._convert_heading(element)
-        if element_type == "p":
-            return self._convert_paragraph(element)
-        if element_type == "a" and element.get("href"):
-            return self._convert_link(element, base_url)
-        if element_type == "img" and element.get("src"):
-            return self._convert_image(element, base_url)
-        if element_type == "ul":
-            return self._convert_unordered_list(element)
-        if element_type == "ol":
-            return self._convert_ordered_list(element)
-        if element_type == "blockquote":
-            return self._convert_blockquote(element)
-        if element_type in ["pre", "code"]:
-            return self._convert_code(element)
-        return self._get_text_from_element(element)
-
-    def _convert_heading(self, element: Tag) -> str:
-        """
-        Converts an HTML heading element to Markdown heading syntax.
-        
-        Args:
-            element: A BeautifulSoup Tag representing an HTML heading (e.g., <h1> to <h6>).
-        
-        Returns:
-            The Markdown-formatted heading as a string.
-        """
-        level = int(element.name[1])
-        return f"{'#' * level} {self._get_text_from_element(element)}"
-
-    def _convert_paragraph(self, element: Tag) -> str:
-        """Convert paragraph elements to markdown."""
-        return self._get_text_from_element(element)
-
-    def _convert_link(self, element: Tag, base_url: str) -> str:
-        """Convert link elements to markdown."""
-        href = element.get("href", "")
-        # Ensure href is a string
-        if isinstance(href, list):
-            href = href[0] if href else ""
-
-        # Resolve relative URLs
-        if href and not href.startswith("http://") and not href.startswith("https://"):
-            href = urljoin(base_url, href)
-
-        return f"[{self._get_text_from_element(element)}]({href})"
-
-    def _convert_image(self, element: Tag, base_url: str) -> str:
-        """Convert image elements to markdown."""
-        src = element.get("src", "")
-        # Ensure src is a string
-        if isinstance(src, list):
-            src = src[0] if src else ""
-
-        # Resolve relative URLs
-        if src and not src.startswith("http://") and not src.startswith("https://"):
-            src = urljoin(base_url, src)
-
-        alt = element.get("alt", "image")
-        return f"![{alt}]({src})"
-
-    def _convert_unordered_list(self, element: Tag) -> str:
-        """Convert unordered list elements to markdown."""
-        items = [
-            f"- {self._get_text_from_element(li)}"
-            for li in element.find_all("li", recursive=False)
-        ]
-        return "\n".join(items)
-
-    def _convert_ordered_list(self, element: Tag) -> str:
-        """Convert ordered list elements to markdown."""
-        items = [
-            f"{i}. {self._get_text_from_element(li)}"
-            for i, li in enumerate(element.find_all("li", recursive=False), 1)
-        ]
-        return "\n".join(items)
-
-    def _convert_blockquote(self, element: Tag) -> str:
-        """Convert blockquote elements to markdown."""
-        lines = self._get_text_from_element(element).split("\n")
-        return "\n".join([f"> {line}" for line in lines])
-
-    def _convert_code(self, element: Tag) -> str:
-        """Convert code elements to markdown."""
-        code = self._get_text_from_element(element)
-        lang = element.get("class", [""])[0] if element.get("class") else ""
-        if lang.startswith("language-"):
-            lang = lang[9:]
-        return f"```{lang}\n{code}\n```"
-
-    def convert_to_markdown(self, html_content: str, url: str = "") -> str:
-        """
-        Convert HTML content to well-structured Markdown.
-
-        Args:
-            html_content: The HTML content to convert
-            url: The source URL for resolving relative links
-
-        Returns:
-            The converted Markdown content
-        """
-        logger.info("Converting HTML content to Markdown.")
-        soup = BeautifulSoup(html_content, "html.parser")
-
-        # Extract base URL for resolving relative links
-        base_url_str = url
-        base_tag = soup.find("base")
-        if (
-            not base_url_str
-            and base_tag
-            and isinstance(base_tag, Tag)
-            and base_tag.get("href")
-        ):
-            base_href = base_tag.get("href")
-            if isinstance(base_href, list):
-                base_href = base_href[0] if base_href else ""
-            base_url_str = base_href or base_url_str
-
-        # Ensure we have a string for base_url
-        base_url = str(base_url_str) if base_url_str is not None else ""
-
-        # Extract page title
-        title = self._get_text_from_element(soup.title) if soup.title else "No Title"
-
-        # Initialize markdown content with the title
-        markdown_content = f"# {title}\n\n"
-
-        # Get the main content area (try common content containers)
-        main_content = (
-            soup.find("main")
-            or soup.find("article")
-            or soup.find(id="content")
-            or soup.find(class_="content")
-            or soup.body
-        )
-
-        if main_content and hasattr(main_content, "find_all"):
-            # Process each element in the main content
-            # Make sure we only process Tag objects
-            for element in [
-                e
-                for e in main_content.find_all(
-                    [
-                        "h1",
-                        "h2",
-                        "h3",
-                        "h4",
-                        "h5",
-                        "h6",
-                        "p",
-                        "ul",
-                        "ol",
-                        "blockquote",
-                        "pre",
-                        "img",
-                    ],
-                    recursive=True,
-                )
-                if isinstance(e, Tag)
-            ]:
-                if element_markdown := self._get_element_markdown(element, base_url):
-                    markdown_content += element_markdown + "\n\n"
-
-        logger.info("Conversion to Markdown completed.")
-        return markdown_content.strip()
-
     def save_content(self, content: str, output_file: str) -> None:
         """
         Save content to a file.
@@ -476,17 +280,8 @@ class MarkdownScraper:
             content: The content to save (markdown, JSON, or XML)
             output_file: The output file path
         """
-        try:
-            # Create directories if they don't exist
-            output_path = Path(output_file)
-            output_path.parent.mkdir(parents=True, exist_ok=True)
-
-            with open(output_file, "w", encoding="utf-8") as f:
-                f.write(content)
-            logger.info(f"File '{output_file}' has been created successfully.")
-        except IOError as e:
-            logger.error(f"Failed to save content to {output_file}: {e}")
-            raise
+        # Delegate to the Converter
+        self.converter.save_content(content, output_file)
 
     def save_markdown(self, markdown_content: str, output_file: str) -> None:
         """
@@ -509,12 +304,8 @@ class MarkdownScraper:
         Returns:
             List of chunks for RAG
         """
-        return create_semantic_chunks(
-            content=markdown_content,
-            source_url=source_url,
-            chunk_size=self.chunker.chunk_size,
-            chunk_overlap=self.chunker.chunk_overlap,
-        )
+        # Delegate to the Converter
+        return self.converter.create_chunks(markdown_content, source_url)
 
     def save_chunks(self, chunks, output_dir, output_format="jsonl"):
         """
@@ -532,61 +323,17 @@ class MarkdownScraper:
     ) -> tuple:
         """
         Converts HTML content to the specified output format and returns both the converted and Markdown versions.
-        
-        If a Rust-based implementation is available, it is used for conversion. For JSON or XML output, the function attempts to convert Markdown to the requested format; if conversion is unavailable, it falls back to Markdown.
-        
+
         Args:
             html_content: The HTML content to convert.
             url: The source URL for resolving relative links.
             output_format: The desired output format ("markdown", "json", or "xml").
-        
+
         Returns:
             A tuple (converted_content, markdown_content), where converted_content is in the requested format and markdown_content is always the Markdown version.
         """
-        if self.rust_available:
-            # Use Rust implementation if available
-            rust_format = getattr(self.OutputFormat, output_format.upper())
-            content = self.convert_html(html_content, url, rust_format)
-            # Always get markdown content for chunking
-            markdown_content = (
-                self.convert_html(html_content, url, self.OutputFormat.MARKDOWN)
-                if output_format != "markdown"
-                else content
-            )
-        elif output_format == "markdown":
-            content = self.convert_to_markdown(html_content, url)
-            markdown_content = content
-        else:
-            # For JSON and XML, first convert to markdown
-            markdown_content = self.convert_to_markdown(html_content, url)
-
-            # Then convert to the requested format
-            try:
-                # Try to use functions from markdown_lab_rs for conversion
-                from markdown_lab.markdown_lab_rs import (
-                    document_to_xml,
-                    parse_markdown_to_document,
-                )
-
-                document = parse_markdown_to_document(markdown_content, url)
-
-                if output_format == "json":
-                    import json
-
-                    content = json.dumps(document, indent=2)
-                elif output_format == "xml":
-                    content = document_to_xml(document)
-                else:
-                    # Fallback to markdown if format not supported
-                    content = markdown_content
-            except ImportError:
-                # Fallback to markdown if conversion functions are not available
-                logger.warning(
-                    f"Could not convert to {output_format}, using markdown instead"
-                )
-                content = markdown_content
-
-        return content, markdown_content
+        # Delegate to the Converter
+        return self.converter.convert_html(html_content, url, output_format)
 
     def scrape_by_sitemap(
         self,
@@ -603,9 +350,9 @@ class MarkdownScraper:
     ) -> List[str]:
         """
         Scrapes multiple pages from a website using its sitemap and saves the content in the specified format.
-        
+
         Filters sitemap URLs by priority and regex patterns, limits the number of pages if specified, and processes each URL by scraping, converting, and saving the content. Optionally creates and saves content chunks for retrieval-augmented generation workflows.
-        
+
         Args:
             base_url: The root URL of the website whose sitemap will be parsed.
             output_dir: Directory where the scraped content will be saved.
@@ -617,47 +364,23 @@ class MarkdownScraper:
             chunk_dir: Directory for saving chunks; defaults to a subdirectory of output_dir if not specified.
             chunk_format: Format for saved chunks ("json" or "jsonl").
             output_format: Output format for scraped content ("markdown", "json", or "xml").
-        
+
         Returns:
             A list of URLs that were successfully scraped and saved.
         """
-        # Get URLs from sitemap
-        filtered_urls = self._discover_urls_from_sitemap(
-            base_url, min_priority, include_patterns, exclude_patterns, limit
+        # Delegate to the Converter's sitemap method
+        return self.converter.convert_sitemap(
+            base_url=base_url,
+            output_dir=output_dir,
+            output_format=output_format,
+            min_priority=min_priority,
+            include_patterns=include_patterns,
+            exclude_patterns=exclude_patterns,
+            limit=limit,
+            save_chunks=save_chunks,
+            chunk_dir=chunk_dir,
+            chunk_format=chunk_format,
         )
-
-        if not filtered_urls:
-            return []
-
-        # Prepare directories
-        output_path, chunk_directory = self._prepare_directories(
-            output_dir, save_chunks, chunk_dir
-        )
-
-        # Process each URL
-        successfully_scraped = []
-        for i, url_info in enumerate(filtered_urls):
-            url = url_info.loc
-            try:
-                self._process_single_url(
-                    url,
-                    i,
-                    len(filtered_urls),
-                    output_path,
-                    output_format,
-                    save_chunks,
-                    chunk_directory,
-                    chunk_format,
-                )
-                successfully_scraped.append(url)
-            except Exception as e:
-                logger.error(f"Error processing URL {url}: {e}")
-                continue
-
-        logger.info(
-            f"Successfully scraped {len(successfully_scraped)}/{len(filtered_urls)} URLs"
-        )
-        return successfully_scraped
 
     def _discover_urls_from_sitemap(
         self,
@@ -669,7 +392,7 @@ class MarkdownScraper:
     ) -> List:
         """
         Parses a sitemap from the given base URL and returns a filtered list of URLs.
-        
+
         Filters URLs based on minimum priority, inclusion and exclusion patterns, and an optional limit. Returns an empty list if no URLs are found.
         """
         # Create sitemap parser
@@ -702,12 +425,12 @@ class MarkdownScraper:
     ) -> Tuple[Path, Optional[str]]:
         """
         Creates the output directory and, if chunking is enabled, creates the chunk directory.
-        
+
         Args:
             output_dir: Path to the main output directory.
             save_chunks: Whether to create a directory for content chunks.
             chunk_dir: Optional path for the chunk directory; defaults to 'chunks' within the output directory if not provided.
-        
+
         Returns:
             A tuple containing the Path object for the output directory and the path to the chunk directory (or None if not used).
         """
@@ -765,7 +488,7 @@ class MarkdownScraper:
     ) -> None:
         """
         Scrapes a single URL, converts its content to the specified format, saves the result, and optionally creates and saves content chunks.
-        
+
         Args:
             url: The URL to scrape.
             index: The index of the URL in the current batch.
@@ -812,7 +535,7 @@ class MarkdownScraper:
     ) -> None:
         """
         Splits Markdown content from a single document into semantic chunks and saves them to a URL-specific directory in the specified format.
-        
+
         Args:
             markdown_content: The Markdown content to be chunked.
             url: The source URL of the content.
@@ -843,7 +566,7 @@ class MarkdownScraper:
     ) -> List[str]:
         """
         Scrapes multiple web pages from a list of URLs provided in a file and saves the results.
-        
+
         Reads URLs from the specified file, processes each URL to scrape and convert its content, and saves the output in the desired format. Supports optional parallel processing and chunked content saving for RAG workflows. Returns a list of successfully scraped URLs; logs and skips URLs that fail to process.
         """
         # Check if links_file exists, if not try the default location
@@ -906,10 +629,10 @@ class MarkdownScraper:
                 def process_url(args):
                     """
                     Processes a single URL for scraping and content conversion, capturing success or failure.
-                    
+
                     Args:
                         args: A tuple containing the URL to process and its index in the list.
-                    
+
                     Returns:
                         A tuple of (success, url, error_message), where success is True if processing
                         succeeded, or False with an error message if an exception occurred.
@@ -1016,7 +739,7 @@ def main(
 ) -> None:
     """
     Main entry point for running the web scraper via CLI or programmatically.
-    
+
     Depending on the provided arguments, this function scrapes a single URL, a list of URLs from a file, or multiple URLs discovered via sitemap, then converts and saves the content in the specified format. Supports chunking for RAG workflows, caching, parallel processing, and advanced filtering options.
     """
     if args_list is not None:
@@ -1110,7 +833,7 @@ def main(
 def _create_argument_parser():
     """
     Creates and configures the argument parser for the command-line interface.
-    
+
     Returns:
         An argparse.ArgumentParser instance with all supported CLI options for scraping, output formatting, chunking, sitemap usage, caching, and parallel processing.
     """
@@ -1218,7 +941,7 @@ def _create_argument_parser():
 def _validate_output_format(output_format: str) -> str:
     """
     Validates and normalizes the output format string.
-    
+
     If the provided format is not one of "markdown", "json", or "xml", defaults to "markdown".
     """
     normalized_format = output_format.lower()
@@ -1233,7 +956,7 @@ def _validate_output_format(output_format: str) -> str:
 def _check_rust_availability() -> None:
     """
     Checks for the availability of the Rust-based implementation for HTML-to-Markdown conversion.
-    
+
     Silently determines if the `markdown_lab.markdown_lab_rs` module can be imported, indicating Rust support.
     """
     with contextlib.suppress(ImportError):
@@ -1258,7 +981,7 @@ def _process_sitemap_mode(
 ) -> None:
     """
     Scrapes a website using its sitemap and saves the content in the specified format.
-    
+
     Parses the base URL, determines the output directory, and invokes the scraper to process all sitemap-discovered URLs according to filtering and chunking options.
     """
     # Parse base URL
@@ -1298,7 +1021,7 @@ def _process_single_url_mode(
 ) -> None:
     """
     Scrapes a single URL, converts its content to the specified format, and saves the result.
-    
+
     If chunking is enabled, also creates and saves content chunks in the specified directory and format.
     """
     # Scrape the URL
@@ -1336,7 +1059,7 @@ def _process_links_file_mode(
 ) -> None:
     """
     Processes and scrapes multiple URLs listed in a links file using the provided scraper.
-    
+
     If no links file is specified, defaults to 'links.txt'. Determines the output directory from the output file path and invokes the scraper to process all URLs, supporting optional chunking and parallel execution.
     """
     # If links_file is None, use the default links.txt
@@ -1368,7 +1091,7 @@ def _ensure_correct_extension(
 ) -> str:
     """
     Ensures the output filename has the correct extension based on the content format.
-    
+
     If the output format is not markdown but the content is markdown, the extension is set to `.md`.
     Returns the adjusted filename.
     """

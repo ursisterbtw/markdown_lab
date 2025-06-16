@@ -1,0 +1,250 @@
+# Typography and Text Styling for Professional SVG Graphics
+
+## Font System Architecture
+
+### Primary Font Stack
+```svg
+font-family="system-ui, -apple-system, sans-serif"
+```
+- **system-ui**: Modern system default
+- **-apple-system**: macOS optimization
+- **sans-serif**: Universal fallback
+- Ensures consistent rendering across platforms
+
+### Monospace for Technical Content
+```svg
+font-family="monospace"
+```
+- Use for code snippets, terminal commands
+- Provides authentic developer aesthetic
+- Ensures proper character alignment
+
+## Typography Scale
+
+### Heading Hierarchy
+```svg
+<!-- Main Title (Hero) -->
+font-size="64" font-weight="700"
+
+<!-- Section Headers -->
+font-size="22" font-weight="600"
+
+<!-- Subsection Headers -->
+font-size="18" font-weight="600"
+
+<!-- Body Text -->
+font-size="14" font-weight="400"
+
+<!-- Small Details -->
+font-size="12" font-weight="400"
+
+<!-- Micro Text -->
+font-size="11" font-weight="400"
+```
+
+### Font Weight Guidelines
+- **700 (Bold)**: Primary titles, major emphasis
+- **600 (Semi-bold)**: Section headers, important labels
+- **400 (Regular)**: Body text, descriptions
+- **300 (Light)**: Subtle information (use sparingly)
+
+## Text Positioning and Alignment
+
+### Anchor Points
+```svg
+<!-- Center Alignment -->
+text-anchor="middle" x="640" y="140"
+
+<!-- Left Alignment -->
+text-anchor="start" x="20" y="25"
+
+<!-- Right Alignment -->
+text-anchor="end" x="380" y="25"
+```
+
+### Baseline Alignment
+- Use consistent y-position baselines within sections
+- Apply 20px spacing between text lines for readability
+- Maintain 40px spacing between different content groups
+
+### Text Positioning Best Practices
+- Center major titles horizontally
+- Left-align descriptive text for readability
+- Use transform groups for complex positioning:
+```svg
+<g transform="translate(80, 250)">
+  <text x="20" y="25">Content here</text>
+</g>
+```
+
+## Text Color and Effects
+
+### Color Hierarchy
+```svg
+<!-- Primary Text -->
+fill="#c9d1d9"
+
+<!-- Secondary Text -->
+fill="#8b949e" opacity="0.9"
+
+<!-- Accent Text -->
+fill="url(#accent-gradient)"
+
+<!-- Brand-Specific -->
+fill="#3776ab" <!-- Python blue -->
+fill="#ce422b" <!-- Rust orange -->
+```
+
+### Text Effects and Filters
+```svg
+<!-- Text Shadow for Headers -->
+filter="url(#text-shadow)"
+
+<!-- Glow Effect for Special Text -->
+filter="url(#glow)"
+```
+
+### Shadow Definition
+```svg
+<filter id="text-shadow" x="-50%" y="-50%" width="200%" height="200%">
+  <feDropShadow dx="2" dy="2" stdDeviation="4" 
+                flood-color="#000000" flood-opacity="0.8"/>
+</filter>
+```
+
+## Code and Technical Text Styling
+
+### Code Snippet Formatting
+```svg
+<!-- Container Background -->
+<rect x="0" y="0" width="280" height="80" rx="6" 
+      fill="#0d1117" stroke="#30363d"/>
+
+<!-- Syntax Highlighting Colors -->
+<!-- Keywords -->
+fill="#79c0ff"
+
+<!-- Strings -->
+fill="#a5c261"
+
+<!-- Comments -->
+fill="#8b949e"
+
+<!-- Variables -->
+fill="#c9d1d9"
+
+<!-- Operators -->
+fill="#ff7b72"
+
+<!-- Functions/Methods -->
+fill="#f0883e"
+```
+
+### Terminal/Command Styling
+```svg
+<!-- Prompt Symbol -->
+<text x="10" y="15" font-family="monospace" 
+      font-size="12" fill="#8b949e">$</text>
+
+<!-- Command -->
+<text x="25" y="15" font-family="monospace" 
+      font-size="12" fill="#39d353">pip install</text>
+
+<!-- Arguments -->
+<text x="105" y="15" font-family="monospace" 
+      font-size="12" fill="#c9d1d9">markdown-lab</text>
+```
+
+## Text Layout Patterns
+
+### Multi-Line Text Handling
+```svg
+<!-- Line 1 -->
+<text x="20" y="70" font-family="system-ui, -apple-system, sans-serif" 
+      font-size="14" fill="#c9d1d9" opacity="0.8">
+  Lightning-fast HTML parsing and conversion
+</text>
+
+<!-- Line 2 (20px spacing) -->
+<text x="20" y="90" font-family="system-ui, -apple-system, sans-serif" 
+      font-size="14" fill="#c9d1d9" opacity="0.8">
+  with optimized memory usage
+</text>
+```
+
+### Label and Value Pairs
+```svg
+<!-- Label -->
+<text x="210" y="8" font-family="monospace" 
+      font-size="12" fill="#39d353">95% faster</text>
+
+<!-- Metrics Display -->
+<text x="0" y="15" font-family="monospace" 
+      font-size="11" fill="#39d353">⚡ 10x faster than Python alternatives</text>
+```
+
+## Responsive Text Considerations
+
+### Scalable Text Sizes
+- Use relative units when possible
+- Test readability at different viewport sizes
+- Maintain minimum 12px for body text
+- Ensure 14px minimum for important information
+
+### Text Overflow Handling
+- Plan for longer text strings in different languages
+- Use appropriate container widths
+- Consider text wrapping for dynamic content
+- Implement ellipsis for constrained spaces
+
+## Accessibility Standards
+
+### Contrast Requirements
+- Ensure 4.5:1 contrast ratio for normal text
+- Achieve 3:1 contrast for large text (18px+)
+- Test against dark background colors
+- Provide high contrast alternatives when needed
+
+### Font Size Guidelines
+- Minimum 12px for any readable text
+- 14px+ for body content
+- 18px+ for important headings
+- Consider user zoom levels up to 200%
+
+## Special Text Elements
+
+### Emoji and Symbols
+```svg
+<!-- Technical Symbols -->
+<text x="15" y="20" font-family="system-ui, -apple-system, sans-serif" 
+      font-size="16" font-weight="700" text-anchor="middle" fill="#39d353">⚡</text>
+
+<!-- Unicode Symbols -->
+<text x="15" y="20" font-family="system-ui, -apple-system, sans-serif" 
+      font-size="16" font-weight="700" text-anchor="middle" fill="#58a6ff">🔧</text>
+```
+
+### Status Indicators
+```svg
+<!-- Success Checkmark -->
+<circle cx="8" cy="8" r="3" fill="#39d353"/>
+
+<!-- Processing Dot -->
+<circle cx="20" cy="20" r="4" fill="#58a6ff" opacity="0.8">
+  <animate attributeName="opacity" values="0.8;0.3;0.8" dur="2s" repeatCount="indefinite"/>
+</circle>
+```
+
+## Performance Optimization
+
+### Text Rendering
+- Group similar text elements together
+- Use consistent font families to reduce browser work
+- Minimize font-weight variations within sections
+- Consider font loading strategies for web fonts
+
+### Memory Efficiency
+- Reuse text styles through CSS classes when possible
+- Minimize unique text styling combinations
+- Use transforms for positioning rather than absolute coordinates
+- Group text elements logically with `<g>` tags

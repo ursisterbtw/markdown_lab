@@ -3,12 +3,12 @@
 # Markdown Lab 🔄📝
 
 Markdown Lab combines Python and Rust components to scrape websites and convert HTML content to markdown, JSON, or XML formats. It supports sitemap parsing, semantic chunking for RAG
-  (Retrieval-Augmented Generation), and includes performance optimizations through Rust integration.
+(Retrieval-Augmented Generation), and includes performance optimizations through Rust integration.
 
-  Key features include HTML-to-markdown/JSON/XML conversion with support for various elements (headers, links, images, lists, code blocks), intelligent content chunking that preserves document structure, and systematic content discovery
-  through sitemap parsing. The hybrid architecture uses Python for high-level operations and Rust for performance-critical tasks.
+Key features include HTML-to-markdown/JSON/XML conversion with support for various elements (headers, links, images, lists, code blocks), intelligent content chunking that preserves document structure, and systematic content discovery
+through sitemap parsing. The hybrid architecture uses Python for high-level operations and Rust for performance-critical tasks.
 
-  Check out [deepwiki](https://deepwiki.com/ursisterbtw/markdown_lab/) for a detailed breakdown of the repository.
+Check out [deepwiki](https://deepwiki.com/ursisterbtw/markdown_lab/) for a detailed breakdown of the repository.
 
 [![Python CI](https://github.com/ursisterbtw/markdown_lab/actions/workflows/CI.yml/badge.svg)](https://github.com/ursisterbtw/markdown_lab/actions/workflows/CI.yml)
 [![Rust](https://github.com/ursisterbtw/markdown_lab/actions/workflows/rust.yml/badge.svg)](https://github.com/ursisterbtw/markdown_lab/actions/workflows/rust.yml)
@@ -21,13 +21,13 @@ Markdown Lab combines Python and Rust components to scrape websites and convert 
 - 📝 Converts HTML to clean Markdown, JSON, or XML formats
 - 🧩 Implements intelligent chunking for RAG (Retrieval-Augmented Generation) systems
 - 🔄 Handles various HTML elements:
-  - Headers (h1-h6)
-  - Paragraphs
-  - Links with resolved relative URLs
-  - Images with resolved relative URLs
-  - Ordered and unordered lists
-  - Blockquotes
-  - Code blocks
+    - Headers (h1-h6)
+    - Paragraphs
+    - Links with resolved relative URLs
+    - Images with resolved relative URLs
+    - Ordered and unordered lists
+    - Blockquotes
+    - Code blocks
 - 📋 Preserves document structure
 - 🪵 Comprehensive logging
 - ✅ Robust error handling with exponential backoff
@@ -121,25 +121,25 @@ python -m markdown_lab https://www.example.com -o output_dir \
 
 ### Command Line Arguments
 
-| Argument | Description | Default |
-|----------|-------------|---------|
-| `url` | The URL to scrape | (required) |
-| `-o, --output` | Output file/directory | `output.md` |
-| `-f, --format` | Output format (markdown, json, xml) | `markdown` |
-| `--save-chunks` | Save content chunks for RAG | False |
-| `--chunk-dir` | Directory to save chunks | `chunks` |
-| `--chunk-format` | Format for chunks (`json`, `jsonl`) | `jsonl` |
-| `--chunk-size` | Maximum chunk size (chars) | 1000 |
-| `--chunk-overlap` | Overlap between chunks (chars) | 200 |
-| `--requests-per-second` | Rate limit for requests | 1.0 |
-| `--use-sitemap` | Use sitemap.xml to discover URLs | False |
-| `--min-priority` | Minimum priority for sitemap URLs | None |
-| `--include` | Regex patterns for URLs to include | None |
-| `--exclude` | Regex patterns for URLs to exclude | None |
-| `--limit` | Maximum number of URLs to scrape | None |
-| `--links-file` | Path to file with URLs to scrape | `links.txt` |
-| `--parallel` | Use parallel processing for multiple URLs | False |
-| `--max-workers` | Max parallel workers when using --parallel | 4 |
+| Argument                | Description                                | Default     |
+| ----------------------- | ------------------------------------------ | ----------- |
+| `url`                   | The URL to scrape                          | (required)  |
+| `-o, --output`          | Output file/directory                      | `output.md` |
+| `-f, --format`          | Output format (markdown, json, xml)        | `markdown`  |
+| `--save-chunks`         | Save content chunks for RAG                | False       |
+| `--chunk-dir`           | Directory to save chunks                   | `chunks`    |
+| `--chunk-format`        | Format for chunks (`json`, `jsonl`)        | `jsonl`     |
+| `--chunk-size`          | Maximum chunk size (chars)                 | 1000        |
+| `--chunk-overlap`       | Overlap between chunks (chars)             | 200         |
+| `--requests-per-second` | Rate limit for requests                    | 1.0         |
+| `--use-sitemap`         | Use sitemap.xml to discover URLs           | False       |
+| `--min-priority`        | Minimum priority for sitemap URLs          | None        |
+| `--include`             | Regex patterns for URLs to include         | None        |
+| `--exclude`             | Regex patterns for URLs to exclude         | None        |
+| `--limit`               | Maximum number of URLs to scrape           | None        |
+| `--links-file`          | Path to file with URLs to scrape           | `links.txt` |
+| `--parallel`            | Use parallel processing for multiple URLs  | False       |
+| `--max-workers`         | Max parallel workers when using --parallel | 4           |
 
 ### As a Module
 
@@ -326,7 +326,7 @@ just build-dev           # Development build
 just build-release       # Optimized build
 just build-js            # Build with JavaScript support
 
-# Development workflows  
+# Development workflows
 just dev                 # Quick development mode
 just dev-cycle           # Build + test bindings
 just full-cycle          # Build + lint + test
@@ -347,40 +347,45 @@ just cli-test            # Test CLI functionality
 ### Code Organization
 
 - `markdown_lab/`: Main Python package
-  - `__init__.py`: Package initialization
-  - `__main__.py`: Command-line entry point
-  - `core/`: Core functionality
-    - `scraper.py`: Main scraper implementation
-    - `cache.py`: Request caching
-    - `throttle.py`: Rate limiting for web requests
-  - `utils/`: Utility modules
-    - `chunk_utils.py`: Utilities for chunking text for RAG
-    - `sitemap_utils.py`: Sitemap parsing and URL discovery
-    - `version.py`: Version information
-  - `markdown_lab_rs.py`: Python interface to Rust components
+
+    - `__init__.py`: Package initialization
+    - `__main__.py`: Command-line entry point
+    - `core/`: Core functionality
+        - `scraper.py`: Main scraper implementation
+        - `cache.py`: Request caching
+        - `throttle.py`: Rate limiting for web requests
+    - `utils/`: Utility modules
+        - `chunk_utils.py`: Utilities for chunking text for RAG
+        - `sitemap_utils.py`: Sitemap parsing and URL discovery
+        - `version.py`: Version information
+    - `markdown_lab_rs.py`: Python interface to Rust components
 
 - `src/`: Rust source code
-  - `lib.rs`: Main library and Python bindings
-  - `html_parser.rs`: HTML parsing utilities
-  - `markdown_converter.rs`: HTML to Markdown conversion
-  - `chunker.rs`: Markdown chunking logic
-  - `js_renderer.rs`: JavaScript page rendering
+
+    - `lib.rs`: Main library and Python bindings
+    - `html_parser.rs`: HTML parsing utilities
+    - `markdown_converter.rs`: HTML to Markdown conversion
+    - `chunker.rs`: Markdown chunking logic
+    - `js_renderer.rs`: JavaScript page rendering
 
 - `tests/`: Test files
-  - `unit/`: Python unit tests
-  - `integration/`: Integration tests
-  - `rust/`: Rust and Python binding tests
+
+    - `unit/`: Python unit tests
+    - `integration/`: Integration tests
+    - `rust/`: Rust and Python binding tests
 
 - `benches/`: Benchmark files
-  - Performance tests for core operations
+
+    - Performance tests for core operations
 
 - `examples/`: Example scripts and demos
-  - `demo_formats.py`: Demo of different output formats
-  - `hello.py`: Simple hello world example
+
+    - `demo_formats.py`: Demo of different output formats
+    - `hello.py`: Simple hello world example
 
 - `docs/`: Documentation
-  - Various documentation files and guides
-  - `assets/`: Documentation assets like images
+    - Various documentation files and guides
+    - `assets/`: Documentation assets like images
 
 ### Running with Real JavaScript Rendering
 
@@ -403,11 +408,13 @@ See `docs/JS_RENDERING.md` for more details.
 ## Dependencies
 
 ### Core Dependencies
+
 - requests: Web scraping and HTTP requests (being migrated to unified HTTP client)
 - beautifulsoup4: HTML parsing fallback
 - psutil: Performance monitoring
 
 ### Development Dependencies
+
 - pytest: Testing framework with benchmarking support
 - mypy: Type checking with strict configuration
 - black: Code formatting
@@ -415,6 +422,7 @@ See `docs/JS_RENDERING.md` for more details.
 - maturin: Rust-Python integration
 
 ### Rust Dependencies
+
 - pyo3: Python bindings
 - scraper: High-performance HTML parsing with cached selectors
 - serde: Serialization for JSON/XML output
@@ -435,6 +443,7 @@ This project is licensed under the MIT License - see the [LICENSE file](LICENSE)
 ## Roadmap
 
 ### ✅ Completed
+
 - [x] Add support for more HTML elements
 - [x] Implement chunking for RAG
 - [x] Add sitemap.xml parsing for systematic scraping
@@ -446,13 +455,15 @@ This project is licensed under the MIT License - see the [LICENSE file](LICENSE)
 - [x] **Remove dead dependencies and fix version conflicts**
 
 ### 🚧 In Progress
+
 - [ ] Async HTTP operations for parallel processing
 - [ ] Memory usage optimization in chunking algorithms
 - [ ] Module restructuring for better maintainability
 
 ### 📋 Planned
+
 - [ ] Add support for JavaScript-rendered pages
-- [ ] Implement custom markdown templates  
+- [ ] Implement custom markdown templates
 - [ ] Include CSS selector support
 - [ ] Enhanced caching with LRU eviction
 - [ ] Token bucket rate limiting
@@ -468,28 +479,33 @@ This project is licensed under the MIT License - see the [LICENSE file](LICENSE)
 To create an official release, follow these steps:
 
 1. **Update Version Numbers**:
-   - Update the version number in `Cargo.toml`, `pyproject.toml`, and `markdown_lab/__init__.py` to the new release version.
+
+    - Update the version number in `Cargo.toml`, `pyproject.toml`, and `markdown_lab/__init__.py` to the new release version.
 
 2. **Commit Changes**:
-   - Commit the changes to the version numbers and any other updates.
+
+    - Commit the changes to the version numbers and any other updates.
 
 3. **Tag the Release**:
-   - Create a new Git tag for the release:
 
-     ```bash
-     git tag -a v1.0.0 -m "Release version 1.0.0"
-     git push origin v1.0.0
-     ```
+    - Create a new Git tag for the release:
+
+        ```bash
+        git tag -a v1.0.0 -m "Release version 1.0.0"
+        git push origin v1.0.0
+        ```
 
 4. **Push Changes**:
-   - Push the changes to the main branch:
 
-     ```bash
-     git push origin main
-     ```
+    - Push the changes to the main branch:
+
+        ```bash
+        git push origin main
+        ```
 
 5. **Create GitHub Release**:
-   - Go to the GitHub repository and create a new release using the tag created in step 3.
+
+    - Go to the GitHub repository and create a new release using the tag created in step 3.
 
 6. **Verify Release**:
-   - Verify that the release has been created successfully and that all components are working as expected.
+    - Verify that the release has been created successfully and that all components are working as expected.

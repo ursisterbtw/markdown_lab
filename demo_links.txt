@@ -1,0 +1,2 @@
+https://httpbin.org/html
+https://httpbin.org/json

@@ -17,6 +17,45 @@ from xml.dom import minidom
 logger = logging.getLogger(__name__)
 
 
+def _python_html_to_markdown(html: str, base_url: str = "") -> str:
+    """
+    Simple Python fallback for HTML to markdown conversion.
+    This is a basic implementation that should be sufficient for testing.
+    """
+    # Very basic HTML to markdown conversion using regex
+    import re
+
+    # Remove script and style tags
+    html = re.sub(
+        r"<(script|style)[^>]*>.*?</\1>", "", html, flags=re.DOTALL | re.IGNORECASE
+    )
+
+    # Convert headers
+    html = re.sub(r"<h1[^>]*>(.*?)</h1>", r"# \1\n", html, flags=re.IGNORECASE)
+    html = re.sub(r"<h2[^>]*>(.*?)</h2>", r"## \1\n", html, flags=re.IGNORECASE)
+    html = re.sub(r"<h3[^>]*>(.*?)</h3>", r"### \1\n", html, flags=re.IGNORECASE)
+
+    # Convert paragraphs
+    html = re.sub(
+        r"<p[^>]*>(.*?)</p>", r"\1\n\n", html, flags=re.DOTALL | re.IGNORECASE
+    )
+
+    # Convert links
+    html = re.sub(
+        r'<a[^>]*href=["\']([^"\']*)["\'][^>]*>(.*?)</a>',
+        r"[\2](\1)",
+        html,
+        flags=re.IGNORECASE,
+    )
+
+    # Remove remaining HTML tags
+    html = re.sub(r"<[^>]+>", "", html)
+
+    # Clean up whitespace
+    html = re.sub(r"\n\s*\n", "\n\n", html)
+    return html.strip()
+
+
 class OutputFormat(str, Enum):
     """Output format for HTML conversion"""
 
@@ -60,16 +99,16 @@ def convert_html(
 ) -> str:
     """
     Converts HTML content to markdown, JSON, or XML format.
-    
+
     Uses a Rust implementation for conversion if available; otherwise, falls back to a Python-based approach. For JSON and XML outputs, the HTML is first converted to markdown, then parsed into a structured document before serialization.
-    	
+
     Args:
-    	html: The HTML content to convert.
-    	base_url: The base URL used for resolving relative links.
-    	output_format: The desired output format (markdown, json, or xml).
-    
+        html: The HTML content to convert.
+        base_url: The base URL used for resolving relative links.
+        output_format: The desired output format (markdown, json, or xml).
+
     Returns:
-    	The converted content in the specified format as a string.
+        The converted content in the specified format as a string.
     """
     if RUST_AVAILABLE:
         try:
@@ -79,17 +118,15 @@ def convert_html(
                 f"Error in Rust HTML conversion to {output_format}, falling back to Python: {e}"
             )
 
-    # Fall back to Python implementation
-    from markdown_lab.core.scraper import MarkdownScraper
-
-    scraper = MarkdownScraper()
+    # Fall back to Python implementation - use a simple HTML to markdown converter
+    logger.warning("Using basic Python HTML to markdown conversion fallback")
 
     if output_format == OutputFormat.MARKDOWN:
-        return scraper.convert_to_markdown(html, base_url)
+        return _python_html_to_markdown(html, base_url)
 
     # For JSON and XML, first convert to markdown to get structured content
     # This is a simplified implementation - the real one would parse the HTML directly
-    markdown_content = scraper.convert_to_markdown(html, base_url)
+    markdown_content = _python_html_to_markdown(html, base_url)
 
     # Parse markdown into our document structure
     document = parse_markdown_to_document(markdown_content, base_url)
@@ -260,7 +297,7 @@ def chunk_markdown(
 def render_js_page(url: str, wait_time_ms: Optional[int] = None) -> str:
     """
     Renders a JavaScript-enabled web page and returns the resulting HTML content.
-    
+
     If the Rust extension is available, uses it to render the page. Otherwise, logs a warning and returns None, as Python fallback is not implemented.
     """
     if RUST_AVAILABLE:

@@ -128,10 +128,10 @@ class SitemapParser:
     def _parse_sitemap_xml(self, content: str) -> Tuple[List[SitemapURL], List[str]]:
         """
         Parses XML sitemap content and extracts URLs and sitemap index references.
-        
+
         Args:
             content: The XML sitemap content as a string.
-        
+
         Returns:
             A tuple containing a list of SitemapURL objects and a list of sitemap index URLs.
         """
@@ -156,10 +156,10 @@ class SitemapParser:
     def _extract_namespace(self, content: str) -> Optional[str]:
         """
         Extracts the XML namespace URI from the given XML content string.
-        
+
         Args:
             content: The XML content as a string.
-        
+
         Returns:
             The namespace URI if found, otherwise None.
         """
@@ -171,7 +171,7 @@ class SitemapParser:
     ) -> Tuple[List[SitemapURL], List[str]]:
         """
         Extracts sitemap URLs from a sitemap index XML element.
-        
+
         Returns:
             A tuple containing an empty list of SitemapURL objects and a list of sitemap index URLs found within the sitemap index.
         """
@@ -192,12 +192,12 @@ class SitemapParser:
     ) -> Tuple[List[SitemapURL], List[str]]:
         """
         Extracts URLs and associated metadata from a regular sitemap XML element.
-        
+
         Args:
             root: The root XML element of the sitemap.
             namespace: The XML namespace URI, if present.
             ns_map: Mapping of XML namespace prefixes to URIs.
-        
+
         Returns:
             A tuple containing a list of SitemapURL objects extracted from the sitemap and an empty list (since regular sitemaps do not contain sitemap indices).
         """
@@ -215,7 +215,7 @@ class SitemapParser:
     ) -> Optional[SitemapURL]:
         """
         Extracts URL location and metadata from a sitemap URL element.
-        
+
         Parses a single <url> element from a sitemap XML, retrieving the URL, last modified date, change frequency, and priority if available. Returns a SitemapURL object or None if the location is missing.
         """
         loc_elem = url_elem.find("sm:loc" if namespace else "loc", ns_map)
@@ -243,13 +243,13 @@ class SitemapParser:
     ) -> Optional[str]:
         """
         Retrieves the stripped text content of a specified child element, considering XML namespace.
-        
+
         Args:
             parent: The parent XML element.
             element_name: The name of the child element to search for.
             namespace: The XML namespace URI, if present.
             ns_map: Mapping of namespace prefixes to URIs.
-        
+
         Returns:
             The stripped text content of the child element, or None if not found or empty.
         """
@@ -262,7 +262,7 @@ class SitemapParser:
     ) -> Optional[float]:
         """
         Extracts the priority value from a sitemap URL element as a float.
-        
+
         Returns:
             The priority as a float if present and valid, otherwise None.
         """
@@ -440,9 +440,9 @@ def discover_site_urls(
 ) -> List[str]:
     """
     Discovers and filters URLs from a website's sitemap based on specified criteria.
-    
+
     Parses the website's sitemap(s), applies filtering by priority and regex patterns, and returns a list of URL strings. Optionally checks robots.txt for sitemap locations.
-    
+
     Args:
         base_url: The website's base URL to start sitemap discovery.
         min_priority: Minimum priority value (0.0–1.0) for included URLs.
@@ -450,7 +450,7 @@ def discover_site_urls(
         exclude_patterns: List of regex patterns; URLs matching any are excluded.
         limit: Maximum number of URLs to return.
         respect_robots_txt: If True, attempts to discover sitemaps via robots.txt.
-    
+
     Returns:
         A list of URL strings matching the filtering criteria.
     """

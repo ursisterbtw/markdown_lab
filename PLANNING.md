@@ -3,9 +3,11 @@
 ## Current State Analysis
 
 ### Architecture Overview
+
 Markdown Lab is a **hybrid Python-Rust application** that converts HTML to multiple output formats (Markdown, JSON, XML) with web scraping and content chunking capabilities. The architecture follows a **dual-implementation pattern** where Rust provides high-performance core functionality with Python fallbacks.
 
 **Core Components:**
+
 - **Python Package** (`markdown_lab/`): High-level orchestration, CLI interface, web scraping utilities
 - **Rust Extension** (`src/`): Performance-critical HTML parsing, conversion, and chunking
 - **PyO3 Bindings**: Bridge between Python and Rust components with graceful fallbacks
@@ -13,29 +15,34 @@ Markdown Lab is a **hybrid Python-Rust application** that converts HTML to multi
 ### Key Pain Points
 
 #### 1. Code Duplication (30-40% redundancy)
+
 - **Dual Implementation**: Similar HTML parsing/conversion logic in both Python and Rust
 - **Error Handling**: Repeated retry/backoff patterns across multiple modules
 - **Configuration**: Same parameters scattered across multiple classes
 - **HTTP Logic**: Identical request handling in scraper.py and sitemap_utils.py
 
 #### 2. Technical Debt Accumulation
+
 - **Large Methods**: 134-line main() function, 74-line conversion methods
 - **Magic Numbers**: Hardcoded values without named constants
 - **Inconsistent Error Handling**: Mix of generic exceptions and specific error types
 - **Missing Type Annotations**: Incomplete typing despite mypy configuration
 
 #### 3. Performance Bottlenecks
+
 - **Memory Inefficiency**: Multiple string copies during HTML processing
 - **Sequential Processing**: No parallelization for multi-URL operations
 - **Cache Overhead**: Dual memory/disk cache without size limits
 - **Redundant Operations**: Multiple DOM traversals, repeated selector compilation
 
 #### 4. Maintenance Complexity
+
 - **Configuration Drift**: Version mismatches between pyproject.toml (3.12) and mypy.ini (3.8)
 - **Dependency Issues**: Redundant requirements (argparse, pathlib built-ins)
 - **Test Brittleness**: Hardcoded expectations, heavy mocking, limited integration coverage
 
 ### Current Performance Metrics
+
 - **Conversion Speed**: ~500-1000 docs/second (small documents)
 - **Memory Usage**: ~50-100MB for typical document processing
 - **Cache Hit Rate**: ~70-80% for repeated URL patterns
@@ -81,6 +88,7 @@ markdown_lab/
 ### Technology Stack Evaluation
 
 #### Current Stack Assessment
+
 - **Python 3.12+**: ✅ Modern, well-suited for orchestration and I/O
 - **Rust 2024**: ✅ Excellent for performance-critical operations
 - **PyO3**: ✅ Mature Python-Rust binding solution
@@ -88,6 +96,7 @@ markdown_lab/
 - **requests**: ⚠️ Synchronous, consider httpx for async operations
 
 #### Recommended Technology Updates
+
 ```python
 # Current                    # Proposed
 requests                  -> httpx (async support)
@@ -100,6 +109,7 @@ simple rate limiting     -> token bucket algorithm
 ### Module Boundaries and Interfaces
 
 #### 1. Core Configuration Management
+
 ```python
 @dataclass
 class MarkdownLabConfig:
@@ -107,22 +117,23 @@ class MarkdownLabConfig:
     requests_per_second: float = 1.0
     timeout: int = 30
     max_retries: int = 3
-    
+
     # Processing settings
     chunk_size: int = 1000
     chunk_overlap: int = 200
-    
+
     # Cache settings
     cache_enabled: bool = True
     cache_max_memory: int = 100_000_000  # 100MB
     cache_max_disk: int = 1_000_000_000   # 1GB
-    
+
     # Performance settings
     parallel_workers: int = 4
     memory_limit: int = 500_000_000       # 500MB
 ```
 
 #### 2. Unified Error Hierarchy
+
 ```python
 class MarkdownLabError(Exception):
     """Base exception for all markdown_lab operations"""
@@ -141,21 +152,22 @@ class ResourceError(MarkdownLabError):
 ```
 
 #### 3. Abstract Base Classes
+
 ```python
 class BaseProcessor(ABC):
     """Abstract base for all content processors"""
-    
+
     @abstractmethod
     async def process(self, content: str, context: ProcessingContext) -> ProcessingResult:
         pass
-    
+
     @abstractmethod
     def validate_input(self, content: str) -> bool:
         pass
 
 class BaseConverter(ABC):
     """Abstract base for format converters"""
-    
+
     @abstractmethod
     def convert(self, document: Document, format: OutputFormat) -> str:
         pass
@@ -164,21 +176,25 @@ class BaseConverter(ABC):
 ## Risk Assessment
 
 ### Breaking Changes
+
 - **Configuration API**: New centralized config may break existing initialization patterns
 - **Import Paths**: Module restructuring will require import updates
 - **Error Types**: Unified error hierarchy may break specific exception handling
 
 **Mitigation Strategy:**
+
 - Provide compatibility layer for 6 months
 - Gradual migration with deprecation warnings
 - Comprehensive migration guide and tooling
 
 ### Migration Complexity
+
 - **Moderate Risk**: Well-defined module boundaries limit blast radius
 - **Code Movement**: ~60% of files will need relocation/refactoring
 - **Test Updates**: ~40% of tests will need updating for new structure
 
 ### Testing Requirements
+
 - **Integration Test Suite**: New comprehensive end-to-end tests
 - **Performance Benchmarks**: Before/after comparisons for all optimizations
 - **Compatibility Tests**: Ensure Python/Rust feature parity maintained
@@ -186,6 +202,7 @@ class BaseConverter(ABC):
 ## Success Metrics
 
 ### Code Quality Targets
+
 - [x] **Configuration System**: Centralized MarkdownLabConfig eliminates scattered parameters
 - [x] **Error Hierarchy**: Unified exception handling with structured context
 - [x] **HTTP Client**: Consolidated request logic with connection pooling
@@ -197,6 +214,7 @@ class BaseConverter(ABC):
 - [ ] **Test Coverage**: 90% line coverage, 80% branch coverage
 
 ### Performance Improvements
+
 - [x] **HTML Parsing**: 40-50% improvement with cached selectors using once_cell
 - [x] **Memory Efficiency**: Reduced string allocations and optimized element processing
 - [ ] **Conversion Speed**: 50% improvement for large documents - **Rust optimizations implemented**
@@ -205,6 +223,7 @@ class BaseConverter(ABC):
 - [ ] **Parallel Throughput**: 3x improvement for multi-URL processing
 
 ### Maintainability Gains
+
 - [x] **Build System**: Updated to use uv and modern Python tooling with justfile workflows
 - [x] **Documentation**: Updated for new architecture and command structure
 - [x] **Dependency Health**: Cleaned requirements.txt and fixed version conflicts
@@ -216,6 +235,7 @@ class BaseConverter(ABC):
 ### Quantitative Benchmarks
 
 #### Before Refactoring
+
 ```
 Lines of Code: 3,487
 Cyclomatic Complexity: avg 8.2, max 18
@@ -227,6 +247,7 @@ Conversion Rate: 750 docs/second
 ```
 
 #### Current Progress (Phase 1 Complete)
+
 ```
 Lines of Code: ~3,150 (350+ lines eliminated so far)
 Code Duplication: ~20% (major reduction in HTTP/config/error handling)
@@ -237,6 +258,7 @@ Error Handling: Structured with context and debugging information
 ```
 
 #### Target After Full Refactoring
+
 ```
 Lines of Code: 2,400-2,600 (25-30% reduction)
 Cyclomatic Complexity: avg 5.5, max 10
@@ -250,6 +272,7 @@ Conversion Rate: 1,200+ docs/second
 ## Implementation Timeline
 
 ### Phase 1: Foundation (Week 1-2) ✅ COMPLETED
+
 - ✅ Create core configuration system (MarkdownLabConfig with validation)
 - ✅ Establish unified error hierarchy (structured exceptions with context)
 - ✅ Extract common HTTP client (consolidated request handling)
@@ -258,21 +281,25 @@ Conversion Rate: 1,200+ docs/second
 - ✅ Fix justfile recipe errors and standardize development workflow
 
 ### Phase 2: Network & I/O Optimization (Week 3-4)
+
 - Implement async HTTP client
 - Optimize caching strategy
 - Add connection pooling and advanced rate limiting
 
 ### Phase 3: Processing Pipeline (Week 5-6)
+
 - Refactor HTML processing logic
 - Consolidate conversion algorithms
 - Optimize memory usage patterns
 
 ### Phase 4: Integration & Testing (Week 7-8)
+
 - Comprehensive integration testing
 - Performance benchmarking and optimization
 - Documentation updates and migration guides
 
 ### Phase 5: Validation & Cleanup (Week 9-10)
+
 - Remove compatibility layer
 - Final performance validation
 - Production readiness assessment
@@ -280,18 +307,21 @@ Conversion Rate: 1,200+ docs/second
 ## Technology Evaluation Results
 
 ### Keep Current Technologies
+
 - **Rust + PyO3**: Excellent performance, mature ecosystem
 - **Python 3.12**: Modern features, good async support
 - **pytest**: Comprehensive testing framework
 - **maturin**: Reliable Rust-Python building
 
 ### Upgrade Recommendations
+
 - **requests → httpx**: Better async support, HTTP/2
 - **beautifulsoup4 → lxml**: 2-3x parsing performance improvement
 - **manual caching → structured caching**: Better memory management
 - **simple throttling → token bucket**: More sophisticated rate limiting
 
 ### New Dependencies to Consider
+
 - **aiohttp**: Async HTTP server capabilities
 - **pydantic**: Enhanced configuration validation
 - **structlog**: Structured logging for better debugging

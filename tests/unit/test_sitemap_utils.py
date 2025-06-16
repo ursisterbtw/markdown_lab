@@ -117,7 +117,7 @@ class TestSitemapUtils(unittest.TestCase):
         # Mock robots.txt and sitemap
         """
         Tests that the parser respects robots.txt sitemap declarations and correctly parses URLs from a custom sitemap.
-        
+
         Mocks responses for robots.txt and a custom sitemap, enables robots.txt handling, and verifies that URLs from the declared sitemap are discovered.
         """
         robots_sitemap_responses = {

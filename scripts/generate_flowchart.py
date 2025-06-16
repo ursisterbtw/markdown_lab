@@ -279,7 +279,7 @@ SVG_ANIMATION_CSS = f"""
 def add_svg_animation(svg_content: str) -> str:
     """
     Injects CSS animation styles and node/edge classes into SVG content.
-    
+
     Adds CSS animation rules and assigns `class="node"` and `class="edge"` to corresponding SVG group elements. If the `<svg>` tag is found, the animation CSS is inserted immediately after it; otherwise, the original SVG content is returned unchanged.
     """
     # Improved regex that properly preserves whitespace between attributes
@@ -310,7 +310,7 @@ def add_svg_animation(svg_content: str) -> str:
 def check_dependencies() -> bool:
     """
     Checks for the presence of the Graphviz 'dot' executable in the system PATH.
-    
+
     Returns:
         True if 'dot' is found, False otherwise.
     """

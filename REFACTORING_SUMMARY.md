@@ -13,6 +13,7 @@ This document summarizes the major structural reorganization of the Markdown Lab
 ## Directory Structure Changes
 
 ### Before:
+
 ```
 markdown_lab/
 ├── Cargo.lock
@@ -36,6 +37,7 @@ markdown_lab/
 ```
 
 ### After:
+
 ```
 markdown_lab/
 ├── Cargo.lock
@@ -88,61 +90,69 @@ markdown_lab/
 ## Key Changes
 
 ### 1. Package Structure
+
 - Created a proper `markdown_lab` Python package with:
-  - Package-level `__init__.py` with version information
-  - Module-level `__main__.py` for CLI usage
-  - Subpackages for core functionality and utilities
+    - Package-level `__init__.py` with version information
+    - Module-level `__main__.py` for CLI usage
+    - Subpackages for core functionality and utilities
 
 ### 2. Code Organization
+
 - **Core Functionality**: Moved main components to `markdown_lab/core/`
-  - Extracted `RequestCache` class to its own module (`cache.py`)
-  - Moved and reorganized the `main.py` content into `core/scraper.py`
-  - Moved request throttling to `core/throttle.py`
-  
+    - Extracted `RequestCache` class to its own module (`cache.py`)
+    - Moved and reorganized the `main.py` content into `core/scraper.py`
+    - Moved request throttling to `core/throttle.py`
 - **Utilities**: Moved utility modules to `markdown_lab/utils/`
-  - Placed chunking utilities in `utils/chunk_utils.py`
-  - Placed sitemap parsing in `utils/sitemap_utils.py`
-  - Created a version module in `utils/version.py`
+    - Placed chunking utilities in `utils/chunk_utils.py`
+    - Placed sitemap parsing in `utils/sitemap_utils.py`
+    - Created a version module in `utils/version.py`
 
 ### 3. Testing Structure
+
 - Reorganized tests into a proper test hierarchy:
-  - Unit tests in `tests/unit/`
-  - Integration tests in `tests/integration/`
-  - Rust and binding tests in `tests/rust/`
-  - Added a `conftest.py` for pytest configuration
+    - Unit tests in `tests/unit/`
+    - Integration tests in `tests/integration/`
+    - Rust and binding tests in `tests/rust/`
+    - Added a `conftest.py` for pytest configuration
 
 ### 4. Documentation and Examples
+
 - Created a dedicated `docs/` directory for documentation
-  - Moved markdown documentation files
-  - Created an `assets/` subdirectory for images and diagrams
+    - Moved markdown documentation files
+    - Created an `assets/` subdirectory for images and diagrams
 - Created an `examples/` directory for example scripts
-  - Moved and updated demo scripts
-  - Added a simple "hello world" example
+    - Moved and updated demo scripts
+    - Added a simple "hello world" example
 
 ### 5. Build System
+
 - Enhanced `pyproject.toml` with:
-  - Better metadata and descriptions
-  - Optional dependencies for development, testing, and JS features
-  - Proper entry point for CLI usage
-  - Tool configuration for linters and formatters
+    - Better metadata and descriptions
+    - Optional dependencies for development, testing, and JS features
+    - Proper entry point for CLI usage
+    - Tool configuration for linters and formatters
 
 ## Import Updates
+
 - Updated all imports throughout the codebase to use the new package structure:
-  - Changed `from main import MarkdownScraper` to `from markdown_lab.core.scraper import MarkdownScraper`
-  - Changed `from sitemap_utils import SitemapParser` to `from markdown_lab.utils.sitemap_utils import SitemapParser`
-  - Changed `from markdown_lab_rs import convert_html` to `from markdown_lab.markdown_lab_rs import convert_html`
+    - Changed `from main import MarkdownScraper` to `from markdown_lab.core.scraper import MarkdownScraper`
+    - Changed `from sitemap_utils import SitemapParser` to `from markdown_lab.utils.sitemap_utils import SitemapParser`
+    - Changed `from markdown_lab_rs import convert_html` to `from markdown_lab.markdown_lab_rs import convert_html`
 
 ## Dependency Management
+
 - Made `psutil` optional and platform-specific
 - Added proper version constraints for dependencies
 - Created dependency groups for development, testing, and optional features
 
 ## CLI Interface
+
 - Updated CLI usage to use the Python module format:
-  - Changed `python main.py` to `python -m markdown_lab`
+    - Changed `python main.py` to `python -m markdown_lab`
 - Ensured backward compatibility by maintaining the same command-line arguments
 
 ## Documentation Updates
+
 - Updated README.md to reflect the new structure
 - Updated import examples in documentation
 - Created this refactoring summary document
