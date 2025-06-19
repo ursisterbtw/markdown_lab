@@ -53,25 +53,27 @@ class TestRustBackend:
     """Comprehensive unit tests for RustBackend class."""
 
     @pytest.fixture(autouse=True)
-    def setup_method(self):
+    def setup_method(request):
         """Set up test fixtures before each test method."""
-        self.mock_config = BackendConfig(
+        test_instance = request.instance
+        test_instance.mock_config = BackendConfig(
             host="localhost",
             port=8080,
             timeout=30,
             debug=True
         )
-        self.backend = RustBackend(self.mock_config)
+        test_instance.backend = RustBackend(test_instance.mock_config)
 
     @pytest.fixture
-    def mock_backend_connected(self):
+    def mock_backend_connected(request):
         """Fixture providing a connected backend instance."""
-        backend = RustBackend(self.mock_config)
+        test_instance = request.instance
+        backend = RustBackend(test_instance.mock_config)
         backend.connect()
         return backend
 
     @pytest.fixture
-    def sample_commands(self):
+    def sample_commands():
         """Fixture providing sample commands for testing."""
         return [
             {"command": "list_files", "args": {"path": "/tmp"}},
@@ -115,7 +117,7 @@ class TestRustBackend:
         result = self.backend.connect()
         assert result is True or isinstance(result, bool)
 
-    @patch('rust_backend.RustBackend.connect')
+    @patch.object(RustBackend, 'connect')
     def test_connect_failure(self, mock_connect):
         mock_connect.side_effect = RustBackendError("Connection failed")
         with pytest.raises(RustBackendError, match="Connection failed"):
@@ -129,7 +131,7 @@ class TestRustBackend:
         self.backend.disconnect()
         assert not self.backend.connected
 
-    @patch('rust_backend.RustBackend.connect')
+    @patch.object(RustBackend, 'connect')
     def test_connection_timeout(self, mock_connect):
         mock_connect.side_effect = TimeoutError("Connection timed out")
         with pytest.raises(TimeoutError):
@@ -209,7 +211,7 @@ class TestRustBackend:
         except TypeError:
             pass
 
-    @patch('rust_backend.RustBackend.execute_command')
+    @patch.object(RustBackend, 'execute_command')
     def test_network_error_handling(self, mock_execute):
         mock_execute.side_effect = ConnectionError("Network unreachable")
         self.backend.connected = True

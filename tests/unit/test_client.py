@@ -370,7 +370,7 @@ class TestFactoryFunctions:
         assert client.config == mock_config
 
     @patch('markdown_lab.http.client.get_config')
-    def test_create_cached_http_client_with_none_config_uses_default(self, gc):
+    def test_create_cached_http_client_with_none_config_uses_default(self, gc):  # noqa: E501
         cfg = Mock(spec=MarkdownLabConfig)
         gc.return_value = cfg
         client = create_cached_http_client(None)
@@ -400,7 +400,7 @@ class TestEdgeCasesAndErrorHandling:
         with pytest.raises((NetworkError, requests.exceptions.InvalidURL)):
             client.get("")
 
-    @pytest.mark.parametrize("status_code", [400,401,403,404,429,500,502,503,504])
+    @pytest.mark.parametrize("status_code", [400, 401, 403, 404, 429, 500, 502, 503, 504])
     @patch('markdown_lab.http.client.time.sleep')
     def test_get_request_with_various_http_error_codes_raises_network_error(self, mock_sleep, status_code, mock_config, mock_session):
         resp = Mock(status_code=status_code)
@@ -441,13 +441,14 @@ class TestPerformanceAndIntegration:
 
     def test_get_many_respects_rate_limiting(self, mock_config, mock_session):
         responses = [Mock(text=str(i), status_code=200) for i in range(3)]
-        for r in responses: r.raise_for_status.return_value = None
+        for r in responses:
+            r.raise_for_status.return_value = None
         mock_session.request.side_effect = responses
 
         client = HttpClient(mock_config)
         client.session = mock_session
         with patch.object(client.throttler, 'throttle') as thr:
-            client.get_many(["a","b","c"])
+            client.get_many(["a", "b", "c"])
             assert thr.call_count == 3
 
     @patch('markdown_lab.http.client.time.sleep')
@@ -479,7 +480,8 @@ class TestPerformanceAndIntegration:
 
     def test_session_reuse_across_requests(self, mock_config, mock_session):
         responses = [Mock(text=str(i), status_code=200) for i in range(5)]
-        for r in responses: r.raise_for_status.return_value = None
+        for r in responses:
+            r.raise_for_status.return_value = None
         mock_session.request.side_effect = responses
 
         client = HttpClient(mock_config)
@@ -511,8 +513,8 @@ class TestConfigurationHandling:
 
     def test_client_respects_zero_retries_configuration(self, mock_session):
         cfg = Mock(spec=MarkdownLabConfig)
-        cfg.user_agent="A"; cfg.timeout=30; cfg.max_retries=0
-        cfg.requests_per_second=1.0; cfg.max_concurrent_requests=5
+        cfg.user_agent = "A"; cfg.timeout = 30; cfg.max_retries = 0
+        cfg.requests_per_second = 1.0; cfg.max_concurrent_requests = 5
         mock_session.request.side_effect = ConnectionError()
 
         client = HttpClient(cfg)
@@ -523,8 +525,8 @@ class TestConfigurationHandling:
 
     def test_client_handles_negative_retry_configuration_gracefully(self, mock_session):
         cfg = Mock(spec=MarkdownLabConfig)
-        cfg.user_agent="A"; cfg.timeout=30; cfg.max_retries=-1
-        cfg.requests_per_second=1.0; cfg.max_concurrent_requests=5
+        cfg.user_agent = "A"; cfg.timeout = 30; cfg.max_retries = -1
+        cfg.requests_per_second = 1.0; cfg.max_concurrent_requests = 5
         mock_session.request.side_effect = ConnectionError()
 
         client = HttpClient(cfg)
