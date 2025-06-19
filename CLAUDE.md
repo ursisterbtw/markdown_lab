@@ -169,15 +169,3 @@ If you prefer direct commands without justfile or the modern CLI:
 - Use `-f/--format` CLI argument to specify output format
 - All formats support the same HTML elements and content structure
 
-## Known Issues & Fixes
-
-### Fixed: XML/JSON Conversion Error (2025-06-19)
-**Issue**: XML and JSON conversion failed with `AttributeError: module 'markdown_lab.markdown_lab_rs' has no attribute 'convert_html'`
-
-**Root Cause**: Python backend was calling `convert_html()` but Rust module exports `convert_html_to_format()`
-
-**Fix**: Updated `markdown_lab/core/rust_backend.py:76` to call correct function name
-- Changed: `self._rust_module.convert_html(html, base_url, output_format)`  
-- To: `self._rust_module.convert_html_to_format(html, base_url, output_format)`
-
-**Status**: ✅ Resolved - All format conversions now working (markdown, json, xml)

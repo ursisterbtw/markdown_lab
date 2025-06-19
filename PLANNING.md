@@ -258,13 +258,6 @@ Error Handling: Structured with context and debugging information
 Format Conversion: All outputs (Markdown, JSON, XML) working correctly
 ```
 
-#### Recent Bug Fixes (2025-06-19)
-
-**Fixed XML/JSON Conversion Issue:**
-- **Problem**: `AttributeError: module 'markdown_lab.markdown_lab_rs' has no attribute 'convert_html'`
-- **Root Cause**: Function name mismatch between Python backend and Rust module exports
-- **Solution**: Updated `rust_backend.py:76` to call correct `convert_html_to_format()` function
-- **Impact**: All three output formats now working reliably
 
 #### Target After Full Refactoring
 

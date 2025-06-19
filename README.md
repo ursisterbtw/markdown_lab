@@ -232,22 +232,6 @@ urls = parser.filter_urls(min_priority=0.5)
 parser.export_urls_to_file(urls, "sitemap_urls.txt")
 ```
 
-## Bug Fixes & Updates
-
-### Fixed: XML/JSON Conversion (2025-06-19)
-Previously, XML and JSON conversion would fail with an AttributeError. This has been resolved by fixing the function name mismatch between the Python backend and Rust module exports.
-
-**What was fixed:**
-- Corrected Python backend to call `convert_html_to_format()` instead of non-existent `convert_html()`
-- All three output formats (Markdown, JSON, XML) now work correctly
-
-**Example usage now working:**
-```bash
-# These commands now work properly
-python -m markdown_lab https://example.com -f json -o output.json
-python -m markdown_lab https://example.com -f xml -o output.xml
-```
-
 ## Sitemap Integration Features
 
 The library intelligently discovers and parses XML sitemaps to scrape exactly what you need:

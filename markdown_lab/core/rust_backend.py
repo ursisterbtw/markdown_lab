@@ -69,10 +69,7 @@ class RustBackend:
             )
 
         try:
-            # Use the correct function name from the Rust module
-            if output_format == "markdown":
-                return self._rust_module.convert_html_to_markdown(html, base_url)
-            # For other formats, use convert_html_to_format which should handle format selection
+            # Unified conversion using convert_html_to_format for all formats
             return self._rust_module.convert_html_to_format(
                 html, base_url, output_format
             )

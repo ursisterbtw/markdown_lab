@@ -465,35 +465,4 @@ graph TD
 **🔧 Quality:** Strict mypy, cleaned dependencies, structured development workflow with reliable justfile
 **🛠️ Workflow:** Fixed justfile recipes enable consistent development experience
 
-### Recent Bug Fixes (2025-06-19)
-
-#### TASK-018: Fix XML/JSON Conversion Error ✅ COMPLETED
-
-**File:** `markdown_lab/core/rust_backend.py:76`
-**Impact:** High - Enables all output formats  
-**Dependencies:** None
-**Issue:** XML and JSON conversion failing with `AttributeError: module 'markdown_lab.markdown_lab_rs' has no attribute 'convert_html'`
-**Status:** ✅ Fixed - Function name corrected from `convert_html()` to `convert_html_to_format()`
-
-**Root Cause Analysis:**
-- Python backend was calling `self._rust_module.convert_html()` 
-- Rust module actually exports `convert_html_to_format()`
-- Function signature mismatch caused AttributeError for non-markdown formats
-
-**Solution Applied:**
-```python
-# Before (line 76):
-return self._rust_module.convert_html(html, base_url, output_format)
-
-# After (line 76):  
-return self._rust_module.convert_html_to_format(html, base_url, output_format)
-```
-
-**Validation:**
-- ✅ Markdown format continues to work correctly
-- ✅ JSON format now converts properly with structured output
-- ✅ XML format now converts properly with XML declaration and hierarchy
-- ✅ All existing tests continue to pass
-- ✅ No performance regression introduced
-
 This foundation enables the remaining 11 tasks to achieve the full **25-35% LOC reduction** target while delivering significant performance improvements and enhanced maintainability.
