@@ -251,13 +251,13 @@ class CachedHttpClient(HttpClient):
     def get(self, url: str, use_cache: bool = True, **kwargs) -> str:
         """
         Retrieve the content of a URL using a GET request, utilizing cache if enabled.
-        
+
         If caching is enabled and a cached response exists for the URL, returns the cached content. Otherwise, performs the GET request, stores the result in the cache if applicable, and returns the response content.
-        
+
         Parameters:
             url (str): The URL to fetch.
             use_cache (bool): Whether to use and update the cache for this request.
-        
+
         Returns:
             str: The response body as text.
         """

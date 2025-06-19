@@ -49,15 +49,15 @@ class RustBackend:
     ) -> str:
         """
         Converts HTML content to the specified output format using the Rust backend.
-        
+
         Parameters:
             html (str): The HTML content to convert.
             base_url (str): The base URL used to resolve relative links in the HTML.
             output_format (str, optional): The desired output format ("markdown", "json", or "xml"). Defaults to "markdown".
-        
+
         Returns:
             str: The converted content in the specified format.
-        
+
         Raises:
             RustIntegrationError: If the Rust backend is unavailable or the conversion fails.
         """
