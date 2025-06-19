@@ -657,11 +657,24 @@ class Converter:
 
     def close(self):
         """Clean up resources."""
-        if hasattr(self, "client"):
-            self.client.session.close()
+        if hasattr(self, "client") and self.client:
+            self.client.close()
+
+    async def aclose(self):
+        """Async cleanup for resources, especially for async HTTP operations."""
+        if hasattr(self, "client") and self.client:
+            await self.client.aclose()
 
     def __enter__(self):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.close()
+
+    async def __aenter__(self):
+        """Async context manager entry."""
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        """Async context manager exit with proper resource cleanup."""
+        await self.aclose()

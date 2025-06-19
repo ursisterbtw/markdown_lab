@@ -106,14 +106,35 @@ class TestHttpClient:
         assert mock_request.call_count == 3
 
     def test_context_manager(self, test_config):
-        """Test HttpClient as context manager."""
-        with HttpClient(test_config) as client:
-            assert client is not None
-        # Session should be closed after context exit
+        """Test HttpClient as context manager and verify close is called."""
+        # Mock the close method to verify it's called
+        with patch.object(HttpClient, 'close') as mock_close:
+            with HttpClient(test_config) as client:
+                assert client is not None
+                assert hasattr(client, "session")
+                assert client.session is not None
+            # Verify close was called on context exit
+            mock_close.assert_called_once()
 
     def test_close_method(self, http_client):
         """Test explicit close method."""
-        http_client.close()
+        # Mock the session close method to verify it's called
+        with patch.object(http_client.session, 'close') as mock_close:
+            http_client.close()
+            mock_close.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_async_context_manager(self, test_config):
+        """Test HttpClient as async context manager."""
+        async with HttpClient(test_config) as client:
+            assert client is not None
+            assert hasattr(client, "aclose")
+        # Should complete without errors
+
+    @pytest.mark.asyncio 
+    async def test_async_close_method(self, http_client):
+        """Test async close method."""
+        await http_client.aclose()
         # Should not raise any exceptions
 
 
@@ -195,6 +216,25 @@ class TestCachedHttpClient:
         config = MarkdownLabConfig(cache_enabled=False)
         client = CachedHttpClient(config)
         assert client.cache is None
+
+    def test_cached_client_close_method(self, cached_http_client):
+        """Test CachedHttpClient close method."""
+        cached_http_client.close()
+        # Should not raise any exceptions
+
+    @pytest.mark.asyncio
+    async def test_cached_client_async_close(self, cached_http_client):
+        """Test CachedHttpClient async close method."""
+        await cached_http_client.aclose()
+        # Should not raise any exceptions
+
+    @pytest.mark.asyncio
+    async def test_cached_client_async_context_manager(self, test_config):
+        """Test CachedHttpClient as async context manager."""
+        async with CachedHttpClient(test_config) as client:
+            assert client is not None
+            assert hasattr(client, "cache")
+        # Should complete without errors
 
 
 class TestClientIntegration:

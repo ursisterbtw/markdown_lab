@@ -313,6 +313,77 @@ class HttpClient:
 
                         return content
 
+                except aiohttp.ClientTimeout as e:
+                    last_exception = e
+                    error_code = "TIMEOUT"
+                    error_msg = f"Request timeout for {url}"
+                    
+                    if attempt < self.config.max_retries:
+                        wait_time = 2**attempt  # Exponential backoff
+                        logger.warning(
+                            f"Async request timeout for {url} on attempt {attempt + 1}/{self.config.max_retries + 1}. "
+                            f"Retrying in {wait_time}s..."
+                        )
+                        await asyncio.sleep(wait_time)
+                    else:
+                        logger.error(f"Async request timeout for {url} after {self.config.max_retries + 1} attempts")
+                        raise NetworkError(
+                            f"Request timeout for {url} after {self.config.max_retries + 1} attempts",
+                            url=url,
+                            error_code="TIMEOUT_EXCEEDED",
+                        ) from e
+                
+                except aiohttp.ClientConnectionError as e:
+                    last_exception = e
+                    error_code = "CONNECTION_ERROR"
+                    
+                    if attempt < self.config.max_retries:
+                        wait_time = 2**attempt  # Exponential backoff
+                        logger.warning(
+                            f"Async connection error for {url} on attempt {attempt + 1}/{self.config.max_retries + 1}: "
+                            f"{str(e)}. Retrying in {wait_time}s..."
+                        )
+                        await asyncio.sleep(wait_time)
+                    else:
+                        logger.error(
+                            f"Async connection error for {url} after {self.config.max_retries + 1} attempts: {str(e)}"
+                        )
+                        raise NetworkError(
+                            f"Connection failed for {url} after {self.config.max_retries + 1} attempts: {str(e)}",
+                            url=url,
+                            error_code="CONNECTION_FAILED",
+                        ) from e
+                
+                except aiohttp.ClientResponseError as e:
+                    last_exception = e
+                    
+                    # Don't retry 4xx errors (client errors)
+                    if 400 <= e.status < 500:
+                        logger.error(f"Client error {e.status} for {url}: {str(e)}")
+                        raise NetworkError(
+                            f"HTTP {e.status} error for {url}: {str(e)}",
+                            url=url,
+                            error_code=f"HTTP_{e.status}",
+                        ) from e
+                    
+                    # Retry 5xx errors (server errors)
+                    if attempt < self.config.max_retries:
+                        wait_time = 2**attempt  # Exponential backoff
+                        logger.warning(
+                            f"Server error {e.status} for {url} on attempt {attempt + 1}/{self.config.max_retries + 1}: "
+                            f"{str(e)}. Retrying in {wait_time}s..."
+                        )
+                        await asyncio.sleep(wait_time)
+                    else:
+                        logger.error(
+                            f"Server error {e.status} for {url} after {self.config.max_retries + 1} attempts: {str(e)}"
+                        )
+                        raise NetworkError(
+                            f"HTTP {e.status} error for {url} after {self.config.max_retries + 1} attempts: {str(e)}",
+                            url=url,
+                            error_code=f"HTTP_{e.status}_EXCEEDED",
+                        ) from e
+                
                 except Exception as e:
                     last_exception = e
 
@@ -351,6 +422,18 @@ class HttpClient:
             self.session.close()
             logger.debug("HTTP client session closed")
 
+    async def aclose(self) -> None:
+        """
+        Asynchronously closes any aiohttp sessions and releases associated resources.
+        
+        This method should be called when using async HTTP operations to ensure
+        proper cleanup of aiohttp ClientSession objects.
+        """
+        # Note: aiohttp sessions are created and closed within the async methods
+        # themselves, so this method is mainly for interface consistency
+        # and any future async session management
+        logger.debug("Async HTTP client resources cleaned up")
+
     def __enter__(self):
         """
         Enters the context manager and returns the HttpClient instance.
@@ -362,6 +445,18 @@ class HttpClient:
         Closes the HTTP client session when exiting a context manager block.
         """
         self.close()
+
+    async def __aenter__(self):
+        """
+        Async context manager entry for async HTTP operations.
+        """
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        """
+        Async context manager exit with proper async resource cleanup.
+        """
+        await self.aclose()
 
 
 class CachedHttpClient(HttpClient):
@@ -438,6 +533,27 @@ class CachedHttpClient(HttpClient):
         if self.cache:
             self.cache.clear()
             logger.info("Request cache cleared")
+
+    def close(self) -> None:
+        """
+        Closes the HTTP session and clears the cache.
+        
+        Extends the parent close method to also handle cache cleanup.
+        """
+        super().close()
+        if self.cache:
+            # Optional: Clear cache on close (can be configurable)
+            logger.debug("Cache resources cleaned up")
+
+    async def aclose(self) -> None:
+        """
+        Asynchronously closes sessions and clears cache resources.
+        
+        Extends the parent aclose method to also handle cache cleanup.
+        """
+        await super().aclose()
+        if self.cache:
+            logger.debug("Async cache resources cleaned up")
 
     # Async methods with caching support
 

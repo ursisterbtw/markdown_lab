@@ -453,12 +453,13 @@ This project is licensed under the MIT License - see the [LICENSE file](LICENSE)
 - [x] **Unified error hierarchy with structured exceptions**
 - [x] **Unified HTTP client with connection pooling**
 - [x] **Remove dead dependencies and fix version conflicts**
+- [x] **Fix XML/JSON conversion error** - Resolved AttributeError preventing non-markdown formats from working
 
 ### 🚧 In Progress
 
-- [ ] Async HTTP operations for parallel processing
-- [ ] Memory usage optimization in chunking algorithms
-- [ ] Module restructuring for better maintainability
+- [ ] **Complete HTTP client unification** (TASK-018) - Consolidate duplicate client implementations for 200+ LOC reduction and 50-100% network performance improvement
+- [ ] **Legacy wrapper elimination** (TASK-019) - Remove MarkdownScraper wrapper for direct Converter usage, targeting 300+ LOC reduction
+- [ ] **Async HTTP operations** (TASK-021) - Implement concurrent processing for 300-500% multi-URL performance improvement
 
 ### 📋 Planned
 
