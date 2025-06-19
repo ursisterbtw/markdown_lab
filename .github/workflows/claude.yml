@@ -19,9 +19,9 @@ jobs:
       (github.event_name == 'issues' && (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude')))
     runs-on: ubuntu-latest
     permissions:
-      contents: read
-      pull-requests: read
-      issues: read
+      contents: write
+      pull-requests: write
+      issues: write
       id-token: write
     steps:
       - name: Checkout repository
@@ -31,9 +31,9 @@ jobs:
 
       - name: Run Claude Code
         id: claude
-        uses: anthropics/claude-code-action@beta
+        uses: anthropics/claude-code-action@main
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          allowed_tools: "Bash(bun install),Bash(bun test:*),Bash(bun run format),Bash(bun typecheck)"
-          custom_instructions: "You have also been granted tools for editing files and running bun commands (install, run, test, typecheck) for testing your changes: bun install, bun test, bun run format, bun typecheck."
+          allowed_tools: "Bash(uv sync),Bash(just test),Bash(just lint),Bash(just build-dev),Bash(cargo test),Bash(pytest)"
+          custom_instructions: "You have been granted tools for editing files and running Python/Rust commands for testing your changes: uv sync, just test, just lint, just build-dev, cargo test, pytest."
           model: "claude-opus-4-20250514"
