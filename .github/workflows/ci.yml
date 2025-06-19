@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Setup Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+      
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+      
+      - name: Install uv
+        run: pip install uv
+      
+      - name: Install dependencies
+        run: |
+          uv sync --dev
+          source .venv/bin/activate
+          pip install maturin
+      
+      - name: Rust checks
+        run: |
+          cargo fmt --check
+          cargo clippy -- -D warnings
+          cargo check --verbose
+      
+      - name: Build Rust extension
+        run: |
+          source .venv/bin/activate
+          maturin develop
+      
+      - name: Python linting
+        run: |
+          source .venv/bin/activate
+          ruff check .
+          mypy .
+      
+      - name: Run tests
+        run: |
+          source .venv/bin/activate
+          pytest -v --tb=short
+          cargo test --verbose

@@ -509,7 +509,7 @@ dev-cycle: build-dev test-bindings
 full-cycle: build-dev lint test
 
 # CI simulation: full pipeline
-ci: clean setup quality test bench
+ci: clean setup lint typecheck test
     @echo "✅ CI pipeline simulation complete!"
 
 # Performance check: build optimized + benchmark
