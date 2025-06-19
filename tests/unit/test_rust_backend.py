@@ -36,14 +36,23 @@ except ImportError:
 
 @pytest.fixture
 def temp_dir():
-    """Create a temporary directory for test files."""
+    """
+    Yield a temporary directory as a `Path` object for use in tests.
+    
+    This fixture provides a temporary directory that is automatically cleaned up after the test completes.
+    """
     with tempfile.TemporaryDirectory() as tmp_dir:
         yield Path(tmp_dir)
 
 
 @pytest.fixture
 def mock_subprocess():
-    """Mock subprocess module for testing."""
+    """
+    Fixture that mocks `subprocess.run` to simulate successful command execution during tests.
+    
+    Yields:
+        MagicMock: The mocked `subprocess.run` object with a default successful result.
+    """
     with patch('subprocess.run') as mock_run:
         mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
         yield mock_run
@@ -51,7 +60,12 @@ def mock_subprocess():
 
 @pytest.fixture
 def sample_rust_config():
-    """Provide sample configuration for RustBackend."""
+    """
+    Return a sample configuration dictionary for initializing a RustBackend instance.
+    
+    Returns:
+        dict: Example configuration with typical Rust compiler settings.
+    """
     return {
         "rust_path": "/usr/bin/rustc",
         "cargo_path": "/usr/bin/cargo",
@@ -65,7 +79,9 @@ def sample_rust_config():
 
 @pytest.fixture
 def simple_rust_code():
-    """Provide simple valid Rust source code for testing."""
+    """
+    Returns a simple, valid Rust source code snippet suitable for testing purposes.
+    """
     return '''
 fn main() {
     println!("Hello, world!");
@@ -75,7 +91,9 @@ fn main() {
 
 @pytest.fixture
 def invalid_rust_code():
-    """Provide invalid Rust source code for error testing."""
+    """
+    Return a string containing invalid Rust source code with a syntax error for use in error handling tests.
+    """
     return '''
 fn main() {
     println!("Hello, world!")  // Missing semicolon
@@ -85,7 +103,15 @@ fn main() {
 
 @pytest.fixture
 def rust_backend_instance(sample_rust_config):
-    """Create a RustBackend instance for testing."""
+    """
+    Create a `RustBackend` instance using a sample configuration with subprocess calls mocked for testing purposes.
+    
+    Parameters:
+        sample_rust_config (dict): Configuration dictionary for initializing the RustBackend.
+    
+    Returns:
+        RustBackend: An instance of RustBackend initialized with the provided configuration.
+    """
     with patch('subprocess.run'):
         return RustBackend(sample_rust_config)
 
@@ -94,7 +120,11 @@ class TestRustBackendInitialization:
     """Test RustBackend initialization and configuration."""
 
     def test_init_with_valid_config(self, sample_rust_config):
-        """Test successful initialization with valid configuration."""
+        """
+        Test that RustBackend initializes successfully with a valid configuration.
+        
+        Asserts that the backend instance has a 'config' attribute and that its attributes match the provided configuration values.
+        """
         with patch('subprocess.run'):
             backend = RustBackend(sample_rust_config)
             assert hasattr(backend, 'config')
@@ -102,24 +132,32 @@ class TestRustBackendInitialization:
                 assert getattr(backend, key, None) == value or key in str(backend.config)
 
     def test_init_with_minimal_config(self):
-        """Test initialization with minimal configuration."""
+        """
+        Test that the RustBackend can be initialized with a minimal configuration containing only the required fields.
+        """
         minimal_config = {"rust_path": "/usr/bin/rustc"}
         with patch('subprocess.run'):
             backend = RustBackend(minimal_config)
             assert hasattr(backend, 'config')
 
     def test_init_with_empty_config(self):
-        """Test initialization with empty configuration raises appropriate error."""
+        """
+        Test that initializing RustBackend with an empty configuration raises a ValueError, TypeError, or RustBackendError.
+        """
         with pytest.raises((ValueError, TypeError, RustBackendError)):
             RustBackend({})
 
     def test_init_with_none_config(self):
-        """Test initialization with None configuration raises TypeError."""
+        """
+        Test that initializing RustBackend with None as the configuration raises a TypeError or AttributeError.
+        """
         with pytest.raises((TypeError, AttributeError)):
             RustBackend(None)
 
     def test_init_with_invalid_config_type(self):
-        """Test initialization with non-dict configuration raises TypeError."""
+        """
+        Test that initializing RustBackend with a non-dictionary configuration raises a TypeError or AttributeError.
+        """
         with pytest.raises((TypeError, AttributeError)):
             RustBackend("invalid_config")
 
@@ -131,7 +169,13 @@ class TestRustBackendInitialization:
         []
     ])
     def test_init_with_invalid_rust_path(self, invalid_path, sample_rust_config):
-        """Test initialization with various invalid rust paths."""
+        """
+        Test that initializing RustBackend with an invalid Rust compiler path raises an appropriate exception.
+        
+        Parameters:
+            invalid_path: An invalid value for the Rust compiler path to test.
+            sample_rust_config: A sample configuration dictionary for RustBackend.
+        """
         sample_rust_config["rust_path"] = invalid_path
         with pytest.raises((RustBackendError, TypeError, ValueError)):
             RustBackend(sample_rust_config)
@@ -142,7 +186,9 @@ class TestRustBackendCompilation:
 
     @patch('subprocess.run')
     def test_compile_success(self, mock_run, rust_backend_instance, simple_rust_code):
-        """Test successful compilation with valid Rust code."""
+        """
+        Verifies that compiling valid Rust code using the backend succeeds and invokes the Rust compiler as expected.
+        """
         mock_run.return_value = MagicMock(
             returncode=0,
             stdout="Compiling test_program...\nFinished release [optimized] target(s)",
@@ -157,7 +203,11 @@ class TestRustBackendCompilation:
 
     @patch('subprocess.run')
     def test_compile_failure_syntax_error(self, mock_run, rust_backend_instance, invalid_rust_code):
-        """Test compilation failure with syntax errors."""
+        """
+        Test that compiling Rust code with syntax errors raises the appropriate exception.
+        
+        Simulates a compilation failure due to a syntax error and asserts that the `compile` method raises a `RustCompilationError`, `subprocess.CalledProcessError`, or a generic exception.
+        """
         mock_run.return_value = MagicMock(
             returncode=1,
             stdout="",
@@ -169,7 +219,11 @@ class TestRustBackendCompilation:
 
     @patch('subprocess.run')
     def test_compile_with_optimization_levels(self, mock_run, sample_rust_config, simple_rust_code):
-        """Test compilation with different optimization levels."""
+        """
+        Test that the RustBackend compiles code with each supported optimization level.
+        
+        Verifies that the appropriate optimization flag is included in the subprocess call for each level.
+        """
         optimization_levels = ["0", "1", "2", "3", "s", "z"]
 
         for level in optimization_levels:
@@ -186,18 +240,32 @@ class TestRustBackendCompilation:
             assert level in call_args or f"opt-level={level}" in call_args
 
     def test_compile_empty_source(self, rust_backend_instance):
-        """Test compilation with empty source code raises error."""
+        """
+        Test that compiling empty source code raises a ValueError or RustBackendError.
+        """
         with pytest.raises((ValueError, RustBackendError)):
             rust_backend_instance.compile("", "test_program")
 
     def test_compile_whitespace_only_source(self, rust_backend_instance):
-        """Test compilation with whitespace-only source code raises error."""
+        """
+        Test that compiling whitespace-only Rust source code raises an error.
+        
+        Asserts that attempting to compile a source string containing only whitespace results in a ValueError or RustBackendError.
+        """
         with pytest.raises((ValueError, RustBackendError)):
             rust_backend_instance.compile("   \n\t  \n  ", "test_program")
 
     @pytest.mark.parametrize("invalid_name", ["", None, 123, [], {}])
     def test_compile_invalid_program_name(self, rust_backend_instance, simple_rust_code, invalid_name):
-        """Test compilation with invalid program names."""
+        """
+        Test that compiling with an invalid program name raises an appropriate exception.
+        
+        Parameters:
+            invalid_name: A program name that is invalid for compilation.
+        
+        Raises:
+            ValueError, TypeError, or RustBackendError if the program name is invalid.
+        """
         with pytest.raises((ValueError, TypeError, RustBackendError)):
             rust_backend_instance.compile(simple_rust_code, invalid_name)
 
@@ -207,7 +275,11 @@ class TestRustBackendErrorHandling:
 
     @patch('subprocess.run')
     def test_subprocess_timeout(self, mock_run, rust_backend_instance, simple_rust_code):
-        """Test handling of compilation timeout."""
+        """
+        Test that a compilation timeout during Rust code compilation raises the appropriate exception.
+        
+        Simulates a subprocess timeout and asserts that either `subprocess.TimeoutExpired` or `RustBackendError` is raised when compiling Rust code.
+        """
         mock_run.side_effect = subprocess.TimeoutExpired("rustc", 30)
 
         with pytest.raises((subprocess.TimeoutExpired, RustBackendError)):
@@ -215,7 +287,11 @@ class TestRustBackendErrorHandling:
 
     @patch('subprocess.run')
     def test_subprocess_permission_error(self, mock_run, rust_backend_instance, simple_rust_code):
-        """Test handling of permission errors during compilation."""
+        """
+        Test that a permission error during Rust code compilation raises the appropriate exception.
+        
+        Simulates a `PermissionError` when invoking the Rust compiler and asserts that either `PermissionError` or `RustBackendError` is raised.
+        """
         mock_run.side_effect = PermissionError("Permission denied: rustc")
 
         with pytest.raises((PermissionError, RustBackendError)):
@@ -223,7 +299,9 @@ class TestRustBackendErrorHandling:
 
     @patch('subprocess.run')
     def test_subprocess_file_not_found(self, mock_run, rust_backend_instance, simple_rust_code):
-        """Test handling when rust compiler is not found."""
+        """
+        Test that a FileNotFoundError or RustBackendError is raised when the Rust compiler executable is not found during compilation.
+        """
         mock_run.side_effect = FileNotFoundError("rustc: command not found")
 
         with pytest.raises((FileNotFoundError, RustBackendError)):
@@ -231,7 +309,11 @@ class TestRustBackendErrorHandling:
 
     @patch('subprocess.run')
     def test_compilation_memory_error(self, mock_run, rust_backend_instance):
-        """Test handling of memory-intensive compilation."""
+        """
+        Test that the RustBackend correctly handles a MemoryError during compilation of large source code.
+        
+        Simulates a memory-intensive compilation scenario by triggering a MemoryError and asserts that the appropriate exception is raised.
+        """
         large_code = "fn main() {\n" + "    let x = 42;\n" * 10000 + "}\n"
         mock_run.side_effect = MemoryError("Out of memory during compilation")
 
@@ -240,7 +322,11 @@ class TestRustBackendErrorHandling:
 
     @patch('subprocess.run')
     def test_rust_compiler_crash(self, mock_run, rust_backend_instance, simple_rust_code):
-        """Test handling when rust compiler crashes with high return code."""
+        """
+        Test that a compiler crash with a high return code raises the appropriate exception.
+        
+        Simulates a Rust compiler internal error and verifies that the compile method raises a compilation-related exception.
+        """
         mock_run.return_value = MagicMock(
             returncode=101,
             stdout="",
@@ -264,7 +350,9 @@ class TestRustBackendParameterized:
     ])
     @patch('subprocess.run')
     def test_compile_different_targets(self, mock_run, target, sample_rust_config, simple_rust_code):
-        """Test compilation for different target architectures."""
+        """
+        Test that RustBackend compiles code for various target architectures by verifying the target flag is included in the subprocess call.
+        """
         mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
 
         sample_rust_config["target"] = target
@@ -285,7 +373,12 @@ class TestRustBackendParameterized:
     ])
     @patch('subprocess.run')
     def test_compile_with_features(self, mock_run, feature_set, sample_rust_config, simple_rust_code):
-        """Test compilation with different feature sets."""
+        """
+        Test that the RustBackend compiles code with various feature sets and passes the correct feature flags to the compiler.
+        
+        Parameters:
+            feature_set (list): List of Rust features to enable during compilation.
+        """
         mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
 
         sample_rust_config["features"] = feature_set
@@ -306,7 +399,12 @@ class TestRustBackendParameterized:
     ])
     @patch('subprocess.run')
     def test_compile_various_source_patterns(self, mock_run, source_variant, rust_backend_instance):
-        """Test compilation with various valid Rust source code patterns."""
+        """
+        Test that the RustBackend can successfully compile various valid Rust source code patterns.
+        
+        Parameters:
+            source_variant (str): A Rust source code string representing a valid code pattern to be compiled.
+        """
         mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
 
         result = rust_backend_instance.compile(source_variant, "test_variant")
@@ -318,7 +416,11 @@ class TestRustBackendUtilities:
 
     @patch('subprocess.run')
     def test_get_rust_version(self, mock_run, rust_backend_instance):
-        """Test retrieving Rust compiler version."""
+        """
+        Test that the Rust compiler version can be retrieved using the backend instance.
+        
+        If the backend provides a `get_rust_version` method, asserts that the returned version string contains the expected version number. Otherwise, verifies that compiling a simple program triggers a subprocess call, indirectly confirming version retrieval capability.
+        """
         mock_run.return_value = MagicMock(
             returncode=0,
             stdout="rustc 1.70.0 (90c541806 2023-05-31)\nbinary: rustc"
@@ -333,7 +435,11 @@ class TestRustBackendUtilities:
 
     @patch('subprocess.run')
     def test_list_available_targets(self, mock_run, rust_backend_instance):
-        """Test listing available compilation targets."""
+        """
+        Tests that the RustBackend correctly lists available compilation targets by simulating the output of the Rust compiler.
+        
+        Ensures that expected targets are present in the returned list.
+        """
         mock_targets = "x86_64-unknown-linux-gnu\naarch64-unknown-linux-gnu\nx86_64-pc-windows-msvc"
         mock_run.return_value = MagicMock(returncode=0, stdout=mock_targets)
 
@@ -344,7 +450,9 @@ class TestRustBackendUtilities:
 
     @patch('subprocess.run')
     def test_validate_configuration(self, mock_run, sample_rust_config):
-        """Test configuration validation."""
+        """
+        Tests that the RustBackend configuration validation passes for valid configurations and raises an exception for invalid optimization levels.
+        """
         mock_run.return_value = MagicMock(returncode=0)
 
         backend = RustBackend(sample_rust_config)
@@ -357,7 +465,11 @@ class TestRustBackendUtilities:
             RustBackend(invalid_config)
 
     def test_cleanup_resources(self, rust_backend_instance, temp_dir):
-        """Test proper cleanup of temporary resources."""
+        """
+        Test that the RustBackend instance properly cleans up temporary files and resources.
+        
+        This test verifies that invoking the `cleanup` method or using the context manager interface on the RustBackend instance removes temporary files created during operation.
+        """
         temp_file = temp_dir / "test.rs"
         temp_file.write_text("fn main() {}")
 
@@ -374,7 +486,11 @@ class TestRustBackendIntegration:
 
     @patch('subprocess.run')
     def test_complete_build_workflow(self, mock_run, temp_dir, sample_rust_config):
-        """Test complete build workflow from source to executable."""
+        """
+        Tests the full build workflow of the RustBackend from compiling source code to producing an executable.
+        
+        Verifies that the compilation process completes successfully and, if available, checks for the presence of build artifacts.
+        """
         mock_run.return_value = MagicMock(returncode=0, stdout="Build successful")
 
         backend = RustBackend(sample_rust_config)
@@ -397,7 +513,11 @@ fn main() {
 
     @patch('subprocess.run')
     def test_error_recovery_workflow(self, mock_run, rust_backend_instance):
-        """Test error recovery and retry mechanisms."""
+        """
+        Test that the RustBackend handles compilation failures by raising exceptions and supports retrying compilation after an initial error.
+        
+        Simulates a failed compilation followed by a successful retry, verifying that error recovery mechanisms function as expected.
+        """
         mock_run.return_value = MagicMock(returncode=1, stderr="temporary error")
         with pytest.raises((RustCompilationError, Exception)):
             rust_backend_instance.compile("fn main() {}", "retry_test")
@@ -416,7 +536,12 @@ class TestRustBackendStress:
     @pytest.mark.parametrize("code_size", [100, 1000, 5000])
     @patch('subprocess.run')
     def test_large_source_compilation(self, mock_run, code_size, rust_backend_instance):
-        """Test compilation with large source files."""
+        """
+        Test that the RustBackend can successfully compile large Rust source files of varying sizes.
+        
+        Parameters:
+            code_size (int): The number of repeated lines to include in the generated source code.
+        """
         mock_run.return_value = MagicMock(returncode=0)
 
         large_code = "fn main() {\n"
@@ -428,7 +553,11 @@ class TestRustBackendStress:
 
     @patch('subprocess.run')
     def test_concurrent_compilation_safety(self, mock_run, rust_backend_instance):
-        """Test thread safety during concurrent operations."""
+        """
+        Test that concurrent compilation using RustBackend is thread-safe.
+        
+        Spawns multiple threads to compile different Rust programs simultaneously and asserts that no unexpected exceptions occur during concurrent execution.
+        """
         import threading
         mock_run.return_value = MagicMock(returncode=0)
 
@@ -436,6 +565,12 @@ class TestRustBackendStress:
         errors = []
 
         def compile_worker(worker_id):
+            """
+            Compiles a simple Rust program for a specific worker and records the result or any exception.
+            
+            Parameters:
+                worker_id (int): Identifier for the worker, used in the generated Rust code and output name.
+            """
             try:
                 code = f"fn main() {{ println!(\"Worker {worker_id}\"); }}"
                 result = rust_backend_instance.compile(code, f"worker_{worker_id}")
@@ -462,14 +597,26 @@ class TestRustBackendEdgeCases:
     ])
     @patch('subprocess.run')
     def test_special_character_handling(self, mock_run, special_chars, rust_backend_instance):
-        """Test handling of special characters in source code."""
+        """
+        Test that the RustBackend can compile source code containing special characters without errors.
+        
+        Parameters:
+            special_chars (str): Rust source code containing special characters to be compiled.
+        
+        Returns:
+            result: The result of the compilation process.
+        """
         mock_run.return_value = MagicMock(returncode=0)
 
         result = rust_backend_instance.compile(special_chars, "special_chars_test")
         mock_run.assert_called()
 
     def test_configuration_edge_cases(self, sample_rust_config):
-        """Test configuration with edge case values."""
+        """
+        Test initialization of RustBackend with configuration edge case values.
+        
+        Verifies that RustBackend either initializes successfully or raises appropriate exceptions when provided with configurations containing empty strings or None for certain fields.
+        """
         edge_cases = [
             {"rust_path": "/usr/bin/rustc", "optimization_level": ""},
             {"rust_path": "/usr/bin/rustc", "target": ""},
@@ -486,7 +633,9 @@ class TestRustBackendEdgeCases:
 
 
 def test_module_imports():
-    """Test that all required modules can be imported."""
+    """
+    Verify that essential modules (`subprocess`, `tempfile`, `pathlib`) can be imported without errors.
+    """
     try:
         import subprocess
         import tempfile
@@ -497,7 +646,11 @@ def test_module_imports():
 
 
 def test_rust_backend_class_exists():
-    """Test that RustBackend class exists and is instantiable."""
+    """
+    Verify that the RustBackend class is defined and can be instantiated with a minimal configuration.
+    
+    Fails the test if an unexpected exception is raised during instantiation.
+    """
     try:
         with patch('subprocess.run'):
             RustBackend({"rust_path": "/usr/bin/rustc"})
