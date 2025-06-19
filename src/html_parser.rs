@@ -357,6 +357,19 @@ pub fn clean_text_efficient(input: &str, trim: bool, max_length: Option<usize>) 
     Cow::Owned(result_string)
 }
 
+/// Trait for HTML processing implementations to enable polymorphism and testing.
+pub trait HtmlProcessor {
+    /// Add HTML content to the processor.
+    /// Returns extracted text chunks when ready.
+    fn add_content(&mut self, html_chunk: &str) -> Vec<String>;
+
+    /// Finalize processing and return any remaining content.
+    fn finalize(&mut self) -> Option<String>;
+
+    /// Get the current chunk size configuration.
+    fn chunk_size(&self) -> usize;
+}
+
 /// Stream-based HTML content extraction for memory-efficient processing of large documents.
 /// Processes HTML in chunks to avoid loading entire DOM into memory when possible.
 pub struct StreamingHtmlProcessor {
@@ -426,5 +439,19 @@ impl StreamingHtmlProcessor {
             .root_element()
             .text()
             .collect::<String>()
+    }
+}
+
+impl HtmlProcessor for StreamingHtmlProcessor {
+    fn add_content(&mut self, html_chunk: &str) -> Vec<String> {
+        self.add_content(html_chunk)
+    }
+
+    fn finalize(&mut self) -> Option<String> {
+        self.finalize()
+    }
+
+    fn chunk_size(&self) -> usize {
+        self.chunk_size
     }
 }

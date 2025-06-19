@@ -281,6 +281,21 @@ fn calculate_semantic_density(text: &str) -> f32 {
     density + length_bonus
 }
 
+/// Trait for chunking implementations to enable polymorphism and testing.
+pub trait Chunker {
+    /// Add a line to the chunker and return a completed chunk if ready.
+    fn add_line(&mut self, line: &str) -> Result<Option<&Chunk>, ChunkerError>;
+
+    /// Finalize processing and return all completed chunks.
+    fn finalize(self) -> Result<Vec<Chunk>, ChunkerError>;
+
+    /// Get the current chunk size configuration.
+    fn chunk_size(&self) -> usize;
+
+    /// Get the current chunk overlap configuration.
+    fn chunk_overlap(&self) -> usize;
+}
+
 /// Streaming chunker for memory-efficient processing of large documents.
 /// Uses a sliding window approach with semantic boundary detection.
 pub struct StreamingChunker {
@@ -435,6 +450,24 @@ impl StreamingChunker {
 
         // 5. Fallback to target position
         target_position
+    }
+}
+
+impl Chunker for StreamingChunker {
+    fn add_line(&mut self, line: &str) -> Result<Option<&Chunk>, ChunkerError> {
+        self.add_line(line)
+    }
+
+    fn finalize(self) -> Result<Vec<Chunk>, ChunkerError> {
+        self.finalize()
+    }
+
+    fn chunk_size(&self) -> usize {
+        self.chunk_size
+    }
+
+    fn chunk_overlap(&self) -> usize {
+        self.chunk_overlap
     }
 }
 

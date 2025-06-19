@@ -77,19 +77,19 @@ class ContentChunker:
         i = 0
         while i < len(sections):
             current_heading, current_content = sections[i]
-            
+
             # Check if current section is very small (likely just a header)
             content_without_header = current_content.replace(current_heading, "").strip()
             if len(content_without_header) < 50 and i + 1 < len(sections):
                 # Merge with next section
-                next_heading, next_content = sections[i + 1] 
+                next_heading, next_content = sections[i + 1]
                 merged_content = current_content + next_content
                 merged_sections.append((current_heading, merged_content))
                 i += 2  # Skip the next section since we merged it
             else:
                 merged_sections.append((current_heading, current_content))
                 i += 1
-        
+
         # Now create chunks from merged sections
         chunks = []
 

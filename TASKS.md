@@ -7,6 +7,7 @@ Building on Phase 1 foundation to complete the architectural transformation and 
 ### 🏗️ Async Foundation (Week 1-2)
 
 #### TASK-2.01: Implement Async HTTP Client
+
 **File:** `markdown_lab/network/async_client.py`  
 **Impact:** High - Enables 300% improvement in multi-URL processing  
 **Dependencies:** Phase 1 HTTP client foundation  
@@ -14,6 +15,7 @@ Building on Phase 1 foundation to complete the architectural transformation and 
 **Status:** ✅ Completed
 
 **Implementation Target:**
+
 ```python
 import asyncio
 import httpx
@@ -55,12 +57,14 @@ class AsyncHttpClient:
 ```
 
 **Expected Benefits:**
+
 - Process 10-50 URLs in parallel instead of sequentially
 - Connection pooling reduces overhead
 - Semaphore controls concurrency to respect rate limits
 - Exception handling preserves partial results
 
 #### TASK-2.02: Advanced Rate Limiting with Token Bucket
+
 **File:** `markdown_lab/network/throttle.py`  
 **Impact:** Medium - Better request pattern management  
 **Dependencies:** TASK-2.01  
@@ -68,6 +72,7 @@ class AsyncHttpClient:
 **Status:** ✅ Completed
 
 **Replace simple sleep-based throttling:**
+
 ```python
 import time
 import asyncio
@@ -114,6 +119,7 @@ class TokenBucketThrottler:
 ```
 
 **Benefits:**
+
 - Supports burst traffic patterns
 - Per-domain rate limiting prevents overwhelming specific servers
 - More efficient than simple sleep-based approaches
@@ -122,6 +128,7 @@ class TokenBucketThrottler:
 ### 🧠 Memory & Caching Optimization (Week 3-4)
 
 #### TASK-2.03: Implement Hierarchical Caching System
+
 **File:** `markdown_lab/network/cache.py`  
 **Impact:** High - Improves performance and reduces memory usage  
 **Dependencies:** TASK-2.01  
@@ -130,6 +137,7 @@ class TokenBucketThrottler:
 **Status:** ✅ Completed
 
 **L1/L2/L3 Cache Architecture:**
+
 ```python
 import asyncio
 import hashlib
@@ -226,6 +234,7 @@ class HierarchicalCache:
 ```
 
 **Features:**
+
 - **L1 Memory Cache**: LRU cache for fastest access
 - **L2 Disk Cache**: Persistent storage with size limits
 - **L3 Network Cache**: Optional for distributed deployments
@@ -234,6 +243,7 @@ class HierarchicalCache:
 - **TTL Support**: Automatic expiration
 
 #### TASK-2.04: Optimize Rust Memory Usage
+
 **Files:** `src/html_parser.rs`, `src/chunker.rs`  
 **Impact:** High - Reduces memory allocations and copies  
 **Dependencies:** None (Rust optimization)  
@@ -243,6 +253,7 @@ class HierarchicalCache:
 **Memory Optimization Strategies:**
 
 1. **Zero-Copy String Processing:**
+
 ```rust
 use std::borrow::Cow;
 
@@ -261,6 +272,7 @@ pub fn clean_text(input: &str) -> Cow<str> {
 ```
 
 2. **Stream-Based Chunking:**
+
 ```rust
 use std::collections::VecDeque;
 
@@ -287,6 +299,7 @@ impl StreamingChunker {
 ```
 
 3. **Optimized Regex Caching:**
+
 ```rust
 use std::sync::OnceLock;
 use regex::RegexSet;
@@ -307,12 +320,14 @@ pub fn get_cleanup_patterns() -> &'static RegexSet {
 ### 🏗️ Architecture Consolidation (Week 5-6)
 
 #### TASK-2.05: Create Modern Converter Pipeline
+
 **Files:** `markdown_lab/processing/converter.py`, `markdown_lab/processing/pipeline.py`  
 **Impact:** High - Central conversion orchestration  
 **Dependencies:** TASK-2.01, TASK-2.03  
 **Estimated LOC Reduction:** 200+ lines
 
 **Unified Conversion Pipeline:**
+
 ```python
 from abc import ABC, abstractmethod
 from typing import Union, Dict, Any, Optional
@@ -405,12 +420,14 @@ class ProcessingPipeline:
 ```
 
 #### TASK-2.06: Implement Format System
+
 **Files:** `markdown_lab/formats/base.py`, `markdown_lab/formats/markdown.py`, `markdown_lab/formats/json.py`, `markdown_lab/formats/xml.py`  
 **Impact:** Medium - Pluggable output formats  
 **Dependencies:** TASK-2.05  
 **Estimated LOC Reduction:** 150+ lines
 
 **Pluggable Format System:**
+
 ```python
 # base.py
 from abc import ABC, abstractmethod
@@ -467,6 +484,7 @@ FORMATTERS = {
 ```
 
 #### TASK-2.07: Module Restructuring & Migration
+
 **Impact:** High - Long-term maintainability  
 **Dependencies:** TASK-2.05, TASK-2.06  
 **Estimated Complexity:** Major (affects imports)
@@ -478,6 +496,7 @@ FORMATTERS = {
    - No breaking changes initially
 
 2. **Compatibility Layer** (Week 5-6)
+
    ```python
    # Old location: markdown_lab/core/scraper.py
    import warnings
@@ -501,12 +520,14 @@ FORMATTERS = {
 ### 🚀 Performance Validation (Week 7-8)
 
 #### TASK-2.08: Comprehensive Performance Benchmarking
+
 **File:** `scripts/performance_validation.py`  
 **Impact:** Critical - Validates all improvements  
 **Dependencies:** All optimization tasks  
 **Success Criteria:** Meet all performance targets
 
 **Benchmark Suite:**
+
 ```python
 import asyncio
 import time
@@ -571,17 +592,20 @@ class PerformanceBenchmark:
 ```
 
 **Performance Targets Validation:**
+
 - Multi-URL processing: 300% improvement (10-50 URLs in parallel)
 - Memory usage: 30% reduction (70-85MB typical vs 100-120MB current)
 - Cache hit rate: 90% for repeated operations
 - Build time: <25 seconds
 
 #### TASK-2.09: Integration Test Suite
+
 **File:** `tests/integration/test_phase2_integration.py`  
 **Impact:** High - Ensures correctness  
 **Dependencies:** All Phase 2 tasks
 
 **Test Coverage:**
+
 - Full async pipeline validation
 - Error handling and recovery
 - Performance under load
@@ -612,6 +636,7 @@ Phase 1 Foundation ✅
 ## Success Validation Criteria
 
 ### Performance Benchmarks
+
 - [ ] Multi-URL processing: 300% improvement validated
 - [ ] Memory usage: 30% reduction confirmed  
 - [ ] Cache hit rate: 90% achieved
@@ -619,12 +644,14 @@ Phase 1 Foundation ✅
 - [ ] All existing functionality maintained
 
 ### Code Quality Metrics
+
 - [ ] LOC reduction: 25-35% total (complete 2,400-2,600 line target)
 - [ ] Code duplication: <5% (from current ~20%)
 - [ ] Test coverage: 90% line coverage, 80% branch coverage
 - [ ] Cyclomatic complexity: <10 for all functions
 
 ### Architecture Goals
+
 - [ ] Clean module separation implemented
 - [ ] Async/sync compatibility maintained
 - [ ] Backward compatibility preserved during transition
@@ -633,11 +660,13 @@ Phase 1 Foundation ✅
 ## Risk Mitigation
 
 ### Breaking Changes
+
 - Compatibility layer maintains existing APIs
 - Gradual migration with deprecation warnings
 - Comprehensive migration documentation
 
 ### Performance Risks
+
 - Benchmark every change against baseline
 - Circuit breakers for cache/async failures
 - Rollback procedures for performance regressions

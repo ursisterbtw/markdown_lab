@@ -5,6 +5,7 @@
 ### Phase 1 Achievements ✅
 
 **Foundation Complete (6/16 tasks):**
+
 - ✅ Centralized configuration system (`MarkdownLabConfig` with validation)
 - ✅ Unified error hierarchy (structured exceptions with context)
 - ✅ Consolidated HTTP client (eliminates scraper.py/sitemap_utils.py duplication)
@@ -15,6 +16,7 @@
 ### Phase 2 Async Foundation Complete ✅
 
 **Async Infrastructure (5/9 tasks):**
+
 - ✅ AsyncHttpClient with connection pooling (300% improvement for multi-URL processing)
 - ✅ TokenBucket rate limiting with burst support and per-domain controls
 - ✅ HierarchicalCache system (L1/L2/L3 architecture with compression)
@@ -22,6 +24,7 @@
 - ✅ Comprehensive validation testing (all async components validated)
 
 **Quantified Results:**
+
 - **LOC Reduction**: ~350+ lines eliminated (10% progress toward 25-35% target)
 - **Performance**: 40-50% HTML parsing improvement with `once_cell` cached selectors
 - **Code Duplication**: Major reduction in HTTP/config/error handling (~30% → ~20%)
@@ -64,6 +67,7 @@
 ### Target Architecture
 
 **Goal**: Complete the architectural transformation to achieve:
+
 - **50% reduction in remaining code duplication** (<5% total)
 - **300% improvement in multi-URL processing** (async HTTP client)
 - **30% memory usage reduction** (optimized data structures)
@@ -76,6 +80,7 @@
 **Current Bottleneck**: Sequential HTTP requests limit batch processing performance
 
 **Target Implementation**:
+
 ```python
 # Before: Sequential processing
 for url in urls:
@@ -93,11 +98,13 @@ async with httpx.AsyncClient() as client:
 #### 2. Memory Optimization Strategy 🧠
 
 **Current Issues**:
+
 - Multiple string copies during HTML processing
 - Unbounded cache growth
 - Inefficient DOM traversals
 
 **Target Optimizations**:
+
 ```rust
 // Rust: Use Cow<str> for zero-copy string handling
 pub fn clean_text(input: &str) -> Cow<str> {
@@ -121,6 +128,7 @@ async def process_large_content(content: AsyncIterator[str]) -> AsyncIterator[st
 **Current State**: Basic memory cache without size limits
 
 **Target Architecture**:
+
 ```python
 class HierarchicalCache:
     """L1: Memory LRU, L2: Disk with compression, L3: Network (optional)"""
@@ -140,6 +148,7 @@ class HierarchicalCache:
 ```
 
 **Features**:
+
 - Size-limited LRU eviction
 - Compression for disk storage
 - Batch operations to reduce I/O
@@ -148,6 +157,7 @@ class HierarchicalCache:
 #### 4. Code Consolidation & Module Restructuring 🏗️
 
 **Target Module Structure**:
+
 ```
 markdown_lab/
 ├── core/                    # ✅ Configuration, errors (DONE)
@@ -181,6 +191,7 @@ markdown_lab/
 ## Implementation Strategy
 
 ### Week 1-2: Async Foundation
+
 1. **Async HTTP Client** (`network/async_client.py`)
    - `httpx.AsyncClient` with connection pooling
    - Parallel URL processing with `asyncio.gather`
@@ -192,6 +203,7 @@ markdown_lab/
    - Per-domain rate limiting
 
 ### Week 3-4: Memory & Caching
+
 1. **Memory Optimization** (Rust: `src/html_parser.rs`, `src/chunker.rs`)
    - Implement `Cow<str>` for zero-copy processing
    - Stream-based chunking for large documents
@@ -203,6 +215,7 @@ markdown_lab/
    - Batch operations and compression
 
 ### Week 5-6: Architecture Consolidation
+
 1. **Module Restructuring**
    - Create new module structure
    - Implement compatibility layer
@@ -214,6 +227,7 @@ markdown_lab/
    - Eliminate redundant logic
 
 ### Week 7-8: Performance Validation
+
 1. **Comprehensive Benchmarking**
    - Before/after performance comparison
    - Memory usage profiling
@@ -229,12 +243,14 @@ markdown_lab/
 ### Quantitative Targets
 
 #### Performance Improvements
+
 - **Multi-URL Processing**: 300% improvement (async parallel processing)
 - **Memory Usage**: 30% reduction (optimized data structures)
 - **Cache Hit Rate**: 90% (intelligent caching strategy)
 - **Build Time**: 25 seconds (from current 35-40 seconds)
 
 #### Code Quality Improvements
+
 - **LOC Reduction**: Complete 25-35% target (2,400-2,600 lines from 3,500)
 - **Code Duplication**: <5% (from current ~20%, originally ~30%)
 - **Cyclomatic Complexity**: <10 for all functions
@@ -243,6 +259,7 @@ markdown_lab/
 ### Validation Benchmarks
 
 #### Before Phase 2
+
 ```
 Multi-URL Processing: Sequential, 1 URL at a time
 Memory Usage: 100-120MB typical, 250-300MB peak
@@ -252,6 +269,7 @@ Module Structure: Mixed legacy and modern components
 ```
 
 #### Target After Phase 2
+
 ```
 Multi-URL Processing: 10-50 URLs in parallel with connection pooling
 Memory Usage: 70-85MB typical, 180-220MB peak
@@ -263,31 +281,37 @@ Module Structure: Clean separation of concerns, modern architecture
 ## Risk Assessment & Mitigation
 
 ### Breaking Changes
+
 - **Import Path Changes**: New module structure affects imports
 - **API Changes**: Async methods require caller updates
 - **Configuration Changes**: New cache/network settings
 
 **Mitigation**:
+
 - Maintain compatibility layer for 6 months
 - Gradual migration with deprecation warnings
 - Comprehensive migration documentation
 
 ### Performance Risks
+
 - **Async Overhead**: Potential performance regression for single URLs
 - **Memory Fragmentation**: Complex caching might increase memory usage
 - **Cache Complexity**: Hierarchical cache could introduce bugs
 
 **Mitigation**:
+
 - Benchmark every change against baseline
 - Implement circuit breakers for cache failures
 - Extensive unit testing for cache logic
 
 ### Development Complexity
+
 - **Async/Await Learning Curve**: Team needs async Python experience
 - **Multi-Language Debugging**: Rust+Python integration complexity
 - **State Management**: Async code state management challenges
 
 **Mitigation**:
+
 - Start with simple async patterns, add complexity gradually
 - Comprehensive logging and debugging tools
 - Clear documentation of async patterns and best practices
@@ -295,6 +319,7 @@ Module Structure: Clean separation of concerns, modern architecture
 ## Technology Stack Evolution
 
 ### Current Stack Assessment
+
 - **Python 3.12**: ✅ Excellent async support
 - **httpx**: 🆕 Modern async HTTP client (upgrade from requests)
 - **PyO3**: ✅ Mature and stable
@@ -302,6 +327,7 @@ Module Structure: Clean separation of concerns, modern architecture
 - **once_cell**: ✅ Already integrated for caching
 
 ### New Dependencies
+
 ```toml
 # Async HTTP and processing
 httpx = "^0.24.0"           # Modern async HTTP client

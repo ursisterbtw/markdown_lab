@@ -142,6 +142,7 @@ If you prefer direct commands without justfile or the modern CLI:
 ### Hybrid Project Commands
 
 **Most Important**: After making Rust changes, always rebuild:
+
 ```bash
 just build-dev                    # Quick rebuild for development
 just build-release               # Optimized rebuild
@@ -149,12 +150,14 @@ maturin develop                  # Direct rebuild command
 ```
 
 **Testing the Python-Rust Interface**:
+
 ```bash
 just test-bindings               # Test Python can call Rust functions
 pytest tests/rust/ -v            # Detailed binding tests
 ```
 
 **Common Development Pattern**:
+
 ```bash
 # Make Rust changes
 edit src/markdown_converter.rs
@@ -180,6 +183,7 @@ pytest tests/unit/test_main.py   # Test full functionality
 This is a **hybrid Python-Rust project** using PyO3 for bindings. The architecture follows a clear separation:
 
 ### Core Design Principles
+
 - **Rust handles performance-critical operations**: HTML parsing, format conversion, content chunking
 - **Python handles orchestration**: HTTP requests, configuration, CLI, workflow management
 - **Dual backend system**: Rust backend for performance, Python fallback for compatibility
@@ -195,48 +199,48 @@ This is a **hybrid Python-Rust project** using PyO3 for bindings. The architectu
 ## Repository Structure
 
 - **src/**: Rust code with PyO3 bindings
-    - **lib.rs**: PyO3 module definition and Python function exports
-    - **html_parser.rs**: Optimized HTML parsing with cached selectors
-    - **markdown_converter.rs**: HTML to Markdown/JSON/XML conversion
-    - **chunker.rs**: Semantic content chunking for RAG
-    - **js_renderer.rs**: JavaScript page rendering (optional feature)
+  - **lib.rs**: PyO3 module definition and Python function exports
+  - **html_parser.rs**: Optimized HTML parsing with cached selectors
+  - **markdown_converter.rs**: HTML to Markdown/JSON/XML conversion
+  - **chunker.rs**: Semantic content chunking for RAG
+  - **js_renderer.rs**: JavaScript page rendering (optional feature)
 - **markdown_lab/**: Main Python package
-    - **core/**: Core functionality
-        - **converter.py**: New simplified converter (preferred)
-        - **scraper.py**: Legacy MarkdownScraper (backwards compatibility)
-        - **config.py**: Centralized configuration management
-        - **errors.py**: Unified error hierarchy with structured exceptions
-        - **rust_backend.py**: Interface to Rust implementations
-        - **cache.py**: Request caching
-        - **throttle.py**: Rate limiting for web requests
-    - **formats/**: Output format handlers
-        - **base.py**: Base formatter interface
-        - **markdown.py**: Markdown output formatter
-        - **json.py**: JSON output formatter  
-        - **xml.py**: XML output formatter
-    - **network/**: HTTP client and networking utilities
-        - **client.py**: Unified HTTP client with connection pooling
-    - **utils/**: Utility modules
-        - **chunk_utils.py**: Utilities for chunking text for RAG
-        - **sitemap_utils.py**: Sitemap parsing and URL discovery
-    - **cli.py**: Modern Typer-based CLI interface
-    - **tui.py**: Terminal user interface
-    - **markdown_lab_rs.py**: Python interface to Rust implementations
+  - **core/**: Core functionality
+    - **converter.py**: New simplified converter (preferred)
+    - **scraper.py**: Legacy MarkdownScraper (backwards compatibility)
+    - **config.py**: Centralized configuration management
+    - **errors.py**: Unified error hierarchy with structured exceptions
+    - **rust_backend.py**: Interface to Rust implementations
+    - **cache.py**: Request caching
+    - **throttle.py**: Rate limiting for web requests
+  - **formats/**: Output format handlers
+    - **base.py**: Base formatter interface
+    - **markdown.py**: Markdown output formatter
+    - **json.py**: JSON output formatter  
+    - **xml.py**: XML output formatter
+  - **network/**: HTTP client and networking utilities
+    - **client.py**: Unified HTTP client with connection pooling
+  - **utils/**: Utility modules
+    - **chunk_utils.py**: Utilities for chunking text for RAG
+    - **sitemap_utils.py**: Sitemap parsing and URL discovery
+  - **cli.py**: Modern Typer-based CLI interface
+  - **tui.py**: Terminal user interface
+  - **markdown_lab_rs.py**: Python interface to Rust implementations
 - **tests/**: Test files for both Python and Rust components
-    - **rust/**: Python binding tests
-    - **unit/**: Python unit tests
-    - **integration/**: Integration tests
+  - **rust/**: Python binding tests
+  - **unit/**: Python unit tests
+  - **integration/**: Integration tests
 - **benches/**: Performance benchmarks
 
 ## Output Format Features
 
 - **Markdown**: Human-readable plain text format (default)
 - **JSON**: Structured data format for programmatic usage
-    - Document structure with title, headers, paragraphs, links, images, etc.
-    - Serialized with proper indentation for readability
+  - Document structure with title, headers, paragraphs, links, images, etc.
+  - Serialized with proper indentation for readability
 - **XML**: Markup format for document interchange
-    - Document structure with proper XML tags and hierarchy
-    - Includes XML declaration and proper escaping
+  - Document structure with proper XML tags and hierarchy
+  - Includes XML declaration and proper escaping
 - Use `-f/--format` CLI argument to specify output format
 - All formats support the same HTML elements and content structure
 
@@ -276,6 +280,7 @@ This is a **hybrid Python-Rust project** using PyO3 for bindings. The architectu
 ### Working with Output Formats
 
 The project uses a pluggable formatter system:
+
 - **Format handlers** in `markdown_lab/formats/` define output structure
 - **Rust backend** does the actual conversion for performance
 - **Both systems** must be updated when adding new formats
@@ -285,6 +290,7 @@ The project uses a pluggable formatter system:
 ### Phase 1 Refactoring Complete ✅
 
 **Achievements:**
+
 - ✅ Centralized configuration system with validation
 - ✅ Unified error hierarchy with structured exceptions
 - ✅ Consolidated HTTP client with connection pooling
@@ -294,6 +300,7 @@ The project uses a pluggable formatter system:
 - ✅ ~350+ lines of code eliminated
 
 **Key Improvements:**
+
 - **Performance**: HTML parsing optimized with cached selectors using once_cell
 - **Architecture**: Dual backend system (Rust + Python fallback) established
 - **Code Quality**: Strict mypy configuration, cleaned dependencies
@@ -302,6 +309,7 @@ The project uses a pluggable formatter system:
 ### Phase 2 Async Foundation Complete ✅
 
 **Achievements (5/9 tasks completed):**
+
 - ✅ AsyncHttpClient with connection pooling (300% improvement for multi-URL processing)
 - ✅ TokenBucket rate limiting with burst support and per-domain controls
 - ✅ HierarchicalCache system (L1/L2/L3 architecture with compression)
@@ -309,6 +317,7 @@ The project uses a pluggable formatter system:
 - ✅ Comprehensive validation testing (all async components validated)
 
 **Performance Gains Achieved:**
+
 - **Multi-URL Processing**: Parallel async processing with connection pooling
 - **Memory Efficiency**: Zero-copy string processing and streaming algorithms
 - **Caching**: Multi-level cache hierarchy with intelligent promotion
@@ -317,6 +326,7 @@ The project uses a pluggable formatter system:
 ### Phase 2 Focus: Architecture Consolidation
 
 **Remaining Priorities:**
+
 - Unified conversion pipeline with format system
 - Module restructuring for better maintainability  
 - Code consolidation to eliminate remaining duplication

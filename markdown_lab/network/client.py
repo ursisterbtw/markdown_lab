@@ -261,10 +261,9 @@ class CachedHttpClient(HttpClient):
         Returns:
             The response text content.
         """
-        if use_cache and self.cache:
-            if cached_content := self.cache.get(url):
-                logger.debug(f"Cache hit for {url}")
-                return cached_content
+        if use_cache and self.cache and (cached_content := self.cache.get(url)):
+            logger.debug(f"Cache hit for {url}")
+            return cached_content
 
         # Make request
         content = super().get(url, **kwargs)

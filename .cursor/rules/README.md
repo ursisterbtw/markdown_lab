@@ -48,7 +48,8 @@ System architecture and design patterns including:
 ## Quick Reference Guide
 
 ### Project Structure
-```
+
+```text
 markdown_lab/
 ├── src/                    # Rust source code
 ├── markdown_lab/           # Python package
@@ -61,6 +62,7 @@ markdown_lab/
 ```
 
 ### Key Technologies
+
 - **Python**: 3.12+ with Typer, Rich, httpx, Pydantic
 - **Rust**: 2024 edition with PyO3, scraper, pulldown-cmark
 - **Build**: maturin for Python-Rust bindings
@@ -69,6 +71,7 @@ markdown_lab/
 - **Linting**: ruff (Python), clippy (Rust)
 
 ### Development Commands
+
 ```bash
 # Setup and build
 just setup                 # Initial setup
@@ -94,7 +97,8 @@ mlab-tui                   # Terminal UI
 ```
 
 ### Architecture Overview
-```
+
+```text
 URL/HTML → HTTP Client → Cache → HTML Parser → Content Extract → Format Convert → Output
    ↑           ↑          ↑         ↑             ↑              ↑
  Python     Python    Python     Rust          Rust           Rust
@@ -103,6 +107,7 @@ URL/HTML → HTTP Client → Cache → HTML Parser → Content Extract → Forma
 ## Code Quality Standards
 
 ### Python Requirements
+
 - Type annotations for all functions and classes
 - Google-style docstrings for public APIs
 - pytest for testing with fixtures and mocks
@@ -111,6 +116,7 @@ URL/HTML → HTTP Client → Cache → HTML Parser → Content Extract → Forma
 - Async/await patterns for concurrent operations
 
 ### Rust Requirements
+
 - Comprehensive error handling with thiserror
 - PyO3 integration with proper type conversions
 - Performance optimization with cached selectors
@@ -119,6 +125,7 @@ URL/HTML → HTTP Client → Cache → HTML Parser → Content Extract → Forma
 - Clear documentation with examples
 
 ### Integration Requirements
+
 - Graceful fallback from Rust to Python backends
 - Consistent error handling across language boundaries
 - Proper resource management and cleanup
@@ -128,6 +135,7 @@ URL/HTML → HTTP Client → Cache → HTML Parser → Content Extract → Forma
 ## Common Patterns
 
 ### Error Handling
+
 ```python
 # Python
 try:
@@ -146,6 +154,7 @@ pub fn convert_html(html: &str) -> Result<String, ConversionError> {
 ```
 
 ### Configuration
+
 ```python
 # Hierarchical configuration loading
 config = AppConfig.load_from_multiple_sources([
@@ -157,6 +166,7 @@ config = AppConfig.load_from_multiple_sources([
 ```
 
 ### Async Processing
+
 ```python
 # Parallel batch processing
 async def process_urls(urls: List[str]) -> List[Result]:
@@ -168,6 +178,7 @@ async def process_urls(urls: List[str]) -> List[Result]:
 ## Best Practices
 
 ### Performance
+
 - Use Rust backend for CPU-intensive operations
 - Implement caching for repeated operations
 - Process items in parallel when possible
@@ -175,6 +186,7 @@ async def process_urls(urls: List[str]) -> List[Result]:
 - Use efficient data structures and algorithms
 
 ### Maintainability
+
 - Keep functions small and focused
 - Use descriptive names and comprehensive documentation
 - Write tests before implementing features
@@ -182,6 +194,7 @@ async def process_urls(urls: List[str]) -> List[Result]:
 - Regular refactoring to improve code quality
 
 ### Reliability
+
 - Handle all error cases gracefully
 - Provide meaningful error messages
 - Implement proper logging and monitoring
