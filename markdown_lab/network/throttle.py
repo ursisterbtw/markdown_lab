@@ -74,11 +74,7 @@ class TokenBucket:
         """
         self._refill()
 
-        if self.tokens >= tokens:
-            return 0.0
-
-        needed_tokens = tokens - self.tokens
-        return needed_tokens / self.rate
+        return 0.0 if self.tokens >= tokens else (tokens - self.tokens) / self.rate
 
     def _refill(self) -> None:
         """Refill bucket based on elapsed time."""

@@ -230,7 +230,7 @@ lint-rust:
 # Type checking
 typecheck:
     @echo "🔍 Running type checks..."
-    @just _activate_venv && mypy markdown_lab/
+    @just _activate_venv && ty check markdown_lab/
 
 # Security audit
 security-audit:
@@ -454,7 +454,7 @@ status:
     if [ -d ".venv" ]; then
         source .venv/bin/activate && python --version
         echo -e "\n${GREEN}📦 Installed Packages:${NC}"
-        source .venv/bin/activate && pip list | grep -E "(markdown-lab|pytest|requests|beautifulsoup4|pyo3|maturin|ruff|black|isort|mypy)" | sort
+        source .venv/bin/activate && pip list | grep -E "(markdown-lab|pytest|requests|beautifulsoup4|pyo3|maturin|ruff|black|isort|ty)" | sort
     else
         echo -e "${RED}❌ Virtual environment not found. Run 'just setup' first.${NC}"
     fi
@@ -541,7 +541,7 @@ fix:
     
     # Clear caches
     echo "🧹 Clearing caches..."
-    rm -rf .pytest_cache/ .mypy_cache/ .request_cache/ 2>/dev/null || true
+    rm -rf .pytest_cache/ .request_cache/ 2>/dev/null || true
     
     # Update dependencies
     echo "⬆️  Updating dependencies..."

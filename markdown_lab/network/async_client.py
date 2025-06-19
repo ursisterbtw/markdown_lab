@@ -9,7 +9,8 @@ connection pooling and parallel execution.
 import asyncio
 import logging
 import time
-from typing import Dict, List, Optional, Tuple, Union
+import random
+from typing import Dict, List, Optional, Tuple, Union, TracebackType, Callable, Any
 from urllib.parse import urlparse
 
 import httpx
@@ -67,13 +68,13 @@ class AsyncHttpClient:
         logger.debug("Async HTTP session created with connection pooling")
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
+    async def __aexit__(self, _exc_type: Optional[Exception], _exc_val: Optional[Exception], _exc_tb: Optional[TracebackType]) -> None:
         """Exit async context manager and close HTTP session."""
         if self._session:
             await self._session.aclose()
             logger.debug("Async HTTP session closed")
 
-    async def get(self, url: str, **kwargs) -> str:
+    async def get(self, url: str, **kwargs: Any) -> str:
         """Perform async GET request with retry logic.
 
         Args:
@@ -91,7 +92,7 @@ class AsyncHttpClient:
 
         return await self._request_with_retries("GET", url, **kwargs)
 
-    async def head(self, url: str, **kwargs) -> httpx.Response:
+    async def head(self, url: str, **kwargs: Any) -> httpx.Response:
         """Perform async HEAD request with retry logic.
 
         Args:
@@ -112,8 +113,8 @@ class AsyncHttpClient:
     async def fetch_multiple(
         self,
         urls: List[str],
-        progress_callback: Optional[callable] = None,
-        **kwargs
+        progress_callback: Optional[Callable[[int, int], None]] = None,
+        **kwargs: Any
     ) -> Dict[str, Union[str, Exception]]:
         """Fetch multiple URLs in parallel with connection pooling.
 
@@ -172,7 +173,7 @@ class AsyncHttpClient:
 
         return results
 
-    async def _fetch_single_with_semaphore(self, url: str, **kwargs) -> Tuple[str, Union[str, Exception]]:
+    async def _fetch_single_with_semaphore(self, url: str, **kwargs: Any) -> Tuple[str, Union[str, Exception]]:
         """Fetch single URL with semaphore-controlled concurrency.
 
         Args:
@@ -182,6 +183,8 @@ class AsyncHttpClient:
         Returns:
             Tuple of (url, content_or_exception)
         """
+        if self._semaphore is None:
+            raise RuntimeError("Semaphore not initialized. Use within async context manager.")
         async with self._semaphore:
             try:
                 # Add per-domain rate limiting if configured
@@ -201,7 +204,7 @@ class AsyncHttpClient:
         self,
         urls: List[str],
         max_per_domain: int = 2,
-        **kwargs
+        **kwargs: Any
     ) -> Dict[str, Union[str, Exception]]:
         """Fetch URLs with per-domain concurrency limits.
 
@@ -252,7 +255,7 @@ class AsyncHttpClient:
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
         # Convert results to dictionary, handling both tuples and exceptions
-        final_results = {}
+        final_results: Dict[str, Union[str, Exception]] = {}
         for i, result in enumerate(results):
             if isinstance(result, tuple):
                 # Normal case: (url, content_or_exception)
@@ -261,7 +264,11 @@ class AsyncHttpClient:
             else:
                 # Exception case: map back to the original URL
                 url = urls[i]
-                final_results[url] = result
+                # Cast BaseException to Exception for type safety
+                if isinstance(result, Exception):
+                    final_results[url] = result
+                else:
+                    final_results[url] = Exception(str(result))
 
         return final_results
 
@@ -270,7 +277,7 @@ class AsyncHttpClient:
         method: str,
         url: str,
         return_response: bool = False,
-        **kwargs
+        **kwargs: Any
     ) -> Union[str, httpx.Response]:
         """Perform HTTP request with retry logic and exponential backoff.
 
@@ -286,6 +293,8 @@ class AsyncHttpClient:
         Raises:
             NetworkError: If all retry attempts fail
         """
+        if self._session is None:
+            raise RuntimeError("HTTP session not initialized. Use within async context manager.")
         last_exception = None
 
         for attempt in range(self.config.max_retries + 1):
@@ -312,7 +321,9 @@ class AsyncHttpClient:
 
                 if attempt < self.config.max_retries:
                     # Exponential backoff with jitter
-                    wait_time = (2 ** attempt) + (asyncio.get_event_loop().time() % 1)
+                    base = 2
+                    cap = 10  # seconds
+                    wait_time = min(base ** attempt, cap) + random.uniform(0, 1)
 
                     logger.warning(
                         f"Request failed for {url} on attempt {attempt + 1}: "
@@ -345,7 +356,7 @@ class AsyncCachedHttpClient(AsyncHttpClient):
     performance when processing repeated requests.
     """
 
-    def __init__(self, config: MarkdownLabConfig, cache=None):
+    def __init__(self, config: MarkdownLabConfig, cache: Any = None):
         """Initialize async cached HTTP client.
 
         Args:
@@ -363,7 +374,7 @@ class AsyncCachedHttpClient(AsyncHttpClient):
 
         logger.debug(f"AsyncCachedHttpClient initialized (cache_enabled: {config.cache_enabled})")
 
-    async def get(self, url: str, use_cache: bool = True, **kwargs) -> str:
+    async def get(self, url: str, use_cache: bool = True, **kwargs: Any) -> str:
         """Perform async GET request with optional caching.
 
         Args:
@@ -393,7 +404,7 @@ class AsyncCachedHttpClient(AsyncHttpClient):
         self,
         urls: List[str],
         use_cache: bool = True,
-        **kwargs
+        **kwargs: Any
     ) -> Dict[str, Union[str, Exception]]:
         """Fetch multiple URLs with cache checking.
 
@@ -407,7 +418,7 @@ class AsyncCachedHttpClient(AsyncHttpClient):
         Returns:
             Dictionary mapping URLs to content or exceptions
         """
-        results = {}
+        results: Dict[str, Union[str, Exception]] = {}
         urls_to_fetch = []
 
         # Check cache for each URL
@@ -464,7 +475,7 @@ async def create_async_client(config: Optional[MarkdownLabConfig] = None) -> Asy
 
 async def create_async_cached_client(
     config: Optional[MarkdownLabConfig] = None,
-    cache=None
+    cache: Any = None
 ) -> AsyncCachedHttpClient:
     """Create and return an async cached HTTP client context manager.
 
@@ -488,7 +499,7 @@ async def fetch_urls_parallel(
     urls: List[str],
     config: Optional[MarkdownLabConfig] = None,
     max_concurrent: Optional[int] = None,
-    progress_callback: Optional[callable] = None
+    progress_callback: Optional[Callable[[int, int], None]] = None
 ) -> Dict[str, Union[str, Exception]]:
     """High-level utility for parallel URL fetching.
 
@@ -507,9 +518,35 @@ async def fetch_urls_parallel(
         config = get_config()
 
     # Override concurrency if specified
-    if max_concurrent:
-        config = config.model_copy()
-        config.max_concurrent_requests = max_concurrent
+    if max_concurrent is not None:
+        # Create a new config with overridden max_concurrent_requests
+        config = MarkdownLabConfig(
+            requests_per_second=config.requests_per_second,
+            timeout=config.timeout,
+            max_retries=config.max_retries,
+            user_agent=config.user_agent,
+            chunk_size=config.chunk_size,
+            chunk_overlap=config.chunk_overlap,
+            max_file_size=config.max_file_size,
+            max_concurrent_requests=max_concurrent,
+            cache_enabled=config.cache_enabled,
+            cache_dir=config.cache_dir,
+            cache_max_memory=config.cache_max_memory,
+            cache_max_disk=config.cache_max_disk,
+            cache_ttl=config.cache_ttl,
+            parallel_workers=config.parallel_workers,
+            memory_limit=config.memory_limit,
+            enable_performance_monitoring=config.enable_performance_monitoring,
+            default_output_format=config.default_output_format,
+            preserve_whitespace=config.preserve_whitespace,
+            include_metadata=config.include_metadata,
+            js_rendering_enabled=config.js_rendering_enabled,
+            rust_backend_enabled=config.rust_backend_enabled,
+            fallback_to_python=config.fallback_to_python,
+        )
+
+    if config is None:
+        raise RuntimeError("MarkdownLabConfig could not be determined.")
 
     async with AsyncHttpClient(config) as client:
         return await client.fetch_multiple(urls, progress_callback=progress_callback)

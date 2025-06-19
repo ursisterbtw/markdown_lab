@@ -1,0 +1,15 @@
+[tool.ty]
+python-version = "3.12"
+
+# Ignore certain imports that may not be available in all environments
+ignore-unresolved-imports = [
+    "yaml",
+    "textual.widgets.Slider",
+    "typing.TracebackType",
+    "markdown_lab.markdown_lab_rs",
+]
+
+# Disable certain rules that are too strict for this codebase
+disabled-rules = [
+    "unresolved-import",
+]

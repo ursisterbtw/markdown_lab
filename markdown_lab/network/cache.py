@@ -20,12 +20,15 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-import diskcache
-from cachetools import LRUCache
+import diskcache  # type: ignore
+from cachetools import LRUCache  # type: ignore
 
 from ..core.config import MarkdownLabConfig
 
 logger = logging.getLogger(__name__)
+
+# Compression threshold for L2 disk cache
+COMPRESSION_THRESHOLD = 1024
 
 
 @dataclass
@@ -206,7 +209,7 @@ class L2DiskCache(CacheBackend):
             self.misses += 1
             return None
 
-        except Exception as e:
+        except (OSError, ValueError) as e:
             logger.warning(f"L2 cache get error for {key}: {e}")
             self.misses += 1
             return None
@@ -224,7 +227,7 @@ class L2DiskCache(CacheBackend):
 
             logger.debug(f"L2 cache set: {key} ({len(value)} -> {len(compressed_value)} bytes)")
 
-        except Exception as e:
+        except (OSError, ValueError) as e:
             logger.warning(f"L2 cache set error for {key}: {e}")
 
     async def delete(self, key: str) -> bool:
@@ -233,7 +236,7 @@ class L2DiskCache(CacheBackend):
             return await asyncio.get_event_loop().run_in_executor(
                 None, self.cache.delete, key
             )
-        except Exception as e:
+        except (OSError, ValueError) as e:
             logger.warning(f"L2 cache delete error for {key}: {e}")
             return False
 
@@ -244,7 +247,7 @@ class L2DiskCache(CacheBackend):
                 None, self.cache.clear
             )
             logger.info("L2 cache cleared")
-        except Exception as e:
+        except (OSError, ValueError) as e:
             logger.warning(f"L2 cache clear error: {e}")
 
     def get_stats(self) -> Dict[str, Any]:
@@ -263,9 +266,7 @@ class L2DiskCache(CacheBackend):
 
     def _compress(self, data: bytes) -> bytes:
         """Compress data for storage efficiency."""
-        if len(data) > 1024:  # Only compress larger data
-            return gzip.compress(data, compresslevel=6)
-        return data
+        return gzip.compress(data, compresslevel=6) if len(data) > COMPRESSION_THRESHOLD else data
 
     def _decompress(self, data: bytes) -> bytes:
         """Decompress stored data."""
@@ -381,14 +382,14 @@ class HierarchicalCache:
         # Initialize cache levels
         self.l1 = L1MemoryCache(
             max_size=getattr(config, 'cache_l1_size', 1000),
-            ttl=getattr(config, 'cache_l1_ttl', 3600)
+            ttl=getattr(config, 'cache_ttl', 3600)
         )
 
         cache_dir = Path(getattr(config, 'cache_dir', '.cache'))
         self.l2 = L2DiskCache(
             cache_dir=cache_dir / 'l2',
             max_size=getattr(config, 'cache_l2_size', 1024 * 1024 * 1024),  # 1GB
-            ttl=getattr(config, 'cache_l2_ttl', 86400)  # 24h
+            ttl=getattr(config, 'cache_ttl', 86400)  # 24h
         )
 
         # L3 cache is optional and disabled by default
@@ -472,13 +473,13 @@ class HierarchicalCache:
         Returns:
             Dictionary mapping keys to values (or None if not cached)
         """
-        results = {}
-
-        # Process all keys
-        for key in keys:
-            results[key] = await self.get(key)
-
-        return results
+        # Process all keys concurrently
+        tasks = [self.get(key) for key in keys]
+        values = await asyncio.gather(*tasks, return_exceptions=True)
+        return {
+            key: value if isinstance(value, str) else None
+            for key, value in zip(keys, values)
+        }
 
     async def set_many(self, items: Dict[str, str], ttl: Optional[int] = None) -> None:
         """Batch storage for better performance.
@@ -603,8 +604,7 @@ class RequestCache:
 
         config = MarkdownLabConfig()
         config.cache_dir = cache_dir
-        config.cache_l1_ttl = max_age
-        config.cache_l2_ttl = max_age
+        config.cache_ttl = max_age
 
         self._cache = HierarchicalCache(config)
 
