@@ -250,21 +250,20 @@ class CachedHttpClient(HttpClient):
 
     def get(self, url: str, use_cache: bool = True, **kwargs) -> str:
         """
-        Performs a GET request with optional caching.
-
-        If caching is enabled and the response for the given URL is present in the cache, returns the cached content. Otherwise, performs the GET request, stores the result in the cache if applicable, and returns the response content.
-
-        Args:
-            url: The URL to request.
-            use_cache: If True, checks the cache before making the request and stores the result after retrieval.
-
+        Retrieve the content of a URL using a GET request, utilizing cache if enabled.
+        
+        If caching is enabled and a cached response exists for the URL, returns the cached content. Otherwise, performs the GET request, stores the result in the cache if applicable, and returns the response content.
+        
+        Parameters:
+            url (str): The URL to fetch.
+            use_cache (bool): Whether to use and update the cache for this request.
+        
         Returns:
-            The response text content.
+            str: The response body as text.
         """
-        if use_cache and self.cache:
-            if cached_content := self.cache.get(url):
-                logger.debug(f"Cache hit for {url}")
-                return cached_content
+        if use_cache and self.cache and (cached_content := self.cache.get(url)):
+            logger.debug(f"Cache hit for {url}")
+            return cached_content
 
         # Make request
         content = super().get(url, **kwargs)

@@ -48,18 +48,18 @@ class RustBackend:
         self, html: str, base_url: str, output_format: str = "markdown"
     ) -> str:
         """
-        Convert HTML to the specified format.
-
-        Args:
-            html: HTML content to convert
-            base_url: Base URL for resolving relative links
-            output_format: Target format ("markdown", "json", "xml")
-
+        Converts HTML content to the specified output format using the Rust backend.
+        
+        Parameters:
+            html (str): The HTML content to convert.
+            base_url (str): The base URL used to resolve relative links in the HTML.
+            output_format (str, optional): The desired output format ("markdown", "json", or "xml"). Defaults to "markdown".
+        
         Returns:
-            Converted content
-
+            str: The converted content in the specified format.
+        
         Raises:
-            RustIntegrationError: If conversion fails
+            RustIntegrationError: If the Rust backend is unavailable or the conversion fails.
         """
         if not self._rust_module:
             raise RustIntegrationError(
@@ -69,11 +69,10 @@ class RustBackend:
             )
 
         try:
-            # Use the correct function name from the Rust module
-            if output_format == "markdown":
-                return self._rust_module.convert_html_to_markdown(html, base_url)
-            # For other formats, use convert_html which should handle format selection
-            return self._rust_module.convert_html(html, base_url, output_format)
+            # Unified conversion using convert_html_to_format for all formats
+            return self._rust_module.convert_html_to_format(
+                html, base_url, output_format
+            )
         except Exception as e:
             raise RustIntegrationError(
                 f"Rust conversion failed: {str(e)}",

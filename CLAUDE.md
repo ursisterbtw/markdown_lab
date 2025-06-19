@@ -168,3 +168,4 @@ If you prefer direct commands without justfile or the modern CLI:
     - Includes XML declaration and proper escaping
 - Use `-f/--format` CLI argument to specify output format
 - All formats support the same HTML elements and content structure
+
