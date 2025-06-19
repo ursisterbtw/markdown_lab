@@ -246,7 +246,7 @@ Memory Usage: 120MB (typical), 300MB (peak)
 Conversion Rate: 750 docs/second
 ```
 
-#### Current Progress (Phase 1 Complete)
+#### Current Progress (Phase 1 Complete + Bug Fixes)
 
 ```
 Lines of Code: ~3,150 (350+ lines eliminated so far)
@@ -255,7 +255,16 @@ HTML Parsing: 40-50% performance improvement with cached selectors
 Build System: Modern uv integration, maturin development workflow
 Configuration: Centralized with validation and environment overrides
 Error Handling: Structured with context and debugging information
+Format Conversion: All outputs (Markdown, JSON, XML) working correctly
 ```
+
+#### Recent Bug Fixes (2025-06-19)
+
+**Fixed XML/JSON Conversion Issue:**
+- **Problem**: `AttributeError: module 'markdown_lab.markdown_lab_rs' has no attribute 'convert_html'`
+- **Root Cause**: Function name mismatch between Python backend and Rust module exports
+- **Solution**: Updated `rust_backend.py:76` to call correct `convert_html_to_format()` function
+- **Impact**: All three output formats now working reliably
 
 #### Target After Full Refactoring
 
