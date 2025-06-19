@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
   "requests>=2.31.0",
+  "httpx>=0.24.0",
   "beautifulsoup4>=4.12.2",
   "psutil>=5.9.5;platform_system!='Linux'",
   "pytest>=8.4.0",
@@ -13,6 +14,8 @@ dependencies = [
   "rich>=13.0.0",
   "textual>=3.0.0",
   "click>=8.0.0",
+  "cachetools>=5.3.0",
+  "diskcache>=5.6.0",
 ]
 
 [project.optional-dependencies]
@@ -39,31 +42,6 @@ Documentation = "https://github.com/ursisterbtw/markdown-lab#readme"
 Issues = "https://github.com/ursisterbtw/markdown-lab/issues"
 
 [tool.pytest.ini_options]
-benchmark_min_rounds = 5
-benchmark_max_time = 1.0
-benchmark_save = true
-benchmark_save_data = true
-benchmark_enable = true
-benchmark_group_by = "group"
-benchmark_sort = "name"
-benchmark_columns = [
-  "min",
-  "max",
-  "mean",
-  "stddev",
-  "median",
-  "iqr",
-  "outliers",
-  "rounds",
-  "iterations",
-]
-benchmark_timer = "time.perf_counter"
-benchmark_disable_gc = true
-benchmark_warmup = true
-benchmark_skip = false
-benchmark_only = false
-benchmark_max_iterations = 100000
-benchmark_min_time = 0.000005
 
 [tool.black]
 line-length = 88
@@ -93,6 +71,11 @@ strict_optional = true
 [build-system]
 requires = ["wheel", "setuptools", "maturin>=1.6,<2.0"]
 build-backend = "maturin"
+
+[dependency-groups]
+dev = [
+    "pytest-benchmark>=5.1.0",
+]
 
 [tool.maturin]
 features = ["pyo3/extension-module"]

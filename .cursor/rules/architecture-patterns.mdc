@@ -1,0 +1,686 @@
+# Architecture Patterns for markdown_lab
+
+## System Architecture Overview
+
+### Hybrid Python-Rust Design
+```
+┌─────────────────────────────────────────────────────────────┐
+│                        Python Layer                         │
+├─────────────────────────────────────────────────────────────┤
+│ CLI Interface    │ HTTP Client    │ Configuration Manager   │
+│ (Typer/Rich)     │ (httpx)        │ (Pydantic)             │
+├─────────────────────────────────────────────────────────────┤
+│ Converter Pipeline │ Format System │ Workflow Orchestration │
+│ (converter.py)     │ (formatters)  │ (batch processing)     │
+├─────────────────────────────────────────────────────────────┤
+│                     PyO3 Binding Layer                     │
+├─────────────────────────────────────────────────────────────┤
+│                        Rust Layer                          │
+├─────────────────────────────────────────────────────────────┤
+│ HTML Parser      │ Converter Core │ Content Chunker        │
+│ (scraper)        │ (pulldown)     │ (text processing)      │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Core Design Principles
+
+1. **Separation of Concerns**: Rust handles performance-critical operations, Python handles orchestration
+2. **Dual Backend Strategy**: Rust backend for performance, Python fallback for compatibility
+3. **Format Agnostic Pipeline**: Single converter supporting multiple output formats
+4. **Graceful Degradation**: System continues working if Rust components fail
+5. **Extensibility**: Pluggable formatters and processors
+
+## Module Organization
+
+### Python Package Structure
+```
+markdown_lab/
+├── __init__.py                 # Package initialization and public API
+├── cli.py                      # Modern Typer-based CLI interface
+├── tui.py                      # Terminal user interface
+├── core/                       # Core functionality
+│   ├── __init__.py
+│   ├── converter.py            # Main conversion pipeline (NEW)
+│   ├── scraper.py              # Legacy API (DEPRECATED)
+│   ├── config.py               # Configuration management
+│   ├── errors.py               # Error hierarchy
+│   ├── rust_backend.py         # Rust integration layer
+│   ├── cache.py                # Request caching
+│   └── throttle.py             # Rate limiting
+├── formats/                    # Output format handlers
+│   ├── __init__.py
+│   ├── base.py                 # Base formatter interface
+│   ├── markdown.py             # Markdown formatter
+│   ├── json.py                 # JSON formatter
+│   └── xml.py                  # XML formatter
+├── network/                    # HTTP client and networking
+│   ├── __init__.py
+│   └── client.py               # Unified HTTP client
+└── utils/                      # Utility modules
+    ├── __init__.py
+    ├── chunk_utils.py          # RAG chunking utilities
+    └── sitemap_utils.py        # Sitemap parsing
+```
+
+### Rust Source Structure
+```
+src/
+├── lib.rs                      # PyO3 module exports
+├── html_parser.rs              # HTML parsing with cached selectors
+├── markdown_converter.rs       # Core conversion logic
+├── chunker.rs                  # Content chunking for RAG
+├── js_renderer.rs              # Optional JS rendering
+├── errors.rs                   # Error types
+└── utils.rs                    # Shared utilities
+```
+
+## Data Flow Architecture
+
+### Conversion Pipeline
+```
+URL/HTML Input
+      ↓
+┌─────────────────┐
+│ HTTP Client     │ ← Python layer (httpx)
+│ (network.client)│
+└─────────────────┘
+      ↓
+┌─────────────────┐
+│ Content Cache   │ ← Python layer (optional)
+│ (core.cache)    │
+└─────────────────┘
+      ↓
+┌─────────────────┐
+│ HTML Parser     │ ← Rust layer (scraper)
+│ (html_parser.rs)│
+└─────────────────┘
+      ↓
+┌─────────────────┐
+│ Content Extract │ ← Rust layer (selector-based)
+│ (main content)  │
+└─────────────────┘
+      ↓
+┌─────────────────┐
+│ Format Convert  │ ← Rust layer (pulldown-cmark)
+│ (md/json/xml)   │
+└─────────────────┘
+      ↓
+┌─────────────────┐
+│ Post-Process    │ ← Python layer (optional)
+│ (formatters)    │
+└─────────────────┘
+      ↓
+    Output
+```
+
+### Error Handling Flow
+```
+Rust Error
+    ↓
+┌─────────────────┐
+│ Rust Error      │ ← ConversionError, ParseError
+│ (thiserror)     │
+└─────────────────┘
+    ↓
+┌─────────────────┐
+│ PyO3 Conversion │ ← Convert to Python exception
+│ (From<T>)       │
+└─────────────────┘
+    ↓
+┌─────────────────┐
+│ Python Error    │ ← Structured error hierarchy
+│ (core.errors)   │
+└─────────────────┘
+    ↓
+┌─────────────────┐
+│ Fallback Logic  │ ← Python-only implementation
+│ (if available)  │
+└─────────────────┘
+```
+
+## Interface Design Patterns
+
+### Converter Interface
+```python
+# Primary interface (NEW)
+class Converter:
+    """Modern converter with dual backend support."""
+    
+    def __init__(self, backend: Backend = Backend.AUTO):
+        self.backend = self._initialize_backend(backend)
+    
+    def convert(
+        self,
+        source: Union[str, Path, URL],
+        format_type: FormatType = "markdown",
+        options: Optional[ConversionOptions] = None
+    ) -> ConversionResult:
+        """Convert content with automatic backend selection."""
+        
+    def batch_convert(
+        self,
+        sources: List[Union[str, Path, URL]],
+        **kwargs
+    ) -> List[ConversionResult]:
+        """Batch convert with parallel processing."""
+
+# Legacy interface (COMPATIBILITY)
+class MarkdownScraper:
+    """Legacy scraper interface for backwards compatibility."""
+    
+    def scrape_to_markdown(self, url: str) -> str:
+        """Legacy method redirecting to new converter."""
+        converter = Converter()
+        return converter.convert(url, format_type="markdown").content
+```
+
+### Backend Abstraction
+```python
+from abc import ABC, abstractmethod
+from enum import Enum
+
+class Backend(Enum):
+    RUST = "rust"
+    PYTHON = "python" 
+    AUTO = "auto"
+
+class ConversionBackend(ABC):
+    """Abstract base for conversion backends."""
+    
+    @abstractmethod
+    def convert_html(
+        self,
+        html: str,
+        format_type: str,
+        options: ConversionOptions
+    ) -> str:
+        """Convert HTML to specified format."""
+    
+    @abstractmethod
+    def is_available(self) -> bool:
+        """Check if backend is available."""
+
+class RustBackend(ConversionBackend):
+    """High-performance Rust backend."""
+    
+    def convert_html(self, html: str, format_type: str, options: ConversionOptions) -> str:
+        try:
+            from markdown_lab.markdown_lab_rs import convert_html_to_markdown
+            return convert_html_to_markdown(html, format_type, options.to_dict())
+        except ImportError:
+            raise BackendUnavailableError("Rust backend not available")
+    
+    def is_available(self) -> bool:
+        try:
+            import markdown_lab.markdown_lab_rs
+            return True
+        except ImportError:
+            return False
+
+class PythonBackend(ConversionBackend):
+    """Pure Python fallback backend."""
+    
+    def convert_html(self, html: str, format_type: str, options: ConversionOptions) -> str:
+        # Pure Python implementation
+        pass
+```
+
+### Format System
+```python
+from abc import ABC, abstractmethod
+
+class BaseFormatter(ABC):
+    """Base class for output formatters."""
+    
+    @abstractmethod
+    def format(self, content: ParsedContent) -> str:
+        """Format parsed content to target format."""
+    
+    @abstractmethod
+    def get_extension(self) -> str:
+        """Get file extension for this format."""
+
+class MarkdownFormatter(BaseFormatter):
+    """Markdown output formatter."""
+    
+    def format(self, content: ParsedContent) -> str:
+        # Convert to markdown
+        return self._build_markdown(content)
+    
+    def get_extension(self) -> str:
+        return ".md"
+
+class JSONFormatter(BaseFormatter):
+    """JSON output formatter."""
+    
+    def format(self, content: ParsedContent) -> str:
+        # Convert to structured JSON
+        return json.dumps(self._build_json_structure(content), indent=2)
+    
+    def get_extension(self) -> str:
+        return ".json"
+
+# Format registry
+FORMATTERS = {
+    "markdown": MarkdownFormatter(),
+    "json": JSONFormatter(),
+    "xml": XMLFormatter(),
+}
+```
+
+## Configuration Management
+
+### Configuration Hierarchy
+```python
+from pydantic import BaseModel
+from typing import Optional, Dict, Any
+from pathlib import Path
+
+class NetworkConfig(BaseModel):
+    """Network-related configuration."""
+    timeout: int = 30
+    max_retries: int = 3
+    user_agent: str = "markdown-lab/1.0"
+    rate_limit: Optional[float] = None
+
+class ConversionConfig(BaseModel):
+    """Conversion-specific configuration."""
+    content_selector: str = "article, main, [role='main'], body"
+    remove_scripts: bool = True
+    remove_styles: bool = True
+    preserve_links: bool = True
+    preserve_images: bool = True
+    max_content_length: Optional[int] = None
+
+class ChunkingConfig(BaseModel):
+    """Content chunking configuration."""
+    chunk_size: int = 1500
+    overlap: int = 150
+    respect_sentences: bool = True
+    respect_paragraphs: bool = True
+
+class AppConfig(BaseModel):
+    """Application configuration."""
+    network: NetworkConfig = NetworkConfig()
+    conversion: ConversionConfig = ConversionConfig()
+    chunking: ChunkingConfig = ChunkingConfig()
+    cache_dir: Optional[Path] = None
+    log_level: str = "INFO"
+    backend: str = "auto"
+    
+    @classmethod
+    def load_from_file(cls, config_path: Path) -> "AppConfig":
+        """Load configuration from file."""
+        # Implementation
+    
+    def save_to_file(self, config_path: Path) -> None:
+        """Save configuration to file."""
+        # Implementation
+```
+
+### Configuration Sources
+```python
+def load_configuration() -> AppConfig:
+    """Load configuration from multiple sources in priority order."""
+    config = AppConfig()
+    
+    # 1. Default configuration (already set)
+    
+    # 2. System-wide configuration
+    system_config = Path("/etc/markdown-lab/config.toml")
+    if system_config.exists():
+        config = merge_config(config, AppConfig.load_from_file(system_config))
+    
+    # 3. User configuration
+    user_config = Path.home() / ".config" / "markdown-lab" / "config.toml"
+    if user_config.exists():
+        config = merge_config(config, AppConfig.load_from_file(user_config))
+    
+    # 4. Project configuration
+    project_config = Path.cwd() / ".markdown-lab.toml"
+    if project_config.exists():
+        config = merge_config(config, AppConfig.load_from_file(project_config))
+    
+    # 5. Environment variables
+    config = merge_config(config, load_from_env())
+    
+    return config
+```
+
+## Performance Optimization Patterns
+
+### Caching Strategy
+```python
+from functools import lru_cache
+from typing import Protocol
+
+class CacheBackend(Protocol):
+    def get(self, key: str) -> Optional[str]: ...
+    def set(self, key: str, value: str, ttl: Optional[int] = None) -> None: ...
+    def delete(self, key: str) -> bool: ...
+
+class MemoryCache(CacheBackend):
+    """In-memory LRU cache."""
+    
+    def __init__(self, max_size: int = 1000):
+        self._cache = {}
+        self._max_size = max_size
+    
+    @lru_cache(maxsize=1000)
+    def get(self, key: str) -> Optional[str]:
+        return self._cache.get(key)
+
+class FileCache(CacheBackend):
+    """File-based cache for persistence."""
+    
+    def __init__(self, cache_dir: Path):
+        self.cache_dir = cache_dir
+        self.cache_dir.mkdir(parents=True, exist_ok=True)
+
+class CachedConverter:
+    """Converter with caching support."""
+    
+    def __init__(self, cache: CacheBackend):
+        self.cache = cache
+        self.converter = Converter()
+    
+    def convert(self, url: str, **kwargs) -> str:
+        cache_key = self._generate_cache_key(url, kwargs)
+        
+        # Check cache first
+        cached_result = self.cache.get(cache_key)
+        if cached_result:
+            return cached_result
+        
+        # Convert and cache
+        result = self.converter.convert(url, **kwargs)
+        self.cache.set(cache_key, result)
+        
+        return result
+```
+
+### Parallel Processing
+```python
+import asyncio
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from typing import List, Callable, TypeVar
+
+T = TypeVar('T')
+R = TypeVar('R')
+
+class ParallelProcessor:
+    """Parallel processing utilities."""
+    
+    def __init__(self, max_workers: int = 4):
+        self.max_workers = max_workers
+    
+    def process_batch(
+        self,
+        items: List[T],
+        processor: Callable[[T], R],
+        progress_callback: Optional[Callable[[int, int], None]] = None
+    ) -> List[R]:
+        """Process items in parallel with progress tracking."""
+        
+        results = []
+        
+        with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+            # Submit all tasks
+            future_to_item = {
+                executor.submit(processor, item): item
+                for item in items
+            }
+            
+            # Collect results
+            for i, future in enumerate(as_completed(future_to_item)):
+                try:
+                    result = future.result()
+                    results.append(result)
+                    
+                    if progress_callback:
+                        progress_callback(i + 1, len(items))
+                        
+                except Exception as e:
+                    results.append(e)
+        
+        return results
+    
+    async def process_batch_async(
+        self,
+        items: List[T],
+        processor: Callable[[T], Awaitable[R]]
+    ) -> List[R]:
+        """Process items asynchronously."""
+        
+        semaphore = asyncio.Semaphore(self.max_workers)
+        
+        async def limited_processor(item: T) -> R:
+            async with semaphore:
+                return await processor(item)
+        
+        tasks = [limited_processor(item) for item in items]
+        return await asyncio.gather(*tasks, return_exceptions=True)
+```
+
+## Testing Architecture
+
+### Test Organization
+```
+tests/
+├── unit/                       # Unit tests for individual components
+│   ├── test_converter.py
+│   ├── test_formatters.py
+│   └── test_config.py
+├── integration/                # Integration tests
+│   ├── test_cli.py
+│   ├── test_full_pipeline.py
+│   └── test_rust_integration.py
+├── rust/                       # Rust binding tests
+│   ├── test_python_bindings.py
+│   └── test_rust_backend.py
+├── performance/                # Performance tests
+│   ├── test_benchmarks.py
+│   └── test_memory_usage.py
+└── fixtures/                   # Test data and fixtures
+    ├── sample_pages/
+    └── expected_outputs/
+```
+
+### Test Patterns
+```python
+import pytest
+from unittest.mock import Mock, patch
+from markdown_lab.core.converter import Converter
+from markdown_lab.core.errors import ConversionError
+
+class TestConverter:
+    """Test suite for the main converter."""
+    
+    @pytest.fixture
+    def converter(self):
+        """Create converter instance for testing."""
+        return Converter(backend=Backend.PYTHON)  # Use Python backend for testing
+    
+    @pytest.fixture
+    def sample_html(self):
+        """Sample HTML content for testing."""
+        return """
+        <html>
+            <head><title>Test Page</title></head>
+            <body>
+                <article>
+                    <h1>Main Title</h1>
+                    <p>Content paragraph</p>
+                </article>
+            </body>
+        </html>
+        """
+    
+    def test_convert_basic_html(self, converter, sample_html):
+        """Test basic HTML conversion."""
+        result = converter.convert(sample_html, format_type="markdown")
+        
+        assert "# Main Title" in result.content
+        assert "Content paragraph" in result.content
+    
+    def test_convert_with_options(self, converter, sample_html):
+        """Test conversion with custom options."""
+        options = ConversionOptions(
+            content_selector="article",
+            preserve_links=False
+        )
+        
+        result = converter.convert(sample_html, options=options)
+        assert result.metadata["selector_used"] == "article"
+    
+    @patch('markdown_lab.core.rust_backend.RustBackend.is_available')
+    def test_backend_fallback(self, mock_available, sample_html):
+        """Test fallback to Python backend when Rust unavailable."""
+        mock_available.return_value = False
+        
+        converter = Converter(backend=Backend.AUTO)
+        result = converter.convert(sample_html)
+        
+        assert result.backend_used == "python"
+    
+    def test_error_handling(self, converter):
+        """Test error handling for invalid input."""
+        with pytest.raises(ConversionError):
+            converter.convert("", format_type="invalid_format")
+```
+
+## Deployment Patterns
+
+### Package Distribution
+```python
+# setup.py or pyproject.toml configuration
+[build-system]
+requires = ["maturin>=1.0,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "markdown-lab"
+dynamic = ["version"]
+description = "High-performance HTML to Markdown conversion"
+dependencies = [
+    "httpx>=0.24.0",
+    "typer[all]>=0.9.0",
+    "rich>=13.0.0",
+    "pydantic>=2.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "mypy>=1.0.0",
+    "ruff>=0.1.0",
+]
+
+[project.scripts]
+mlab = "markdown_lab.cli:main"
+mlab-tui = "markdown_lab.tui:main"
+mlab-legacy = "markdown_lab.legacy_cli:main"
+
+[tool.maturin]
+features = ["pyo3/extension-module"]
+```
+
+### Container Support
+```dockerfile
+# Multi-stage build for optimal size
+FROM rust:1.70 as rust-builder
+WORKDIR /app
+COPY Cargo.toml Cargo.lock ./
+COPY src/ src/
+RUN cargo build --release
+
+FROM python:3.12-slim as python-builder
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+FROM python:3.12-slim
+WORKDIR /app
+COPY --from=rust-builder /app/target/release/libmarkdown_lab_rs.so .
+COPY --from=python-builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
+COPY markdown_lab/ markdown_lab/
+RUN pip install -e .
+
+ENTRYPOINT ["mlab"]
+```
+
+## Monitoring and Observability
+
+### Structured Logging
+```python
+import structlog
+from typing import Dict, Any
+
+# Configure structured logging
+structlog.configure(
+    processors=[
+        structlog.stdlib.filter_by_level,
+        structlog.stdlib.add_logger_name,
+        structlog.stdlib.add_log_level,
+        structlog.stdlib.PositionalArgumentsFormatter(),
+        structlog.processors.TimeStamper(fmt="iso"),
+        structlog.processors.StackInfoRenderer(),
+        structlog.processors.format_exc_info,
+        structlog.processors.UnicodeDecoder(),
+        structlog.processors.JSONRenderer()
+    ],
+    wrapper_class=structlog.stdlib.BoundLogger,
+    logger_factory=structlog.stdlib.LoggerFactory(),
+    cache_logger_on_first_use=True,
+)
+
+logger = structlog.get_logger(__name__)
+
+class ConversionMetrics:
+    """Metrics collection for conversion operations."""
+    
+    def __init__(self):
+        self.conversions_total = 0
+        self.conversions_successful = 0
+        self.conversions_failed = 0
+        self.average_processing_time = 0.0
+        self.backend_usage = {"rust": 0, "python": 0}
+    
+    def record_conversion(
+        self,
+        url: str,
+        format_type: str,
+        backend: str,
+        processing_time: float,
+        success: bool,
+        error: Optional[str] = None
+    ):
+        """Record conversion metrics."""
+        self.conversions_total += 1
+        
+        if success:
+            self.conversions_successful += 1
+        else:
+            self.conversions_failed += 1
+        
+        self.backend_usage[backend] += 1
+        
+        # Update average processing time
+        self.average_processing_time = (
+            (self.average_processing_time * (self.conversions_total - 1) + processing_time)
+            / self.conversions_total
+        )
+        
+        # Log the event
+        logger.info(
+            "Conversion completed",
+            url=url,
+            format_type=format_type,
+            backend=backend,
+            processing_time=processing_time,
+            success=success,
+            error=error
+        )
+```
+
+This architecture provides a solid foundation for the markdown_lab project with clear separation of concerns, performance optimization, and maintainability.

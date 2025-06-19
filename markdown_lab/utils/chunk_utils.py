@@ -72,13 +72,31 @@ class ContentChunker:
         if current_section:
             sections.append((current_heading, current_section))
 
-        # Now create chunks from sections
+        # Merge small sections (header-only) with the next section
+        merged_sections = []
+        i = 0
+        while i < len(sections):
+            current_heading, current_content = sections[i]
+            
+            # Check if current section is very small (likely just a header)
+            content_without_header = current_content.replace(current_heading, "").strip()
+            if len(content_without_header) < 50 and i + 1 < len(sections):
+                # Merge with next section
+                next_heading, next_content = sections[i + 1] 
+                merged_content = current_content + next_content
+                merged_sections.append((current_heading, merged_content))
+                i += 2  # Skip the next section since we merged it
+            else:
+                merged_sections.append((current_heading, current_content))
+                i += 1
+        
+        # Now create chunks from merged sections
         chunks = []
 
         # Parse domain for metadata
         domain = urlparse(source_url).netloc
 
-        for section_heading, section_content in sections:
+        for section_heading, section_content in merged_sections:
             # If the section is smaller than chunk_size, keep it as one chunk
             if len(section_content) <= self.chunk_size:
                 chunk_id = hashlib.md5(

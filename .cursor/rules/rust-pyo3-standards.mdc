@@ -1,0 +1,588 @@
+# Rust and PyO3 Standards for markdown_lab
+
+## Rust Language Standards
+
+### Language Edition and Features
+- Use Rust 2024 edition for latest language features
+- Leverage modern Rust idioms: `?` operator, `match` expressions, iterators
+- Use `thiserror` for error handling and `serde` for serialization
+- Enable appropriate feature flags for performance optimizations
+
+### Project Structure
+```
+src/
+├── lib.rs              # PyO3 module definition and exports
+├── html_parser.rs      # HTML parsing with cached selectors
+├── markdown_converter.rs # Core conversion logic
+├── chunker.rs          # Content chunking for RAG
+├── js_renderer.rs      # Optional JS rendering (feature-gated)
+├── errors.rs           # Error types and handling
+└── utils.rs            # Shared utilities
+```
+
+### Dependencies Management
+```toml
+[dependencies]
+pyo3 = { version = "0.20", features = ["extension-module", "abi3-py38"] }
+scraper = "0.18"
+html5ever = "0.26"
+regex = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "1.0"
+pulldown-cmark = "0.9"
+
+[dependencies.pyo3-asyncio]
+version = "0.20"
+features = ["tokio-runtime"]
+optional = true
+
+[features]
+default = []
+real_rendering = ["dep:headless_chrome", "dep:tokio"]
+async_support = ["dep:pyo3-asyncio"]
+```
+
+## PyO3 Integration Standards
+
+### Module Definition
+```rust
+use pyo3::prelude::*;
+
+#[pymodule]
+fn markdown_lab_rs(_py: Python, m: &PyModule) -> PyResult<()> {
+    // Core conversion functions
+    m.add_function(wrap_pyfunction!(convert_html_to_markdown, m)?)?;
+    m.add_function(wrap_pyfunction!(convert_html_to_json, m)?)?;
+    m.add_function(wrap_pyfunction!(convert_html_to_xml, m)?)?;
+    
+    // Chunking functions
+    m.add_function(wrap_pyfunction!(chunk_content, m)?)?;
+    m.add_function(wrap_pyfunction!(extract_content, m)?)?;
+    
+    // Parser functions
+    m.add_function(wrap_pyfunction!(parse_html, m)?)?;
+    m.add_function(wrap_pyfunction!(clean_html, m)?)?;
+    
+    // Error types
+    m.add("ConversionError", py.get_type::<ConversionError>())?;
+    m.add("ParseError", py.get_type::<ParseError>())?;
+    
+    Ok(())
+}
+```
+
+### Function Signatures
+```rust
+/// Convert HTML content to markdown format
+#[pyfunction]
+#[pyo3(signature = (html_content, options=None))]
+pub fn convert_html_to_markdown(
+    html_content: &str,
+    options: Option<&PyDict>,
+) -> PyResult<String> {
+    let opts = parse_conversion_options(options)?;
+    
+    html_to_markdown(html_content, &opts)
+        .map_err(|e| ConversionError::new_err(e.to_string()))
+}
+
+/// Extract content chunks for RAG applications
+#[pyfunction]
+#[pyo3(signature = (content, chunk_size=1500, overlap=150))]
+pub fn chunk_content(
+    content: &str,
+    chunk_size: usize,
+    overlap: usize,
+) -> PyResult<Vec<String>> {
+    let chunks = create_chunks(content, chunk_size, overlap)
+        .map_err(|e| ChunkError::new_err(e.to_string()))?;
+    
+    Ok(chunks)
+}
+```
+
+### Error Handling
+```rust
+use pyo3::exceptions::PyValueError;
+use thiserror::Error;
+
+#[derive(Error, Debug)]
+pub enum ConversionError {
+    #[error("HTML parsing failed: {0}")]
+    ParseError(String),
+    #[error("Content extraction failed: {0}")]
+    ExtractionError(String),
+    #[error("Format conversion failed: {0}")]
+    FormatError(String),
+}
+
+impl From<ConversionError> for PyErr {
+    fn from(err: ConversionError) -> PyErr {
+        PyValueError::new_err(err.to_string())
+    }
+}
+
+// Custom Python exception types
+create_exception!(markdown_lab_rs, ConversionError, pyo3::exceptions::PyException);
+create_exception!(markdown_lab_rs, ParseError, pyo3::exceptions::PyException);
+create_exception!(markdown_lab_rs, ChunkError, pyo3::exceptions::PyException);
+```
+
+### Type Conversions
+```rust
+use pyo3::types::{PyDict, PyList, PyString};
+use std::collections::HashMap;
+
+// Convert Python dict to Rust HashMap
+fn parse_conversion_options(options: Option<&PyDict>) -> PyResult<ConversionOptions> {
+    let mut opts = ConversionOptions::default();
+    
+    if let Some(dict) = options {
+        if let Some(selector) = dict.get_item("content_selector")? {
+            opts.content_selector = selector.extract::<String>()?;
+        }
+        
+        if let Some(remove_scripts) = dict.get_item("remove_scripts")? {
+            opts.remove_scripts = remove_scripts.extract::<bool>()?;
+        }
+        
+        if let Some(preserve_links) = dict.get_item("preserve_links")? {
+            opts.preserve_links = preserve_links.extract::<bool>()?;
+        }
+    }
+    
+    Ok(opts)
+}
+
+// Convert Rust struct to Python dict
+#[pyfunction]
+pub fn get_conversion_stats(html_content: &str) -> PyResult<PyObject> {
+    Python::with_gil(|py| {
+        let stats = analyze_html(html_content)?;
+        
+        let dict = PyDict::new(py);
+        dict.set_item("total_elements", stats.total_elements)?;
+        dict.set_item("text_length", stats.text_length)?;
+        dict.set_item("link_count", stats.link_count)?;
+        dict.set_item("image_count", stats.image_count)?;
+        
+        Ok(dict.into())
+    })
+}
+```
+
+## Performance Optimization
+
+### HTML Parsing
+```rust
+use scraper::{Html, Selector};
+use std::sync::OnceLock;
+
+// Cache selectors for performance
+static CONTENT_SELECTORS: OnceLock<Vec<Selector>> = OnceLock::new();
+static CLEANUP_SELECTORS: OnceLock<Vec<Selector>> = OnceLock::new();
+
+fn get_content_selectors() -> &'static Vec<Selector> {
+    CONTENT_SELECTORS.get_or_init(|| {
+        vec![
+            Selector::parse("article").unwrap(),
+            Selector::parse("main").unwrap(),
+            Selector::parse("[role='main']").unwrap(),
+            Selector::parse("body").unwrap(),
+        ]
+    })
+}
+
+pub fn extract_main_content(html: &str) -> Result<String, ConversionError> {
+    let document = Html::parse_document(html);
+    let selectors = get_content_selectors();
+    
+    // Try selectors in priority order
+    for selector in selectors {
+        if let Some(element) = document.select(selector).next() {
+            return Ok(element.inner_html());
+        }
+    }
+    
+    Err(ConversionError::ExtractionError(
+        "No main content found".to_string()
+    ))
+}
+```
+
+### Memory Efficiency
+```rust
+use std::borrow::Cow;
+
+// Use Cow for efficient string handling
+pub fn clean_text(input: &str) -> Cow<str> {
+    if input.chars().all(|c| !c.is_whitespace() || c == ' ') {
+        // No cleaning needed, return borrowed reference
+        Cow::Borrowed(input)
+    } else {
+        // Clean and return owned string
+        let cleaned = input
+            .chars()
+            .map(|c| if c.is_whitespace() { ' ' } else { c })
+            .collect::<String>();
+        Cow::Owned(cleaned)
+    }
+}
+
+// Use iterators for efficient processing
+pub fn process_elements(html: &str) -> Result<Vec<ProcessedElement>, ConversionError> {
+    let document = Html::parse_document(html);
+    
+    document
+        .select(&Selector::parse("*").unwrap())
+        .filter_map(|element| {
+            // Only process elements with text content
+            if element.text().collect::<String>().trim().is_empty() {
+                return None;
+            }
+            
+            Some(ProcessedElement::from_element(element))
+        })
+        .collect::<Result<Vec<_>, _>>()
+}
+```
+
+### Parallel Processing
+```rust
+use rayon::prelude::*;
+
+#[pyfunction]
+pub fn batch_convert_html(
+    html_contents: Vec<&str>,
+    format: &str,
+) -> PyResult<Vec<String>> {
+    let results: Result<Vec<String>, ConversionError> = html_contents
+        .par_iter()
+        .map(|html| match format {
+            "markdown" => html_to_markdown(html, &ConversionOptions::default()),
+            "json" => html_to_json(html, &ConversionOptions::default()),
+            "xml" => html_to_xml(html, &ConversionOptions::default()),
+            _ => Err(ConversionError::FormatError(
+                format!("Unsupported format: {}", format)
+            )),
+        })
+        .collect();
+    
+    results.map_err(|e| PyValueError::new_err(e.to_string()))
+}
+```
+
+## Code Organization
+
+### Module Structure
+```rust
+// lib.rs - PyO3 module exports
+pub mod html_parser;
+pub mod markdown_converter;
+pub mod chunker;
+pub mod errors;
+pub mod utils;
+
+#[cfg(feature = "real_rendering")]
+pub mod js_renderer;
+
+use pyo3::prelude::*;
+
+// Re-export commonly used types
+pub use html_parser::{parse_html, clean_html};
+pub use markdown_converter::{html_to_markdown, html_to_json, html_to_xml};
+pub use chunker::{chunk_content, ChunkOptions};
+pub use errors::{ConversionError, ParseError, ChunkError};
+```
+
+### Configuration Management
+```rust
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ConversionOptions {
+    pub content_selector: String,
+    pub remove_scripts: bool,
+    pub remove_styles: bool,
+    pub preserve_links: bool,
+    pub preserve_images: bool,
+    pub max_content_length: Option<usize>,
+    pub custom_selectors: Vec<String>,
+}
+
+impl Default for ConversionOptions {
+    fn default() -> Self {
+        Self {
+            content_selector: "article, main, [role='main'], body".to_string(),
+            remove_scripts: true,
+            remove_styles: true,
+            preserve_links: true,
+            preserve_images: true,
+            max_content_length: None,
+            custom_selectors: Vec::new(),
+        }
+    }
+}
+
+impl ConversionOptions {
+    pub fn from_dict(dict: &PyDict) -> PyResult<Self> {
+        let mut options = Self::default();
+        
+        // Extract each option with proper error handling
+        if let Some(value) = dict.get_item("content_selector")? {
+            options.content_selector = value.extract()?;
+        }
+        
+        // ... extract other options
+        
+        Ok(options)
+    }
+}
+```
+
+## Testing Standards
+
+### Unit Tests
+```rust
+#[cfg(test)]
+mod tests {
+    use super::*;
+    
+    #[test]
+    fn test_html_to_markdown_basic() {
+        let html = r#"<h1>Title</h1><p>Paragraph</p>"#;
+        let expected = "# Title\n\nParagraph";
+        
+        let result = html_to_markdown(html, &ConversionOptions::default())
+            .expect("Conversion should succeed");
+        
+        assert_eq!(result.trim(), expected);
+    }
+    
+    #[test]
+    fn test_content_extraction_with_selectors() {
+        let html = r#"
+            <html>
+                <body>
+                    <div class="sidebar">Sidebar</div>
+                    <main><h1>Main Content</h1></main>
+                </body>
+            </html>
+        "#;
+        
+        let content = extract_main_content(html)
+            .expect("Should extract main content");
+        
+        assert!(content.contains("Main Content"));
+        assert!(!content.contains("Sidebar"));
+    }
+    
+    #[test]
+    fn test_error_handling() {
+        let invalid_html = "<invalid><unclosed>";
+        
+        match html_to_markdown(invalid_html, &ConversionOptions::default()) {
+            Ok(_) => panic!("Should return error for invalid HTML"),
+            Err(ConversionError::ParseError(_)) => (), // Expected
+            Err(e) => panic!("Unexpected error type: {:?}", e),
+        }
+    }
+}
+```
+
+### Integration Tests
+```rust
+// tests/integration_test.rs
+use pyo3::prelude::*;
+use markdown_lab_rs::*;
+
+#[test]
+fn test_python_integration() {
+    Python::with_gil(|py| {
+        let html = r#"<article><h1>Test</h1><p>Content</p></article>"#;
+        
+        let result: String = convert_html_to_markdown(html, None)
+            .expect("Conversion should work");
+        
+        assert!(result.contains("# Test"));
+        assert!(result.contains("Content"));
+    });
+}
+```
+
+### Benchmarks
+```rust
+// benches/conversion_bench.rs
+use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use markdown_lab_rs::*;
+
+fn benchmark_html_conversion(c: &mut Criterion) {
+    let html = include_str!("../test_data/large_page.html");
+    
+    c.bench_function("html_to_markdown_large", |b| {
+        b.iter(|| {
+            html_to_markdown(
+                black_box(html),
+                black_box(&ConversionOptions::default())
+            ).unwrap()
+        })
+    });
+    
+    c.bench_function("html_to_json_large", |b| {
+        b.iter(|| {
+            html_to_json(
+                black_box(html),
+                black_box(&ConversionOptions::default())
+            ).unwrap()
+        })
+    });
+}
+
+criterion_group!(benches, benchmark_html_conversion);
+criterion_main!(benches);
+```
+
+## Documentation Standards
+
+### Function Documentation
+```rust
+/// Convert HTML content to markdown format with customizable options.
+///
+/// This function parses HTML using the scraper crate and converts it to
+/// clean markdown format. It handles common HTML elements like headers,
+/// paragraphs, lists, links, and images.
+///
+/// # Arguments
+///
+/// * `html_content` - Raw HTML content as a string
+/// * `options` - Optional conversion configuration
+///
+/// # Returns
+///
+/// Returns a `String` containing the markdown representation of the HTML,
+/// or a `ConversionError` if parsing or conversion fails.
+///
+/// # Examples
+///
+/// ```rust
+/// use markdown_lab_rs::{html_to_markdown, ConversionOptions};
+///
+/// let html = r#"<h1>Title</h1><p>Content</p>"#;
+/// let options = ConversionOptions::default();
+/// let markdown = html_to_markdown(html, &options)?;
+/// assert_eq!(markdown.trim(), "# Title\n\nContent");
+/// ```
+///
+/// # Errors
+///
+/// This function returns a `ConversionError` in the following cases:
+/// - Invalid or malformed HTML that cannot be parsed
+/// - Content extraction fails (no main content found)
+/// - Memory allocation failures for very large documents
+pub fn html_to_markdown(
+    html_content: &str,
+    options: &ConversionOptions,
+) -> Result<String, ConversionError> {
+    // Implementation
+}
+```
+
+### Module Documentation
+```rust
+//! HTML to Markdown conversion module.
+//!
+//! This module provides high-performance HTML parsing and conversion
+//! functionality using the scraper crate for DOM manipulation and
+//! pulldown-cmark for markdown generation.
+//!
+//! # Features
+//!
+//! - Fast HTML parsing with cached CSS selectors
+//! - Multiple output formats: Markdown, JSON, XML
+//! - Content chunking for RAG applications
+//! - Configurable extraction options
+//! - Memory-efficient processing of large documents
+//!
+//! # Examples
+//!
+//! ```rust
+//! use markdown_lab_rs::markdown_converter::*;
+//!
+//! let html = r#"<article><h1>Title</h1><p>Content</p></article>"#;
+//! let markdown = html_to_markdown(html, &ConversionOptions::default())?;
+//! println!("{}", markdown);
+//! ```
+
+use crate::errors::{ConversionError, Result};
+use crate::html_parser::{extract_main_content, clean_html};
+```
+
+## Build Configuration
+
+### Cargo.toml Optimization
+```toml
+[profile.release]
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
+
+[profile.dev]
+debug = true
+opt-level = 0
+
+# Specific optimizations for PyO3
+[profile.release.package.pyo3]
+opt-level = 3
+
+[profile.release.package.scraper]
+opt-level = 3
+```
+
+### Feature Flags
+```rust
+// Conditional compilation for optional features
+#[cfg(feature = "real_rendering")]
+pub mod js_renderer {
+    use headless_chrome::prelude::*;
+    
+    pub fn render_with_js(url: &str) -> Result<String, ConversionError> {
+        // JavaScript rendering implementation
+    }
+}
+
+#[cfg(not(feature = "real_rendering"))]
+pub mod js_renderer {
+    use crate::errors::ConversionError;
+    
+    pub fn render_with_js(_url: &str) -> Result<String, ConversionError> {
+        Err(ConversionError::FormatError(
+            "JavaScript rendering not available. Enable 'real_rendering' feature.".to_string()
+        ))
+    }
+}
+```
+
+## Code Quality Standards
+
+### Clippy Configuration
+```toml
+# Cargo.toml
+[lints.clippy]
+all = "warn"
+pedantic = "warn"
+nursery = "warn"
+cargo = "warn"
+
+# Allow some pedantic lints that are too strict
+module_name_repetitions = "allow"
+must_use_candidate = "allow"
+```
+
+### Formatting Standards
+- Use `cargo fmt` with default rustfmt configuration
+- Keep line length under 100 characters
+- Use consistent indentation (4 spaces)
+- Group imports: std, external crates, internal modules
+- Use meaningful variable names and avoid abbreviations

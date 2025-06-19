@@ -1,5 +1,6 @@
 use once_cell::sync::Lazy;
 use scraper::{Html, Selector};
+use std::borrow::Cow;
 use std::collections::HashMap;
 use thiserror::Error;
 
@@ -67,6 +68,7 @@ static SELECTOR_CACHE: Lazy<HashMap<&'static str, Selector>> = Lazy::new(|| {
 /// # Examples
 ///
 /// ```
+/// use markdown_lab_rs::html_parser::extract_main_content;
 /// let html = r#"<html><body><main><p>Hello</p></main></body></html>"#;
 /// let main_content = extract_main_content(html).unwrap();
 /// assert!(main_content.root_element().html().contains("Hello"));
@@ -107,6 +109,7 @@ pub fn extract_main_content(html: &str) -> Result<Html, ParserError> {
 /// # Examples
 ///
 /// ```
+/// use markdown_lab_rs::html_parser::clean_html;
 /// let html = r#"<body><script>bad()</script><main>Content</main></body>"#;
 /// let cleaned = clean_html(html).unwrap();
 /// assert!(cleaned.contains("Content"));
@@ -144,6 +147,7 @@ pub fn clean_html(html: &str) -> Result<String, ParserError> {
 /// # Examples
 ///
 /// ```
+/// use markdown_lab_rs::html_parser::clean_html_advanced;
 /// let html = r#"<html><body><script>bad()</script><main>Good Content</main></body></html>"#;
 /// let cleaned = clean_html_advanced(html).unwrap();
 /// assert!(cleaned.contains("Good Content"));
@@ -175,6 +179,7 @@ pub fn clean_html_advanced(html: &str) -> Result<String, ParserError> {
 /// # Examples
 ///
 /// ```
+/// use markdown_lab_rs::html_parser::extract_links;
 /// let html = r#"<a href="/about">About</a><a href="https://example.com/contact">Contact</a>"#;
 /// let links = extract_links(html, "https://example.com").unwrap();
 /// assert_eq!(links, vec![
@@ -229,6 +234,7 @@ pub fn extract_links(html: &str, base_url: &str) -> Result<Vec<String>, ParserEr
 /// # Examples
 ///
 /// ```
+/// use markdown_lab_rs::html_parser::resolve_url;
 /// let abs = resolve_url("https://example.com/path/", "subpage.html").unwrap();
 /// assert_eq!(abs, "https://example.com/path/subpage.html");
 ///
@@ -248,11 +254,13 @@ pub fn resolve_url(base_url: &str, relative_url: &str) -> Result<String, ParserE
 }
 
 /// Extracts and normalizes the text content from an HTML element, collapsing consecutive whitespace into single spaces.
+/// Uses Cow<str> for zero-copy optimization when possible.
 ///
 /// # Examples
 ///
 /// ```
 /// use scraper::{Html, Selector};
+/// use markdown_lab_rs::html_parser::get_element_text;
 /// let html = Html::parse_fragment("<div>Hello   <b>world</b>!</div>");
 /// let selector = Selector::parse("div").unwrap();
 /// let element = html.select(&selector).next().unwrap();
@@ -260,11 +268,163 @@ pub fn resolve_url(base_url: &str, relative_url: &str) -> Result<String, ParserE
 /// assert_eq!(text, "Hello world !");
 /// ```
 pub fn get_element_text(element: &scraper::ElementRef) -> String {
-    element
-        .text()
-        .collect::<Vec<_>>()
-        .join(" ")
-        .split_whitespace()
-        .collect::<Vec<_>>()
-        .join(" ")
+    let raw_text: String = element.text().collect::<Vec<_>>().join(" ");
+    normalize_whitespace(&raw_text).into_owned()
+}
+
+/// Normalizes whitespace in text using zero-copy optimization when possible.
+/// Only allocates a new string if normalization is actually needed.
+///
+/// # Examples
+///
+/// ```
+/// use markdown_lab_rs::html_parser::normalize_whitespace;
+/// let text = "Hello world";
+/// let normalized = normalize_whitespace(text);
+/// // No allocation needed - returns Cow::Borrowed
+/// assert_eq!(normalized, "Hello world");
+///
+/// let text_with_spaces = "Hello    world\n\ttest";
+/// let normalized = normalize_whitespace(text_with_spaces);
+/// // Allocation needed - returns Cow::Owned
+/// assert_eq!(normalized, "Hello world test");
+/// ```
+pub fn normalize_whitespace(input: &str) -> Cow<'_, str> {
+    // Check if normalization is needed
+    let needs_normalization =
+        input.chars().any(|c| c.is_whitespace() && c != ' ') || input.contains("  "); // Multiple consecutive spaces
+
+    if !needs_normalization {
+        // No allocation needed
+        Cow::Borrowed(input)
+    } else {
+        // Normalize whitespace - allocation required
+        let normalized = input.split_whitespace().collect::<Vec<_>>().join(" ");
+        Cow::Owned(normalized)
+    }
+}
+
+/// Efficiently cleans text by removing extra whitespace and optionally trimming.
+/// Uses streaming approach for large texts to minimize memory allocations.
+///
+/// # Arguments
+/// * `input` - Input text to clean
+/// * `trim` - Whether to trim leading/trailing whitespace
+/// * `max_length` - Optional maximum length (truncates if exceeded)
+///
+/// # Returns
+/// Cleaned text with optimized memory usage
+pub fn clean_text_efficient(input: &str, trim: bool, max_length: Option<usize>) -> Cow<'_, str> {
+    let mut needs_processing = false;
+
+    // Quick check for processing needs
+    if trim && (input.starts_with(char::is_whitespace) || input.ends_with(char::is_whitespace)) {
+        needs_processing = true;
+    }
+
+    if max_length.map_or(false, |max| input.len() > max) {
+        needs_processing = true;
+    }
+
+    if input.chars().any(|c| c.is_whitespace() && c != ' ') || input.contains("  ") {
+        needs_processing = true;
+    }
+
+    if !needs_processing {
+        return Cow::Borrowed(input);
+    }
+
+    // Process the text
+    let result = if trim { input.trim() } else { input };
+
+    // Normalize whitespace
+    let normalized = normalize_whitespace(result);
+    let mut result_string = normalized.into_owned();
+
+    // Apply length limit if specified
+    if let Some(max_len) = max_length {
+        if result_string.len() > max_len {
+            // Find a good truncation point (word boundary)
+            let truncation_point = result_string[..max_len]
+                .rfind(char::is_whitespace)
+                .unwrap_or(max_len);
+
+            result_string.truncate(truncation_point);
+            result_string.push_str("...");
+        }
+    }
+
+    Cow::Owned(result_string)
+}
+
+/// Stream-based HTML content extraction for memory-efficient processing of large documents.
+/// Processes HTML in chunks to avoid loading entire DOM into memory when possible.
+pub struct StreamingHtmlProcessor {
+    chunk_size: usize,
+    buffer: String,
+}
+
+impl StreamingHtmlProcessor {
+    /// Create a new streaming processor with specified chunk size.
+    pub fn new(chunk_size: usize) -> Self {
+        Self {
+            chunk_size,
+            buffer: String::with_capacity(chunk_size * 2),
+        }
+    }
+
+    /// Add HTML content to the processor buffer.
+    /// Returns extracted text chunks when buffer is full.
+    pub fn add_content(&mut self, html_chunk: &str) -> Vec<String> {
+        self.buffer.push_str(html_chunk);
+
+        let mut results = Vec::new();
+
+        // Process complete tags in buffer
+        while self.buffer.len() > self.chunk_size {
+            if let Some(chunk) = self.extract_next_chunk() {
+                results.push(chunk);
+            } else {
+                break;
+            }
+        }
+
+        results
+    }
+
+    /// Finalize processing and return any remaining content.
+    pub fn finalize(&mut self) -> Option<String> {
+        if self.buffer.is_empty() {
+            None
+        } else {
+            let remaining = self.buffer.clone();
+            self.buffer.clear();
+            Some(self.extract_text_from_html(&remaining))
+        }
+    }
+
+    fn extract_next_chunk(&mut self) -> Option<String> {
+        // Find a good break point (complete HTML tag)
+        let search_start = self.chunk_size.saturating_sub(100); // Look back a bit
+
+        if let Some(tag_end) = self.buffer[search_start..].find('>') {
+            let split_point = search_start + tag_end + 1;
+
+            let chunk = self.buffer[..split_point].to_string();
+            self.buffer.drain(..split_point);
+
+            Some(self.extract_text_from_html(&chunk))
+        } else {
+            None
+        }
+    }
+
+    fn extract_text_from_html(&self, html: &str) -> String {
+        // Simple text extraction - in a full implementation,
+        // this would use the scraper crate with streaming
+        Html::parse_fragment(html)
+            .root_element()
+            .text()
+            .collect::<String>()
+    }
 }

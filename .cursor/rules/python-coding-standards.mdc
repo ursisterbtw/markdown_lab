@@ -1,0 +1,352 @@
+# Python Coding Standards for markdown_lab
+
+## Language and Framework Standards
+
+### Python Version
+- Target Python 3.12+ with modern syntax and features
+- Use type annotations for all function signatures and class attributes
+- Leverage new features like pattern matching and structural typing where appropriate
+
+### Package Management
+- Use `uv` for dependency management and virtual environments
+- Pin exact versions in `pyproject.toml` for reproducible builds
+- Separate development dependencies from runtime dependencies
+
+### Import Organization
+```python
+# Standard library imports
+import os
+import sys
+from pathlib import Path
+from typing import Optional, Dict, List, Union
+
+# Third-party imports
+import httpx
+import rich
+from pydantic import BaseModel
+
+# Local imports
+from markdown_lab.core.converter import Converter
+from markdown_lab.formats.base import BaseFormatter
+```
+
+## Type Annotations and Safety
+
+### Type Hints
+- Use type hints for all function parameters and return values
+- Use `Optional[T]` for nullable values, `Union[T, U]` for alternatives
+- Use `TypeVar` for generic types, `Protocol` for structural typing
+- Use `Literal` for string enums and fixed values
+
+```python
+from typing import Optional, Union, Dict, List, Protocol, TypeVar, Literal
+
+FormatType = Literal["markdown", "json", "xml"]
+T = TypeVar('T')
+
+class Convertible(Protocol):
+    def convert(self) -> str: ...
+
+def convert_content(
+    url: str,
+    format_type: FormatType = "markdown",
+    options: Optional[Dict[str, Any]] = None
+) -> Union[str, Dict[str, Any]]:
+    """Convert content with proper type safety."""
+    pass
+```
+
+### Error Handling
+- Use specific exception types, not bare `Exception`
+- Create custom exception hierarchy in `core/errors.py`
+- Use `try/except/finally` with appropriate scope
+- Log errors with structured information
+
+```python
+from markdown_lab.core.errors import ConversionError, NetworkError
+
+try:
+    result = converter.convert(url)
+except NetworkError as e:
+    logger.error("Network error during conversion", extra={"url": url, "error": str(e)})
+    raise
+except ConversionError as e:
+    logger.error("Conversion failed", extra={"url": url, "error": str(e)})
+    return None
+```
+
+## Code Organization
+
+### Module Structure
+- Keep modules focused on single responsibility
+- Use `__init__.py` to define public API
+- Place private functions and classes in separate modules
+- Use consistent naming: `snake_case` for functions/variables, `PascalCase` for classes
+
+### Class Design
+```python
+class ContentConverter:
+    """Converts web content to various formats.
+    
+    Attributes:
+        format_type: Output format (markdown, json, xml)
+        options: Configuration options for conversion
+    """
+    
+    def __init__(
+        self,
+        format_type: FormatType = "markdown",
+        options: Optional[Dict[str, Any]] = None
+    ) -> None:
+        self.format_type = format_type
+        self.options = options or {}
+        self._client = self._create_client()
+    
+    def _create_client(self) -> httpx.AsyncClient:
+        """Create HTTP client with proper configuration."""
+        # Private method for internal use
+        pass
+    
+    async def convert(self, url: str) -> Union[str, Dict[str, Any]]:
+        """Convert content from URL to specified format."""
+        # Public method for external use
+        pass
+```
+
+### Function Design
+- Keep functions small and focused (under 20 lines when possible)
+- Use descriptive names that indicate purpose
+- Include docstrings for all public functions
+- Use early returns to reduce nesting
+
+```python
+def extract_title(html_content: str) -> Optional[str]:
+    """Extract title from HTML content.
+    
+    Args:
+        html_content: Raw HTML content as string
+        
+    Returns:
+        Extracted title or None if not found
+        
+    Raises:
+        ParseError: If HTML is malformed
+    """
+    if not html_content.strip():
+        return None
+    
+    # Implementation here
+    pass
+```
+
+## Testing Standards
+
+### Test Organization
+- Use `pytest` as the testing framework
+- Organize tests in parallel directory structure
+- Use descriptive test names that explain behavior
+- Group related tests in classes
+
+```python
+class TestContentConverter:
+    """Test suite for ContentConverter class."""
+    
+    def test_convert_valid_url_returns_markdown(self):
+        """Converting valid URL should return markdown content."""
+        pass
+    
+    def test_convert_invalid_url_raises_network_error(self):
+        """Converting invalid URL should raise NetworkError."""
+        pass
+    
+    @pytest.mark.asyncio
+    async def test_convert_async_operation(self):
+        """Test async conversion operations."""
+        pass
+```
+
+### Fixtures and Mocking
+```python
+@pytest.fixture
+def mock_http_client():
+    """Mock HTTP client for testing."""
+    with patch('httpx.AsyncClient') as mock:
+        yield mock
+
+@pytest.fixture
+def sample_html_content():
+    """Sample HTML content for testing."""
+    return """
+    <html>
+        <head><title>Test Page</title></head>
+        <body><h1>Test Content</h1></body>
+    </html>
+    """
+```
+
+## Documentation Standards
+
+### Docstring Format
+Use Google-style docstrings with complete type information:
+
+```python
+def process_batch(
+    urls: List[str],
+    output_dir: Path,
+    format_type: FormatType = "markdown",
+    max_workers: int = 4
+) -> Dict[str, Union[str, Exception]]:
+    """Process multiple URLs in parallel.
+    
+    Args:
+        urls: List of URLs to process
+        output_dir: Directory to save output files
+        format_type: Output format for conversion
+        max_workers: Maximum number of parallel workers
+        
+    Returns:
+        Dictionary mapping URLs to results or exceptions
+        
+    Raises:
+        ValueError: If output_dir doesn't exist
+        PermissionError: If output_dir is not writable
+        
+    Example:
+        >>> results = process_batch(
+        ...     ["https://example.com", "https://test.com"],
+        ...     Path("./output"),
+        ...     format_type="json"
+        ... )
+        >>> len(results)
+        2
+    """
+```
+
+### Code Comments
+- Use comments to explain why, not what
+- Keep comments up-to-date with code changes
+- Use TODO comments for future improvements
+- Use FIXME comments for known issues
+
+```python
+# TODO: Add support for custom selectors in content extraction
+# FIXME: Handle edge case where title contains special characters
+
+def extract_content(html: str) -> str:
+    # Remove script and style tags first to avoid extracting their content
+    soup = BeautifulSoup(html, 'html.parser')
+    
+    # Strategy: prioritize article tags, then main, then body
+    content_selectors = ['article', 'main', 'body']
+    # ... implementation
+```
+
+## Performance and Best Practices
+
+### Async/Await Usage
+```python
+async def fetch_multiple_urls(urls: List[str]) -> List[str]:
+    """Fetch multiple URLs concurrently."""
+    async with httpx.AsyncClient() as client:
+        tasks = [client.get(url) for url in urls]
+        responses = await asyncio.gather(*tasks, return_exceptions=True)
+        return [r.text if isinstance(r, httpx.Response) else str(r) for r in responses]
+```
+
+### Resource Management
+```python
+def process_large_file(file_path: Path) -> None:
+    """Process large file with proper resource management."""
+    with open(file_path, 'r', encoding='utf-8') as f:
+        # Process file in chunks to avoid memory issues
+        for chunk in iter(lambda: f.read(4096), ''):
+            # Process chunk
+            pass
+```
+
+### Logging
+```python
+import structlog
+
+logger = structlog.get_logger(__name__)
+
+def convert_url(url: str) -> str:
+    """Convert URL with structured logging."""
+    logger.info("Starting conversion", url=url)
+    
+    try:
+        result = _perform_conversion(url)
+        logger.info("Conversion completed", url=url, size=len(result))
+        return result
+    except Exception as e:
+        logger.error("Conversion failed", url=url, error=str(e), exc_info=True)
+        raise
+```
+
+## Integration with Rust
+
+### PyO3 Bindings
+```python
+# Import Rust functions properly
+try:
+    from markdown_lab.markdown_lab_rs import convert_html_to_markdown
+    RUST_AVAILABLE = True
+except ImportError:
+    RUST_AVAILABLE = False
+    logger.warning("Rust backend not available, using Python fallback")
+
+def convert_html(html: str, format_type: str = "markdown") -> str:
+    """Convert HTML using Rust backend when available."""
+    if RUST_AVAILABLE:
+        try:
+            return convert_html_to_markdown(html, format_type)
+        except Exception as e:
+            logger.warning("Rust conversion failed, falling back to Python", error=str(e))
+    
+    # Python fallback implementation
+    return _python_convert_html(html, format_type)
+```
+
+### Error Handling for Rust Calls
+```python
+from markdown_lab.core.errors import RustBindingError
+
+def safe_rust_call(func, *args, **kwargs):
+    """Safely call Rust function with error handling."""
+    try:
+        return func(*args, **kwargs)
+    except Exception as e:
+        # Convert Rust errors to Python exceptions
+        raise RustBindingError(f"Rust function {func.__name__} failed: {e}") from e
+```
+
+## Code Quality Checks
+
+### Linting Configuration
+- Use `ruff` for fast linting and formatting
+- Configure `mypy` for strict type checking
+- Use `black` for code formatting consistency
+- Run `isort` for import sorting
+
+### Pre-commit Hooks
+```yaml
+# .pre-commit-config.yaml
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.1.0
+    hooks:
+      - id: ruff
+        args: [--fix, --exit-non-zero-on-fix]
+      - id: ruff-format
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.0.0
+    hooks:
+      - id: mypy
+```
+
+### Quality Standards
+- Maintain test coverage above 80%
+- Keep cyclomatic complexity under 10
+- Use meaningful variable names (no single letters except loop counters)
+- Follow PEP 8 style guidelines
+- Write self-documenting code with clear intent
