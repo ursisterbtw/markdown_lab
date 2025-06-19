@@ -2,6 +2,8 @@
 .request_cache/
 tmp/
 markdown_scraper.log
+.cursor/
+.windsurf/
 
 # Cached Files
 *cache*

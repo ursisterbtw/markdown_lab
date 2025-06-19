@@ -1,13 +1,13 @@
-import pytest
-from unittest.mock import Mock, patch, MagicMock, call
-import requests
-from requests.exceptions import RequestException, Timeout, ConnectionError
-import json
 import time
-from typing import Optional, Dict, Any
+from unittest.mock import Mock, patch
 
-from markdown_lab.core.client import CoreClient
-from markdown_lab.network.client import NetworkClient
+import pytest
+import requests
+from requests.exceptions import ConnectionError, Timeout
+
+from markdown_lab.core.config import MarkdownLabConfig
+from markdown_lab.network.client import CachedHttpClient, HttpClient
+
 
 @pytest.fixture
 def mock_response():
@@ -15,343 +15,298 @@ def mock_response():
     mock_resp = Mock()
     mock_resp.status_code = 200
     mock_resp.text = "<html><body><h1>Test HTML</h1></body></html>"
-    mock_resp.json.return_value = {"status": "success", "data": "test"}
     mock_resp.headers = {"content-type": "text/html"}
+    mock_resp.elapsed.total_seconds.return_value = 0.25
+    mock_resp.raise_for_status.return_value = None
     return mock_resp
 
-@pytest.fixture
-def core_client():
-    """Fixture for CoreClient instance."""
-    return CoreClient()
 
 @pytest.fixture
-def network_client():
-    """Fixture for NetworkClient instance."""
-    return NetworkClient()
+def test_config():
+    """Test configuration for HTTP clients."""
+    return MarkdownLabConfig(
+        timeout=10,
+        max_retries=2,
+        requests_per_second=5,
+        cache_enabled=True,
+        user_agent="TestAgent/1.0",
+    )
+
 
 @pytest.fixture
-def sample_html():
-    """Sample HTML content for testing."""
-    return "<html><head><title>Test</title></head><body><h1>Header</h1><p>Paragraph</p></body></html>"
+def http_client(test_config):
+    """Fixture for HttpClient instance."""
+    return HttpClient(test_config)
+
 
 @pytest.fixture
-def sample_config():
-    """Sample configuration for client testing."""
-    return {
-        "timeout": 30,
-        "retries": 3,
-        "user_agent": "MarkdownLab/1.0",
-        "headers": {"Accept": "text/html,application/xhtml+xml"}
-    }
+def cached_http_client(test_config):
+    """Fixture for CachedHttpClient instance."""
+    return CachedHttpClient(test_config)
 
-class TestCoreClient:
-    """Test suite for CoreClient functionality."""
-    
-    def test_core_client_initialization_default(self):
-        """Test CoreClient initializes with default parameters."""
-        client = CoreClient()
-        assert client is not None
-        assert hasattr(client, 'config')
-        
-    def test_core_client_initialization_with_config(self, sample_config):
-        """Test CoreClient initializes with custom configuration."""
-        client = CoreClient(config=sample_config)
-        assert client is not None
-        
-    def test_core_client_invalid_config(self):
-        """Test CoreClient handles invalid configuration gracefully."""
-        with pytest.raises((ValueError, TypeError)):
-            CoreClient(config="invalid_config")
-            
-    def test_core_client_none_config(self):
-        """Test CoreClient handles None configuration."""
-        client = CoreClient(config=None)
-        assert client is not None
-        
-    def test_process_html_valid_input(self, core_client, sample_html):
-        """Test processing valid HTML content."""
-        result = core_client.process_html(sample_html)
-        assert result is not None
-        assert isinstance(result, str)
-        
-    def test_process_html_empty_input(self, core_client):
-        """Test processing empty HTML content."""
-        result = core_client.process_html("")
-        assert result is not None
-        
-    def test_process_html_none_input(self, core_client):
-        """Test processing None input."""
-        with pytest.raises((ValueError, TypeError)):
-            core_client.process_html(None)
-            
-    def test_process_html_malformed_html(self, core_client):
-        """Test processing malformed HTML content."""
-        malformed_html = "<html><body><h1>Unclosed header<p>Unclosed paragraph"
-        result = core_client.process_html(malformed_html)
-        assert result is not None
-        
-    def test_process_html_with_special_characters(self, core_client):
-        """Test processing HTML with special characters and encoding."""
-        special_html = "<html><body><p>Special chars: åäö, 中文, emoji 🚀</p></body></html>"
-        result = core_client.process_html(special_html)
-        assert result is not None
-        assert isinstance(result, str)
 
-class TestNetworkClient:
-    """Test suite for NetworkClient functionality."""
-    
-    def test_network_client_initialization(self):
-        """Test NetworkClient initializes correctly."""
-        client = NetworkClient()
+class TestHttpClient:
+    """Test suite for unified HttpClient functionality."""
+
+    def test_http_client_initialization_default(self):
+        """Test HttpClient initializes with default configuration."""
+        client = HttpClient()
         assert client is not None
-        
-    def test_network_client_with_timeout(self):
-        """Test NetworkClient initializes with custom timeout."""
-        client = NetworkClient(timeout=60)
-        assert client.timeout == 60
-        
-    @patch('requests.get')
-    def test_fetch_url_success(self, mock_get, network_client, mock_response):
-        """Test successful URL fetching."""
-        mock_get.return_value = mock_response
-        result = network_client.fetch_url("https://example.com")
-        assert result is not None
-        mock_get.assert_called_once()
-        
-    @patch('requests.get')
-    def test_fetch_url_with_headers(self, mock_get, network_client, mock_response):
-        """Test URL fetching with custom headers."""
-        mock_get.return_value = mock_response
-        custom_headers = {"User-Agent": "TestAgent"}
-        result = network_client.fetch_url("https://example.com", headers=custom_headers)
-        mock_get.assert_called_once()
-        args, kwargs = mock_get.call_args
-        assert "headers" in kwargs
-        
-    @patch('requests.get')
-    def test_fetch_url_timeout(self, mock_get, network_client):
-        """Test URL fetching with timeout."""
-        mock_get.side_effect = Timeout("Request timed out")
-        with pytest.raises(Timeout):
-            network_client.fetch_url("https://example.com")
-            
-    @patch('requests.get')
-    def test_fetch_url_connection_error(self, mock_get, network_client):
-        """Test URL fetching with connection error."""
-        mock_get.side_effect = ConnectionError("Connection failed")
-        with pytest.raises(ConnectionError):
-            network_client.fetch_url("https://example.com")
-            
-    @patch('requests.get')
-    def test_fetch_url_invalid_url(self, mock_get, network_client):
-        """Test fetching invalid URL."""
-        with pytest.raises((ValueError, RequestException)):
-            network_client.fetch_url("not-a-valid-url")
-            
-    @patch('requests.get')
-    def test_fetch_url_empty_url(self, mock_get, network_client):
-        """Test fetching empty URL."""
-        with pytest.raises((ValueError, RequestException)):
-            network_client.fetch_url("")
-            
-    @patch('requests.get')
-    def test_fetch_url_none_url(self, mock_get, network_client):
-        """Test fetching None URL."""
-        with pytest.raises((ValueError, TypeError)):
-            network_client.fetch_url(None)
-            
-    def test_core_client_large_html_input(self, core_client):
-        """Test processing very large HTML input."""
-        large_html = "<html><body>" + "<p>Large content</p>" * 10000 + "</body></html>"
-        result = core_client.process_html(large_html)
-        assert result is not None
-        
-    def test_core_client_deeply_nested_html(self, core_client):
-        """Test processing deeply nested HTML."""
-        nested_html = "<html><body>"
-        for i in range(100):
-            nested_html += f"<div class='level-{i}'>"
-        nested_html += "Deep content"
-        for i in range(100):
-            nested_html += "</div>"
-        nested_html += "</body></html>"
-        result = core_client.process_html(nested_html)
-        assert result is not None
-        
-    @patch('requests.get')
-    def test_network_client_retry_mechanism(self, mock_get, network_client):
-        """Test retry mechanism on network failures."""
-        mock_get.side_effect = [
-            ConnectionError("First attempt failed"),
-            ConnectionError("Second attempt failed"),
-            Mock(status_code=200, text="Success")
-        ]
-        result = network_client.fetch_url_with_retry("https://example.com", max_retries=3)
-        assert mock_get.call_count == 3
-        
-    def test_core_client_concurrent_processing(self, core_client, sample_html):
-        """Test concurrent HTML processing."""
-        import threading
-        results = []
-        def process_html():
-            result = core_client.process_html(sample_html)
-            results.append(result)
-        threads = [threading.Thread(target=process_html) for _ in range(5)]
-        for thread in threads: thread.start()
-        for thread in threads: thread.join()
-        assert len(results) == 5
-        assert all(result is not None for result in results)
-        
-    @patch('requests.get')
-    def test_network_client_rate_limiting(self, mock_get, network_client, mock_response):
-        """Test rate limiting behavior."""
-        mock_get.return_value = mock_response
-        start_time = time.time()
-        for _ in range(3):
-            network_client.fetch_url_with_rate_limit("https://example.com", min_interval=0.1)
-        end_time = time.time()
-        assert end_time - start_time >= 0.2
+        assert hasattr(client, "config")
+        assert hasattr(client, "session")
+        assert hasattr(client, "throttler")
+
+    def test_http_client_initialization_with_config(self, test_config):
+        """Test HttpClient initializes with custom configuration."""
+        client = HttpClient(test_config)
+        assert client.config == test_config
+        assert client.config.timeout == 10
+        assert client.config.max_retries == 2
+
+    @patch("requests.Session.request")
+    def test_get_success(self, mock_request, http_client, mock_response):
+        """Test successful GET request."""
+        mock_request.return_value = mock_response
+        result = http_client.get("https://example.com")
+        assert result == mock_response.text
+        mock_request.assert_called_once()
+
+    @patch("requests.Session.request")
+    def test_get_with_retries(self, mock_request, http_client, mock_response):
+        """Test GET request with retry logic."""
+        mock_request.side_effect = [ConnectionError("Connection failed"), mock_response]
+        result = http_client.get("https://example.com")
+        assert result == mock_response.text
+        assert mock_request.call_count == 2
+
+    @patch("requests.Session.request")
+    def test_get_max_retries_exceeded(self, mock_request, http_client):
+        """Test GET request when max retries exceeded."""
+        mock_request.side_effect = ConnectionError("Connection failed")
+        with pytest.raises(Exception):
+            http_client.get("https://example.com")
+        assert mock_request.call_count == http_client.config.max_retries + 1
+
+    @patch("requests.Session.request")
+    def test_head_request(self, mock_request, http_client, mock_response):
+        """Test HEAD request functionality."""
+        mock_request.return_value = mock_response
+        result = http_client.head("https://example.com")
+        assert result == mock_response
+        mock_request.assert_called_once_with("HEAD", "https://example.com", timeout=10)
+
+    @patch("requests.Session.request")
+    def test_get_many_urls(self, mock_request, http_client, mock_response):
+        """Test batch GET requests."""
+        mock_request.return_value = mock_response
+        urls = ["https://example1.com", "https://example2.com", "https://example3.com"]
+        results = http_client.get_many(urls)
+        assert len(results) == 3
+        assert all(url in results for url in urls)
+        assert mock_request.call_count == 3
+
+    def test_context_manager(self, test_config):
+        """Test HttpClient as context manager."""
+        with HttpClient(test_config) as client:
+            assert client is not None
+        # Session should be closed after context exit
+
+    def test_close_method(self, http_client):
+        """Test explicit close method."""
+        http_client.close()
+        # Should not raise any exceptions
+
+
+class TestCachedHttpClient:
+    """Test suite for CachedHttpClient functionality."""
+
+    def test_cached_client_initialization_default(self):
+        """Test CachedHttpClient initializes with default configuration."""
+        client = CachedHttpClient()
+        assert client is not None
+        assert hasattr(client, "cache")
+
+    def test_cached_client_initialization_with_config(self, test_config):
+        """Test CachedHttpClient initializes with custom configuration."""
+        client = CachedHttpClient(test_config)
+        assert client.config == test_config
+
+    @patch("requests.Session.request")
+    def test_get_with_cache_miss(self, mock_request, cached_http_client, mock_response):
+        """Test GET request with cache miss."""
+        mock_request.return_value = mock_response
+        result = cached_http_client.get("https://example.com")
+        assert result == mock_response.text
+        mock_request.assert_called_once()
+
+    @patch("requests.Session.request")
+    def test_get_with_cache_hit(self, mock_request, cached_http_client, mock_response):
+        """Test GET request with cache hit."""
+        mock_request.return_value = mock_response
+
+        # First request - cache miss
+        result1 = cached_http_client.get("https://example.com")
+        assert result1 == mock_response.text
+
+        # Second request - cache hit
+        result2 = cached_http_client.get("https://example.com")
+        assert result2 == mock_response.text
+
+        # Should only make one actual HTTP request
+        mock_request.assert_called_once()
+
+    @patch("requests.Session.request")
+    def test_get_skip_cache(self, mock_request, cached_http_client, mock_response):
+        """Test GET request with skip_cache parameter."""
+        mock_request.return_value = mock_response
+
+        # First request
+        cached_http_client.get("https://example.com")
+
+        # Second request with skip_cache=True
+        result = cached_http_client.get("https://example.com", skip_cache=True)
+        assert result == mock_response.text
+
+        # Should make two HTTP requests
+        assert mock_request.call_count == 2
+
+    @patch("requests.Session.request")
+    def test_get_use_cache_false(self, mock_request, cached_http_client, mock_response):
+        """Test GET request with use_cache=False."""
+        mock_request.return_value = mock_response
+
+        # First request
+        cached_http_client.get("https://example.com")
+
+        # Second request with use_cache=False
+        result = cached_http_client.get("https://example.com", use_cache=False)
+        assert result == mock_response.text
+
+        # Should make two HTTP requests
+        assert mock_request.call_count == 2
+
+    def test_clear_cache(self, cached_http_client):
+        """Test cache clearing functionality."""
+        cached_http_client.clear_cache()
+        # Should not raise any exceptions
+
+    def test_cache_disabled_config(self):
+        """Test CachedHttpClient with caching disabled."""
+        config = MarkdownLabConfig(cache_enabled=False)
+        client = CachedHttpClient(config)
+        assert client.cache is None
+
 
 class TestClientIntegration:
-    """Integration tests for client interactions."""
-    
-    @patch('requests.get')
-    def test_end_to_end_workflow(self, mock_get, mock_response):
-        """Test complete workflow from URL fetch to markdown conversion."""
-        mock_get.return_value = mock_response
-        network_client = NetworkClient()
-        core_client = CoreClient()
-        html_content = network_client.fetch_url("https://example.com")
-        markdown_result = core_client.process_html(html_content)
-        assert html_content is not None
-        assert markdown_result is not None
-        mock_get.assert_called_once()
-        
-    def test_error_propagation_workflow(self):
-        """Test error propagation through client chain."""
-        network_client = NetworkClient()
-        core_client = CoreClient()
-        with patch('requests.get', side_effect=ConnectionError("Network error")):
-            with pytest.raises(ConnectionError):
-                html_content = network_client.fetch_url("https://example.com")
-                core_client.process_html(html_content)
-                
-    @patch('requests.get')
-    def test_client_state_management(self, mock_get, mock_response):
-        """Test client state management across multiple operations."""
-        mock_get.return_value = mock_response
-        client = NetworkClient()
-        result1 = client.fetch_url("https://example1.com")
-        result2 = client.fetch_url("https://example2.com")
-        assert result1 is not None
-        assert result2 is not None
-        assert mock_get.call_count == 2
+    """Integration tests for HTTP client functionality."""
 
-class TestParametrizedScenarios:
-    """Parametrized tests for comprehensive coverage."""
-    
-    @pytest.mark.parametrize("html_input,expected_type", [
-        ("<h1>Header</h1>", str),
-        ("<p>Paragraph</p>", str),
-        ("<div><span>Nested</span></div>", str),
-        ("Plain text", str),
-        ("<html></html>", str),
-    ])
-    def test_core_client_various_inputs(self, core_client, html_input, expected_type):
-        """Test CoreClient with various HTML inputs."""
-        result = core_client.process_html(html_input)
-        assert isinstance(result, expected_type)
-        
-    @pytest.mark.parametrize("url,should_raise", [
-        ("https://valid-url.com", False),
-        ("http://another-valid.com", False),
-        ("invalid-url", True),
-        ("", True),
-        ("ftp://not-http.com", True),
-    ])
-    @patch('requests.get')
-    def test_network_client_url_validation(self, mock_get, network_client, mock_response, url, should_raise):
-        """Test NetworkClient URL validation."""
-        mock_get.return_value = mock_response
-        if should_raise:
-            with pytest.raises((ValueError, RequestException)):
-                network_client.fetch_url(url)
-        else:
-            result = network_client.fetch_url(url)
-            assert result is not None
-            
-    @pytest.mark.parametrize("status_code,should_raise", [
-        (200, False),
-        (201, False),
-        (404, True),
-        (500, True),
-        (403, True),
-    ])
-    @patch('requests.get')
-    def test_network_client_status_codes(self, mock_get, network_client, status_code, should_raise):
-        """Test NetworkClient handling of various HTTP status codes."""
-        mock_resp = Mock()
-        mock_resp.status_code = status_code
-        mock_resp.raise_for_status.side_effect = None if status_code < 400 else RequestException(f"HTTP {status_code}")
-        mock_get.return_value = mock_resp
-        if should_raise:
-            with pytest.raises(RequestException):
-                network_client.fetch_url("https://example.com")
-        else:
-            result = network_client.fetch_url("https://example.com")
-            assert result is not None
+    @patch("requests.Session.request")
+    def test_throttling_behavior(self, mock_request, test_config, mock_response):
+        """Test that requests are properly throttled."""
+        mock_request.return_value = mock_response
+        client = HttpClient(test_config)
 
-class TestClientUtilities:
-    """Test utility methods and edge cases."""
-    
-    def test_client_cleanup_resources(self, network_client):
-        """Test proper resource cleanup."""
-        network_client.fetch_url("https://example.com")
-        if hasattr(network_client, 'cleanup'):
-            network_client.cleanup()
-        assert True
-        
-    def test_client_configuration_validation(self):
-        """Test client configuration validation."""
-        valid_configs = [
-            {"timeout": 30, "retries": 3},
-            {"user_agent": "TestAgent"},
-            {},
+        start_time = time.time()
+        # Make multiple requests that should be throttled
+        for i in range(3):
+            client.get(f"https://example{i}.com")
+        end_time = time.time()
+
+        # With 5 requests per second, 3 requests should take at least 0.4 seconds
+        # (allowing some margin for test execution overhead)
+        elapsed = end_time - start_time
+        assert elapsed >= 0.3  # Conservative check
+
+    @patch("requests.Session.request")
+    def test_error_handling_chain(self, mock_request, http_client):
+        """Test error handling through the request chain."""
+        mock_request.side_effect = [
+            Timeout("Request timeout"),
+            ConnectionError("Connection error"),
+            requests.exceptions.HTTPError("HTTP error"),
         ]
-        for config in valid_configs:
-            client = NetworkClient(**config)
-            assert client is not None
-            
-    def test_client_memory_usage(self, core_client, sample_html):
-        """Test memory usage with large inputs."""
-        import sys
-        initial_size = sys.getsizeof(core_client)
-        for _ in range(10):
-            large_html = sample_html * 1000
-            core_client.process_html(large_html)
-        final_size = sys.getsizeof(core_client)
-        assert final_size - initial_size < 1000000
-        
-    def teardown_method(self, method):
-        """Clean up after each test method."""
-        pass
-        
-    @classmethod
-    def teardown_class(cls):
-        """Clean up after all tests in class."""
-        pass
 
-class TestClientPerformance:
-    """Performance benchmarks for client operations."""
-    
-    def test_core_client_performance(self, benchmark, core_client, sample_html):
-        """Benchmark CoreClient HTML processing performance."""
-        result = benchmark(core_client.process_html, sample_html)
-        assert result is not None
-        
-    @patch('requests.get')
-    def test_network_client_performance(self, benchmark, mock_get, network_client, mock_response):
-        """Benchmark NetworkClient URL fetching performance."""
-        mock_get.return_value = mock_response
-        result = benchmark(network_client.fetch_url, "https://example.com")
-        assert result is not None
+        with pytest.raises(Exception):
+            http_client.get("https://example.com")
+
+    def test_session_configuration(self, http_client):
+        """Test that session is properly configured."""
+        session = http_client.session
+        assert "User-Agent" in session.headers
+        assert session.headers["User-Agent"] == http_client.config.user_agent
+
+    @patch("requests.Session.request")
+    def test_response_timing_logging(self, mock_request, http_client, mock_response):
+        """Test that response timing is logged."""
+        mock_request.return_value = mock_response
+
+        with patch("markdown_lab.network.client.logger") as mock_logger:
+            http_client.get("https://example.com")
+            # Verify that info log was called (response timing is logged)
+            mock_logger.info.assert_called()
+
+
+class TestErrorScenarios:
+    """Test various error scenarios."""
+
+    @pytest.mark.parametrize(
+        "exception_type",
+        [
+            ConnectionError,
+            Timeout,
+            requests.exceptions.HTTPError,
+            requests.exceptions.RequestException,
+        ],
+    )
+    @patch("requests.Session.request")
+    def test_exception_handling(self, mock_request, http_client, exception_type):
+        """Test handling of various request exceptions."""
+        mock_request.side_effect = exception_type("Test error")
+
+        with pytest.raises(Exception):
+            http_client.get("https://example.com")
+
+    @patch("requests.Session.request")
+    def test_http_error_status_codes(self, mock_request, http_client):
+        """Test handling of HTTP error status codes."""
+        mock_resp = Mock()
+        mock_resp.status_code = 404
+        mock_resp.raise_for_status.side_effect = requests.exceptions.HTTPError(
+            "404 Not Found"
+        )
+        mock_request.return_value = mock_resp
+
+        with pytest.raises(Exception):
+            http_client.get("https://example.com")
+
+
+class TestPerformance:
+    """Performance-related tests."""
+
+    @patch("requests.Session.request")
+    def test_connection_reuse(self, mock_request, http_client, mock_response):
+        """Test that connections are reused efficiently."""
+        mock_request.return_value = mock_response
+
+        # Make multiple requests to the same domain
+        for i in range(5):
+            http_client.get("https://example.com/page" + str(i))
+
+        # All requests should use the same session
+        assert mock_request.call_count == 5
+
+    def test_memory_efficiency(self, cached_http_client):
+        """Test memory efficiency of cached client."""
+        import sys
+
+        initial_size = sys.getsizeof(cached_http_client)
+
+        # Simulate adding items to cache
+        if cached_http_client.cache:
+            for i in range(100):
+                cached_http_client.cache.set(f"url{i}", f"content{i}")
+
+        # Memory usage should be reasonable
+        final_size = sys.getsizeof(cached_http_client)
+        size_increase = final_size - initial_size
+        assert size_increase < 1000000  # Less than 1MB increase

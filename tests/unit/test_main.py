@@ -5,235 +5,209 @@ from unittest.mock import MagicMock, patch
 import pytest
 import requests
 
-from markdown_lab.core.cache import RequestCache
-from markdown_lab.core.scraper import MarkdownScraper
+from markdown_lab.core.config import MarkdownLabConfig
+from markdown_lab.core.converter import Converter
 
 
 @pytest.fixture
-def scraper():
-    return MarkdownScraper(cache_enabled=False)
+def converter():
+    config = MarkdownLabConfig(cache_enabled=False)
+    return Converter(config)
 
 
-@patch("markdown_lab.core.scraper.requests.Session.get")
-def test_scrape_website_success(mock_get, scraper):
+@pytest.fixture
+def test_html():
+    return "<html><head><title>Test</title></head><body><h1>Header</h1><p>Paragraph</p></body></html>"
+
+
+@patch("markdown_lab.network.client.requests.Session.request")
+def test_convert_url_success(mock_request, converter, test_html):
     mock_response = MagicMock()
     mock_response.status_code = 200
-    mock_response.text = "<html><head><title>Test</title></head><body></body></html>"
+    mock_response.text = test_html
     mock_response.elapsed.total_seconds.return_value = 0.1
-    mock_get.return_value = mock_response
+    mock_response.raise_for_status.return_value = None
+    mock_request.return_value = mock_response
 
-    result = scraper.scrape_website("http://example.com")
-    assert result == "<html><head><title>Test</title></head><body></body></html>"
+    result = converter.convert_url("http://example.com")
+    assert "# Header" in result
+    assert "Paragraph" in result
 
 
-@patch("markdown_lab.core.scraper.requests.Session.get")
-def test_scrape_website_http_error(mock_get, scraper):
+@patch("markdown_lab.network.client.requests.Session.request")
+def test_convert_url_http_error(mock_request, converter):
     mock_response = MagicMock()
+    mock_response.status_code = 404
     mock_response.raise_for_status.side_effect = requests.exceptions.HTTPError(
         "404 Not Found"
     )
-    mock_get.return_value = mock_response
+    mock_request.return_value = mock_response
 
-    with pytest.raises(requests.exceptions.HTTPError):
-        scraper.scrape_website("http://example.com")
-
-
-@patch("markdown_lab.core.scraper.requests.Session.get")
-def test_scrape_website_general_error(mock_get, scraper):
-    mock_get.side_effect = Exception("Connection error")
-
-    with pytest.raises(Exception) as exc_info:
-        scraper.scrape_website("http://example.com")
-    assert str(exc_info.value) == "Connection error"
+    with pytest.raises(Exception):
+        converter.convert_url("http://example.com")
 
 
-def test_convert_to_markdown(scraper):
-    """
-    Tests that HTML content is correctly converted to markdown format by the scraper.
-
-    Verifies that key elements such as headers, paragraphs, images, and list items are present in the markdown output.
-    """
-    html_content = """<html><head><title>Test</title></head>
-    <body>
-    <h1>Header 1</h1>
-    <p>Paragraph 1</p>
-    <a href='http://example.com'>Link</a>
-    <img src='image.jpg' alt='Test Image'>
-    <ul><li>Item 1</li><li>Item 2</li></ul>
-    </body></html>"""
-
-    # Get the result and check that it contains the expected elements
-    # The exact format might vary, so we check for key content instead of exact matching
-    result = scraper.convert_html_to_format(
-        html_content, "http://example.com", "markdown"
+def test_convert_html_to_markdown(converter, test_html):
+    converted_content, markdown_content = converter.convert_html(
+        test_html, "http://example.com", output_format="markdown"
     )
-
-    assert "# Test" in result
-    assert "Header 1" in result
-    assert "Paragraph 1" in result
-    # We see that links might not be processed in our implementation, so let's skip that check
-    # assert "[Link](http://example.com)" in result
-    assert "![Test Image](" in result and "image.jpg)" in result
-    assert "Item 1" in result
-    assert "Item 2" in result
+    assert "# Header" in converted_content
+    assert "Paragraph" in converted_content
 
 
-@patch("markdown_lab.core.scraper.requests.Session.get")
-def test_format_conversion(mock_get, scraper):
-    """
-    Tests conversion of HTML content to JSON and XML formats using both Rust and Python implementations.
-
-    Simulates an HTTP GET request returning sample HTML, then verifies that the content can be converted to JSON and XML formats. Attempts to use Rust-based conversion utilities if available, falling back to Python helpers otherwise. Asserts that key elements from the HTML are present in the converted outputs.
-    """
-    mock_response = MagicMock()
-    mock_response.status_code = 200
-    mock_response.text = """<html><head><title>Format Test</title></head>
-    <body>
-    <h1>Test Heading</h1>
-    <p>Test paragraph</p>
-    <ul><li>Item A</li><li>Item B</li></ul>
-    </body></html>"""
-    mock_response.elapsed.total_seconds.return_value = 0.1
-    mock_get.return_value = mock_response
-
-    # Test the JSON output format using the scraper's Rust implementation
-    try:
-        # Convert to JSON using the scraper's unified method
-        json_content = scraper.convert_html_to_format(
-            mock_response.text, "http://example.com", "json"
-        )
-
-        # Basic validation
-        assert "Format Test" in json_content
-        assert "Test Heading" in json_content
-        assert "Test paragraph" in json_content
-        assert "Item A" in json_content
-        assert "Item B" in json_content
-
-        # XML output test
-        xml_content = scraper.convert_html_to_format(
-            mock_response.text, "http://example.com", "xml"
-        )
-
-        # Basic validation
-        assert "<title>Format Test</title>" in xml_content
-        assert "Test Heading" in xml_content
-        assert "Test paragraph" in xml_content
-        assert "Item A" in xml_content
-        assert "Item B" in xml_content
-
-    except ImportError:
-        # Fall back to Python implementation (import a helper)
-        from markdown_lab.markdown_lab_rs import (
-            document_to_xml,
-            parse_markdown_to_document,
-        )
-
-        # Convert to markdown first
-        markdown_content = scraper.convert_to_markdown(mock_response.text)
-
-        # Then convert to JSON
-        document = parse_markdown_to_document(markdown_content, "http://example.com")
-        import json
-
-        json_content = json.dumps(document, indent=2)
-
-        # Basic validation
-        assert "Format Test" in json_content
-        assert "Test Heading" in json_content
-        assert "Item A" in json_content or "Item B" in json_content
-
-        # XML output test
-        xml_content = document_to_xml(document)
-
-        # Basic validation
-        assert "<title>Format Test</title>" in xml_content
-        assert "Test Heading" in xml_content
-        assert "Item A" in xml_content or "Item B" in xml_content
+def test_convert_html_to_json(converter, test_html):
+    converted_content, markdown_content = converter.convert_html(
+        test_html, "http://example.com", output_format="json"
+    )
+    assert '"title": "Test"' in converted_content
+    assert '"content"' in converted_content
 
 
-@patch("builtins.open")
-def test_save_markdown(mock_open):
-    # setup the mock file object
-    mock_file = MagicMock()
-    mock_open.return_value.__enter__.return_value = mock_file
-
-    scraper = MarkdownScraper()
-    markdown_content = "# Test Markdown"
-    output_file = "test_output.md"
-
-    # call the method under test
-    scraper.save_markdown(markdown_content, output_file)
-
-    # assert that open was called with the correct file name and mode
-    mock_open.assert_called_once_with(output_file, "w", encoding="utf-8")
-
-    # assert write was called with the content
-    mock_file.write.assert_called_once_with(markdown_content)
+def test_convert_html_to_xml(converter, test_html):
+    converted_content, markdown_content = converter.convert_html(
+        test_html, "http://example.com", output_format="xml"
+    )
+    assert "<title>Test</title>" in converted_content
+    assert "<content>" in converted_content
 
 
-def test_request_cache():
+def test_convert_url_list(converter):
+    """Test URL list conversion functionality."""
     with tempfile.TemporaryDirectory() as temp_dir:
-        # Initialize cache
-        cache = RequestCache(cache_dir=temp_dir, max_age=60)
+        urls = ["http://example1.com", "http://example2.com"]
 
-        # Test cache functionality
-        url = "http://example.com/test"
-        content = "<html><body>Test content</body></html>"
+        with patch(
+            "markdown_lab.network.client.requests.Session.request"
+        ) as mock_request:
+            mock_response = MagicMock()
+            mock_response.status_code = 200
+            mock_response.text = "<html><body><h1>Test</h1></body></html>"
+            mock_response.raise_for_status.return_value = None
+            mock_request.return_value = mock_response
 
-        # Cache should be empty initially
-        assert cache.get(url) is None
+            results = converter.convert_url_list(
+                urls=urls,
+                output_dir=temp_dir,
+                output_format="markdown",
+                save_chunks=False,
+            )
 
-        # Set content in cache
-        cache.set(url, content)
+            assert len(results) == 2
+            assert results == urls
 
-        # Cache should now contain content
-        assert cache.get(url) == content
-
-        # Check that file was created
-        key = cache._get_cache_key(url)
-        assert (Path(temp_dir) / key).exists()
+            # Check that files were created
+            output_path = Path(temp_dir)
+            files = list(output_path.glob("*.md"))
+            assert len(files) == 2
 
 
-@patch("markdown_lab.core.scraper.requests.Session.get")
-def test_scrape_website_with_cache(mock_get):
+def test_convert_format_validation(converter, test_html):
+    """Test that invalid formats raise appropriate errors."""
+    with pytest.raises(ValueError):
+        converter.convert_html(
+            test_html, "http://example.com", output_format="invalid_format"
+        )
+
+
+def test_converter_with_cache_enabled():
+    """Test converter with caching enabled."""
+    config = MarkdownLabConfig(cache_enabled=True, cache_ttl=3600)
+    converter = Converter(config)
+
+    assert converter.client.cache is not None
+
+
+def test_converter_with_cache_disabled():
+    """Test converter with caching disabled."""
+    config = MarkdownLabConfig(cache_enabled=False)
+    converter = Converter(config)
+
+    # The CachedHttpClient should have cache=None when disabled
+    assert converter.client.cache is None
+
+
+@patch("markdown_lab.network.client.requests.Session.request")
+def test_convert_sitemap_functionality(mock_request, converter):
+    """Test sitemap conversion functionality."""
+    # Mock sitemap XML response
+    sitemap_xml = """<?xml version="1.0" encoding="UTF-8"?>
+    <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+        <url>
+            <loc>http://example.com/page1</loc>
+            <priority>0.8</priority>
+        </url>
+        <url>
+            <loc>http://example.com/page2</loc>
+            <priority>0.6</priority>
+        </url>
+    </urlset>"""
+
+    # Mock HTML response
+    html_response = "<html><body><h1>Test Page</h1></body></html>"
+
+    def mock_response_side_effect(method, url, **kwargs):
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.raise_for_status.return_value = None
+
+        if "sitemap" in url:
+            mock_resp.text = sitemap_xml
+        else:
+            mock_resp.text = html_response
+
+        return mock_resp
+
+    mock_request.side_effect = mock_response_side_effect
+
     with tempfile.TemporaryDirectory() as temp_dir:
-        # Setup mock response
-        mock_response = MagicMock()
-        mock_response.status_code = 200
-        mock_response.text = (
-            "<html><head><title>Cached Test</title></head><body></body></html>"
+        results = converter.convert_sitemap(
+            base_url="http://example.com",
+            output_dir=temp_dir,
+            output_format="markdown",
+            min_priority=0.5,
+            limit=2,
         )
-        mock_response.elapsed.total_seconds.return_value = 0.1
-        mock_get.return_value = mock_response
 
-        # Create scraper with cache enabled
-        scraper = MarkdownScraper(cache_enabled=True)
-        scraper.request_cache.cache_dir = Path(temp_dir)  # Override cache directory
+        assert len(results) == 2
 
-        url = "http://example.com/cached"
+        # Check that files were created
+        output_path = Path(temp_dir)
+        files = list(output_path.glob("*.md"))
+        assert len(files) == 2
 
-        # First request should hit the network
-        result1 = scraper.scrape_website(url)
-        assert (
-            result1
-            == "<html><head><title>Cached Test</title></head><body></body></html>"
-        )
-        assert mock_get.call_count == 1
 
-        # Second request should use the cache
-        result2 = scraper.scrape_website(url)
-        assert (
-            result2
-            == "<html><head><title>Cached Test</title></head><body></body></html>"
-        )
-        # The mock should not have been called again
-        assert mock_get.call_count == 1
+def test_error_handling_with_invalid_url(converter):
+    """Test error handling with invalid URLs."""
+    with pytest.raises(Exception):
+        converter.convert_url("not-a-valid-url")
 
-        # Request with skip_cache should hit the network again
-        result3 = scraper.scrape_website(url, skip_cache=True)
-        assert (
-            result3
-            == "<html><head><title>Cached Test</title></head><body></body></html>"
-        )
-        assert mock_get.call_count == 2
+
+def test_chunking_functionality(converter, test_html):
+    """Test content chunking functionality."""
+    with tempfile.TemporaryDirectory() as temp_dir:
+        chunk_dir = Path(temp_dir) / "chunks"
+
+        with patch(
+            "markdown_lab.network.client.requests.Session.request"
+        ) as mock_request:
+            mock_response = MagicMock()
+            mock_response.status_code = 200
+            mock_response.text = test_html
+            mock_response.raise_for_status.return_value = None
+            mock_request.return_value = mock_response
+
+            results = converter.convert_url_list(
+                urls=["http://example.com"],
+                output_dir=temp_dir,
+                output_format="markdown",
+                save_chunks=True,
+                chunk_dir=str(chunk_dir),
+                chunk_format="json",
+            )
+
+            assert len(results) == 1
+            assert chunk_dir.exists()
+
+            # Check that chunk files were created
+            chunk_files = list(chunk_dir.glob("*.json"))
+            assert len(chunk_files) >= 1

@@ -14,6 +14,7 @@ from xml.etree.ElementTree import ParseError
 
 import requests
 
+from markdown_lab.core.config import MarkdownLabConfig, get_config
 from markdown_lab.core.throttle import RequestThrottler
 
 logger = logging.getLogger("sitemap_parser")
@@ -34,29 +35,21 @@ class SitemapParser:
 
     def __init__(
         self,
-        requests_per_second: float = 1.0,
-        max_retries: int = 3,
-        timeout: int = 30,
+        config: Optional[MarkdownLabConfig] = None,
         respect_robots_txt: bool = True,
     ):
         """
         Initialize the sitemap parser.
 
         Args:
-            requests_per_second: Maximum number of requests per second
-            max_retries: Maximum number of retry attempts for failed requests
-            timeout: Request timeout in seconds
+            config: MarkdownLabConfig instance. If None, uses default config.
             respect_robots_txt: Whether to check robots.txt for sitemap location
         """
+        self.config = config or get_config()
+
         self.session = requests.Session()
-        self.session.headers.update(
-            {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
-            }
-        )
-        self.throttler = RequestThrottler(requests_per_second)
-        self.max_retries = max_retries
-        self.timeout = timeout
+        self.session.headers.update({"User-Agent": self.config.user_agent})
+        self.throttler = RequestThrottler(self.config.requests_per_second)
         self.respect_robots_txt = respect_robots_txt
         self.discovered_urls: List[SitemapURL] = []
         self.processed_sitemaps: Set[str] = set()
@@ -71,10 +64,10 @@ class SitemapParser:
         Returns:
             The response text or None if failed
         """
-        for attempt in range(self.max_retries):
+        for attempt in range(self.config.max_retries):
             try:
                 self.throttler.throttle()
-                response = self.session.get(url, timeout=self.timeout)
+                response = self.session.get(url, timeout=self.config.timeout)
                 response.raise_for_status()
                 return response.text
             except (
@@ -82,11 +75,11 @@ class SitemapParser:
                 requests.exceptions.HTTPError,
             ) as e:
                 logger.warning(
-                    f"Request error on attempt {attempt + 1}/{self.max_retries}: {e}"
+                    f"Request error on attempt {attempt + 1}/{self.config.max_retries}: {e}"
                 )
-                if attempt == self.max_retries - 1:
+                if attempt == self.config.max_retries - 1:
                     logger.error(
-                        f"Failed to retrieve {url} after {self.max_retries} attempts"
+                        f"Failed to retrieve {url} after {self.config.max_retries} attempts"
                     )
                     return None
                 time.sleep(2**attempt)  # Exponential backoff

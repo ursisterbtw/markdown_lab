@@ -1,0 +1,2 @@
+https://terminaltrove.com/new
+https://docs.anthropic.com/en/docs/claude-code/sdk

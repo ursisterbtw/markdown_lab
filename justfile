@@ -1,5 +1,5 @@
 # Justfile for Markdown Lab
-# A comprehensive task runner for development, testing, and deployment
+# Streamlined task runner for development, testing, and deployment
 
 # Default recipe - show available commands
 default:
@@ -16,9 +16,6 @@ _activate_venv:
     fi
 
 # === SETUP & INSTALLATION ===
-
-# Install all dependencies and set up development environment
-# === ENVIRONMENT SETUP ===
 
 # Install all dependencies and set up development environment
 setup:
@@ -73,312 +70,321 @@ clean:
 
 # === DEVELOPMENT ===
 
-# Build Rust components for development
-build-dev:
-    @echo "🔨 Building Rust components for development..."
-    @just _activate_venv && maturin develop
+# Build Rust components (dev=debug, release=optimized, js=with JavaScript support)
+build mode="dev":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    case "{{mode}}" in
+        "dev")
+            echo "🔨 Building Rust components for development..."
+            just _activate_venv && maturin develop
+            ;;
+        "release")
+            echo "🚀 Building Rust components with optimizations..."
+            just _activate_venv && maturin develop --release
+            ;;
+        "js")
+            echo "🌐 Building with JavaScript rendering support..."
+            cargo build --release --features real_rendering
+            just _activate_venv && maturin develop --release --features real_rendering
+            ;;
+        *)
+            echo "❌ Invalid mode. Use: dev, release, or js"
+            exit 1
+            ;;
+    esac
 
-# Build Rust components with optimizations
-build-release:
-    @echo "🚀 Building Rust components with optimizations..."
-    @just _activate_venv && maturin develop --release
-
-# Build with JavaScript rendering support
-build-js:
-    @echo "🌐 Building with JavaScript rendering support..."
-    @cargo build --release --features real_rendering
-    @just _activate_venv && maturin develop --release --features real_rendering
-
-# Hot reload development mode
+# Quick development setup and build
 dev:
     #!/usr/bin/env bash
     set -euo pipefail
-    
-    echo "🔄 Starting development mode with hot reload..."
-    
-    # Check if virtual environment exists
+    echo "🔄 Starting development mode..."
     if [ ! -d ".venv" ]; then
         echo "❌ Virtual environment not found. Run 'just setup' first."
         exit 1
     fi
-    
-    # Initial build
-    @just _activate_venv && maturin develop
-    
-    echo "✅ Development build complete!"
-    echo "  • Run 'just build-dev' after Rust changes"
-    echo "  • Python changes are automatically picked up"
+    just build dev
+    echo "✅ Development ready! Use 'just build dev' after Rust changes"
 
 # === TESTING ===
 
-# Run all tests
-test: test-rust test-python test-integration
-    @echo "✅ All tests completed successfully!"
-
-# Run Rust tests
-test-rust:
-    @echo "🦀 Running Rust tests..."
-    cargo test --color=always
-
-# Run Rust tests with output
-test-rust-verbose:
-    @echo "🦀 Running Rust tests with verbose output..."
-    RUST_LOG=debug cargo test -- --nocapture --color=always
-
-# Run Python tests
-test-python:
+# Run tests (all=complete suite, rust=Rust only, python=Python only, bindings=Python bindings, coverage=with coverage)
+test type="all":
     #!/usr/bin/env bash
     set -euo pipefail
-    echo "🐍 Running Python tests..."
-    if [ ! -f ".venv/bin/activate" ]; then
-        echo "Error: Virtual environment not found at .venv/bin/activate" >&2
-        exit 1
-    fi
-    source .venv/bin/activate && python -m pytest tests/ -v --color=yes
+    case "{{type}}" in
+        "all")
+            echo "🧪 Running complete test suite..."
+            cargo test --color=always
+            just _activate_venv && python -m pytest tests/ -v --color=yes
+            echo "✅ All tests completed successfully!"
+            ;;
+        "rust")
+            echo "🦀 Running Rust tests..."
+            cargo test --color=always
+            ;;
+        "rust-verbose")
+            echo "🦀 Running Rust tests with verbose output..."
+            RUST_LOG=debug cargo test -- --nocapture --color=always
+            ;;
+        "python")
+            echo "🐍 Running Python tests..."
+            just _activate_venv && python -m pytest tests/ -v --color=yes
+            ;;
+        "bindings")
+            echo "🔗 Running Python binding tests..."
+            just _activate_venv && python -m pytest tests/rust/test_python_bindings.py -v --color=yes
+            ;;
+        "integration")
+            echo "🔧 Running integration tests..."
+            just _activate_venv && python -m pytest tests/integration/ -v --color=yes
+            ;;
+        "coverage")
+            echo "📊 Running tests with coverage..."
+            just _activate_venv && python -m pytest --cov=markdown_lab --cov-report=html --cov-report=term --cov-fail-under=80 --color=yes
+            ;;
+        *)
+            echo "❌ Invalid type. Use: all, rust, rust-verbose, python, bindings, integration, coverage"
+            exit 1
+            ;;
+    esac
 
-# Run Python binding tests specifically
-test-bindings:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    echo "🔗 Running Python binding tests..."
-    if [ ! -f ".venv/bin/activate" ]; then
-        echo "Error: Virtual environment not found at .venv/bin/activate" >&2
-        exit 1
-    fi
-    source .venv/bin/activate && python -m pytest tests/rust/test_python_bindings.py -v --color=yes
-
-# Run integration tests
-test-integration:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    echo "🔧 Running integration tests..."
-    if [ ! -f ".venv/bin/activate" ]; then
-        echo "Error: Virtual environment not found at .venv/bin/activate" >&2
-        exit 1
-    fi
-    source .venv/bin/activate && python -m pytest tests/integration/ -v --color=yes
-
-# Run tests with coverage
-test-coverage:
-    @echo "📊 Running tests with coverage..."
-    @just _activate_venv && python -m pytest \
-        --cov=markdown_lab \
-        --cov-report=html \
-        --cov-report=term \
-        --cov-fail-under=80 \
-        --color=yes
-
-# Run a specific test file or test case
+# Run specific test file or pattern
 test-file file="":
     #!/usr/bin/env bash
     set -euo pipefail
-    
-    if [ -z "$file" ]; then
-        echo "❌ Please specify a test file or test case (e.g., 'just test-file tests/test_parser.py')"
+    if [ -z "{{file}}" ]; then
+        echo "❌ Usage: just test-file <test_file_or_pattern>"
         exit 1
     fi
-    
-    echo "🔍 Running tests in $file..."
-    just _activate_venv && python -m pytest "$file" -v --color=yes
+    echo "🔍 Running tests matching {{file}}..."
+    just _activate_venv && python -m pytest "{{file}}" -v --color=yes
 
 # === BENCHMARKING ===
 
-# Run all benchmarks
-bench:
-    @echo "⚡ Running all benchmarks..."
-    cargo bench
-
-# Run specific benchmark
-bench-html:
-    @echo "📄 Running HTML parsing benchmark..."
-    cargo bench html_to_markdown
-
-# Run chunking benchmark
-bench-chunk:
-    @echo "📝 Running chunking benchmark..."
-    cargo bench chunk_markdown
-
-# Visualize benchmark results
-bench-viz:
-    @echo "📊 Generating benchmark visualization..."
-    source .venv/bin/activate && python scripts/visualize_benchmarks.py
+# Run benchmarks (all=complete suite, html=HTML parsing, chunk=chunking, viz=visualization)
+bench type="all":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    case "{{type}}" in
+        "all")
+            echo "⚡ Running all benchmarks..."
+            cargo bench
+            ;;
+        "html")
+            echo "📄 Running HTML parsing benchmark..."
+            cargo bench html_to_markdown
+            ;;
+        "chunk")
+            echo "📝 Running chunking benchmark..."
+            cargo bench chunk_markdown
+            ;;
+        "viz")
+            echo "📊 Generating benchmark visualization..."
+            just _activate_venv && python scripts/visualize_benchmarks.py
+            ;;
+        *)
+            echo "❌ Invalid type. Use: all, html, chunk, viz"
+            exit 1
+            ;;
+    esac
 
 # === CODE QUALITY ===
 
-# Run all linting and formatting
-lint: lint-python lint-rust
-    @echo "✅ Linting complete!"
-
-# Lint Python code
-lint-python:
-    @echo "🔍 Linting Python code..."
-    @just _activate_venv && ruff check . --fix
-    @just _activate_venv && black .
-    @just _activate_venv && isort .
-
-# Lint Python with unsafe fixes
-lint-python-unsafe:
-    @echo "🔍 Linting Python code with unsafe fixes..."
-    @just _activate_venv && ruff check . --fix --unsafe-fixes
-
-# Lint Rust code
-lint-rust:
-    @echo "🦀 Linting Rust code..."
-    @cargo fmt -- --check
-    @cargo clippy -- -D warnings
-
-# Type checking
-typecheck:
-    @echo "🔍 Running type checks..."
-    @just _activate_venv && mypy markdown_lab/
-
-# Security audit
-security-audit:
-    @echo "🔒 Running security audit..."
-    @cargo audit
-    @just _activate_venv && safety check --full-report
-
-# Full code quality check
-quality: lint typecheck security-audit test
-    @echo "✅ Code quality checks passed!"
+# Code quality checks (lint=formatting, typecheck=type checking, security=audit, quality=all)
+quality type="lint":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    case "{{type}}" in
+        "lint")
+            echo "🔍 Running linting and formatting..."
+            just _activate_venv && ruff check . --fix
+            just _activate_venv && black .
+            just _activate_venv && isort .
+            cargo fmt -- --check
+            cargo clippy -- -D warnings
+            echo "✅ Linting complete!"
+            ;;
+        "lint-unsafe")
+            echo "🔍 Running linting with unsafe fixes..."
+            just _activate_venv && ruff check . --fix --unsafe-fixes
+            just _activate_venv && black .
+            just _activate_venv && isort .
+            ;;
+        "typecheck")
+            echo "🔍 Running type checks..."
+            just _activate_venv && mypy markdown_lab/
+            ;;
+        "security")
+            echo "🔒 Running security audit..."
+            cargo audit
+            just _activate_venv && safety check --full-report
+            ;;
+        "all")
+            echo "🔍 Running full code quality check..."
+            just quality lint
+            just quality typecheck
+            just quality security
+            just test all
+            echo "✅ Code quality checks passed!"
+            ;;
+        *)
+            echo "❌ Invalid type. Use: lint, lint-unsafe, typecheck, security, all"
+            exit 1
+            ;;
+    esac
 
 # === DEMOS & EXAMPLES ===
 
-# Run format conversion demo
-demo:
-    @echo "🎭 Running format conversion demo..."
-    @just _activate_venv && python examples/demo_formats.py
-
-# Run simple hello world example
-hello:
-    @echo "👋 Running hello world example..."
-    @just _activate_venv && python examples/hello.py
-
-# Test CLI with example URL
-cli-test:
-    @echo "🖥️  Testing CLI with example URL..."
-    @just _activate_venv && python -m markdown_lab https://httpbin.org/html -o test_output.md
-    @echo "✅ Output saved to test_output.md"
-
-# Test all output formats
-test-formats:
+# Run examples and demos (demo=format conversion, hello=hello world, cli=CLI test, formats=all formats)
+example type="demo":
     #!/usr/bin/env bash
     set -euo pipefail
-    
-    echo "📄 Testing all output formats..."
-    
-    # Check if virtual environment exists
     if [ ! -d ".venv" ]; then
         echo "❌ Virtual environment not found. Run 'just setup' first."
         exit 1
     fi
     
-    # Create output directory
-    OUTPUT_DIR="test_output_$(date +%Y%m%d_%H%M%S)"
-    mkdir -p "$OUTPUT_DIR"
-    
-    # Test Markdown output
-    echo "🔹 Testing Markdown output..."
-    just _activate_venv && python -m markdown_lab https://httpbin.org \
-        -o "$OUTPUT_DIR/output.md" \
-        -f markdown
-    
-    # Test JSON output
-    echo "🔹 Testing JSON output..."
-    just _activate_venv && python -m markdown_lab https://httpbin.org \
-        -o "$OUTPUT_DIR/output.json" \
-        -f json
-    
-    # Test XML output
-    echo "🔹 Testing XML output..."
-    just _activate_venv && python -m markdown_lab https://httpbin.org \
-        -o "$OUTPUT_DIR/output.xml" \
-        -f xml
-    
-    echo "✨ All formats tested successfully!"
-    echo "📁 Output directory: $OUTPUT_DIR"
-    echo "   - output.md (Markdown)"
-    echo "   - output.json (JSON)"
-    echo "   - output.xml (XML)"
+    case "{{type}}" in
+        "demo")
+            echo "🎭 Running format conversion demo..."
+            just _activate_venv && python examples/demo_formats.py
+            ;;
+        "hello")
+            echo "👋 Running hello world example..."
+            just _activate_venv && python examples/hello.py
+            ;;
+        "cli")
+            echo "🖥️  Testing CLI with example URL..."
+            just _activate_venv && python -m markdown_lab https://httpbin.org/html -o test_output.md
+            echo "✅ Output saved to test_output.md"
+            ;;
+        "formats")
+            echo "📄 Testing all output formats..."
+            OUTPUT_DIR="test_output_$(date +%Y%m%d_%H%M%S)"
+            mkdir -p "$OUTPUT_DIR"
+            
+            echo "🔹 Testing Markdown output..."
+            just _activate_venv && python -m markdown_lab https://httpbin.org -o "$OUTPUT_DIR/output.md" -f markdown
+            
+            echo "🔹 Testing JSON output..."
+            just _activate_venv && python -m markdown_lab https://httpbin.org -o "$OUTPUT_DIR/output.json" -f json
+            
+            echo "🔹 Testing XML output..."
+            just _activate_venv && python -m markdown_lab https://httpbin.org -o "$OUTPUT_DIR/output.xml" -f xml
+            
+            echo "✨ All formats tested successfully!"
+            echo "📁 Output directory: $OUTPUT_DIR"
+            echo "   - output.md (Markdown)"
+            echo "   - output.json (JSON)"
+            echo "   - output.xml (XML)"
+            ;;
+        *)
+            echo "❌ Invalid type. Use: demo, hello, cli, formats"
+            exit 1
+            ;;
+    esac
 
 # === DOCUMENTATION ===
 
-# Generate project documentation
-docs:
-    @echo "📚 Generating project documentation..."
-    @just _activate_venv && python scripts/generate_flowchart.py
-    @echo "✅ Documentation generated!"
-
-# Show help for CLI
-help:
-    @echo "❓ Showing CLI help..."
-    @just _activate_venv && python -m markdown_lab --help
-
-# Generate API documentation
-docs-api:
-    @echo "📚 Generating API documentation..."
-    @just _activate_venv && pdoc --html --force -o docs/api markdown_lab
-    @echo "✅ API documentation generated in docs/api/"
-
-# Generate and serve documentation
-docs-serve:
-    @echo "🌐 Starting documentation server..."
-    @just _activate_venv && python -m http.server 8000 --directory docs/
-    @echo "📚 Documentation available at http://localhost:8000"
+# Documentation tasks (gen=generate, help=CLI help, api=API docs, serve=start server)
+docs type="gen":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    case "{{type}}" in
+        "gen")
+            echo "📚 Generating project documentation..."
+            just _activate_venv && python scripts/generate_flowchart.py
+            echo "✅ Documentation generated!"
+            ;;
+        "help")
+            echo "❓ Showing CLI help..."
+            just _activate_venv && python -m markdown_lab --help
+            ;;
+        "api")
+            echo "📚 Generating API documentation..."
+            just _activate_venv && pdoc --html --force -o docs/api markdown_lab
+            echo "✅ API documentation generated in docs/api/"
+            ;;
+        "serve")
+            echo "🌐 Starting documentation server..."
+            just _activate_venv && python -m http.server 8000 --directory docs/
+            echo "📚 Documentation available at http://localhost:8000"
+            ;;
+        *)
+            echo "❌ Invalid type. Use: gen, help, api, serve"
+            exit 1
+            ;;
+    esac
 
 # === PROFILING & DEBUGGING ===
 
-# Profile memory usage
-profile-memory:
-    @echo "🧠 Profiling memory usage..."
-    @just _activate_venv && python -m memory_profiler examples/demo_formats.py
-
-# Profile CPU usage
-profile-cpu:
-    @echo "⏱️  Profiling CPU usage..."
-    @just _activate_venv && python -m cProfile -o profile.cprof examples/demo_formats.py
-    @echo "📊 Profile saved to profile.cprof"
-    @echo "Analyze with: snakeviz profile.cprof"
-
-# Debug mode build
-debug:
-    @echo "🐛 Building in debug mode..."
-    @just _activate_venv && RUST_LOG=debug maturin develop
-
-# Interactive debug shell
-debug-shell:
-    @echo "🐚 Starting Python debug shell..."
-    @just _activate_venv && python -m IPython --no-banner
-
-# Check for memory leaks
-check-leaks:
-    @echo "🔍 Checking for memory leaks..."
-    @just _activate_venv && python -c "from markdown_lab import markdown_lab_rs; markdown_lab_rs.test_leaks()"
-
-# Generate flamegraph
-flamegraph:
-    @echo "🔥 Generating flamegraph..."
-    @cargo flamegraph --example demo_formats --features=flamegraph
-    @echo "📊 Flamegraph saved to flamegraph.svg"
+# Profiling and debugging tools (memory=memory usage, cpu=CPU usage, debug=debug build, shell=debug shell, leaks=memory leaks, flamegraph=performance)
+profile type="memory":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    case "{{type}}" in
+        "memory")
+            echo "🧠 Profiling memory usage..."
+            just _activate_venv && python -m memory_profiler examples/demo_formats.py
+            ;;
+        "cpu")
+            echo "⏱️  Profiling CPU usage..."
+            just _activate_venv && python -m cProfile -o profile.cprof examples/demo_formats.py
+            echo "📊 Profile saved to profile.cprof (analyze with: snakeviz profile.cprof)"
+            ;;
+        "debug")
+            echo "🐛 Building in debug mode..."
+            just _activate_venv && RUST_LOG=debug maturin develop
+            ;;
+        "shell")
+            echo "🐚 Starting Python debug shell..."
+            just _activate_venv && python -m IPython --no-banner
+            ;;
+        "leaks")
+            echo "🔍 Checking for memory leaks..."
+            just _activate_venv && python -c "from markdown_lab import markdown_lab_rs; markdown_lab_rs.test_leaks()"
+            ;;
+        "flamegraph")
+            echo "🔥 Generating flamegraph..."
+            cargo flamegraph --example demo_formats --features=flamegraph
+            echo "📊 Flamegraph saved to flamegraph.svg"
+            ;;
+        *)
+            echo "❌ Invalid type. Use: memory, cpu, debug, shell, leaks, flamegraph"
+            exit 1
+            ;;
+    esac
 
 # === RELEASE & DEPLOYMENT ===
 
+# Build wheels (std=standard, js=with JavaScript support)
+wheel type="std":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    case "{{type}}" in
+        "std")
+            echo "📦 Building standard wheel..."
+            just _activate_venv && maturin build --release
+            echo "✅ Wheel built in target/wheels/"
+            ;;
+        "js")
+            echo "📦 Building wheel with JavaScript support..."
+            just _activate_venv && maturin build --release --features real_rendering
+            echo "✅ JavaScript-enabled wheel built in target/wheels/"
+            ;;
+        *)
+            echo "❌ Invalid type. Use: std, js"
+            exit 1
+            ;;
+    esac
+
 # Prepare for release
-release-prep: clean quality bench
+release-prep: clean
     @echo "🎯 Preparing for release..."
+    @just quality all
+    @just bench all
     @echo "✅ All checks passed! Ready for release."
-
-# Build wheel for distribution
-build-wheel:
-    @echo "📦 Building wheel for distribution..."
-    @just _activate_venv && maturin build --release
-    @echo "✅ Wheel built in target/wheels/"
-
-# Build wheel with JavaScript support
-build-wheel-js:
-    @echo "📦 Building wheel with JavaScript support..."
-    @just _activate_venv && maturin build --release --features real_rendering
-    @echo "✅ JavaScript-enabled wheel built in target/wheels/"
 
 # Create release build
 release: clean
@@ -489,31 +495,30 @@ status:
     echo "- Run 'just test' to run all tests"
     echo "- Run 'just docs-serve' to view documentation"
 
-# Update dependencies
-update:
-    @echo "📦 Updating dependencies..."
-    uv sync --upgrade
-    cargo update
 
-# Install pre-commit hooks
-hooks:
-    @echo "🪝 Installing pre-commit hooks..."
-    source .venv/bin/activate && pre-commit install
+# === WORKFLOW SHORTCUTS ===
 
-# === DEVELOPMENT SHORTCUTS ===
+# Quick development cycle: build + test bindings
+dev-cycle:
+    @just build dev
+    @just test bindings
 
-# Quick development cycle: build + test
-dev-cycle: build-dev test-bindings
+# Full development cycle: build + quality + test
+full-cycle:
+    @just build dev
+    @just quality lint
+    @just test all
 
-# Full development cycle: build + lint + test
-full-cycle: build-dev lint test
-
-# CI simulation: full pipeline
-ci: clean setup lint typecheck test
+# CI simulation: complete pipeline
+ci: clean setup
+    @just quality all
+    @just test all
     @echo "✅ CI pipeline simulation complete!"
 
-# Performance check: build optimized + benchmark
-perf: build-release bench
+# Performance check: optimized build + benchmarks
+perf:
+    @just build release
+    @just bench all
 
 # === TROUBLESHOOTING ===
 
@@ -628,62 +633,55 @@ check-env:
 e2e url="https://httpbin.org/html":
     #!/usr/bin/env bash
     echo "🌐 Running end-to-end test with {{url}}"
-    source .venv/bin/activate
-    
-    # Test all formats
+    just _activate_venv
     python -m markdown_lab "{{url}}" -o e2e_test.md -f markdown
     python -m markdown_lab "{{url}}" -o e2e_test.json -f json
     python -m markdown_lab "{{url}}" -o e2e_test.xml -f xml
-    
-    # Test with chunking
     python -m markdown_lab "{{url}}" -o e2e_test_chunked.md --save-chunks --chunk-dir e2e_chunks
-    
-    echo "✅ End-to-end test complete!"
-    echo "Generated files: e2e_test.{md,json,xml} and e2e_chunks/"
+    echo "✅ End-to-end test complete! Generated: e2e_test.{md,json,xml} and e2e_chunks/"
 
 # Load test with multiple URLs
 load-test:
     #!/usr/bin/env bash
     echo "⚡ Running load test..."
-    source .venv/bin/activate
-    
-    # Create test URLs file
-    echo 'https://httpbin.org/html' > test_urls.txt
-    echo 'https://httpbin.org/json' >> test_urls.txt
-    echo 'https://httpbin.org/xml' >> test_urls.txt
-    
-    # Run parallel processing test
+    just _activate_venv
+    echo -e 'https://httpbin.org/html\nhttps://httpbin.org/json\nhttps://httpbin.org/xml' > test_urls.txt
     python -m markdown_lab --links-file test_urls.txt -o load_test_output --parallel --max-workers 3
-    
     echo "✅ Load test complete! Check load_test_output/"
     rm test_urls.txt
 
 # === MAINTENANCE ===
 
-# Clean up test files
-clean-tests:
-    @echo "🧹 Cleaning up test files..."
-    rm -f test_output.*
-    rm -f e2e_test.*
-    rm -rf e2e_chunks/
-    rm -rf load_test_output/
-    rm -f test_urls.txt
-
-# Archive project (for backup)
-archive:
+# Maintenance tasks (clean-tests=remove test files, archive=create backup, update=update deps, hooks=install pre-commit)
+maintain type="clean-tests":
     #!/usr/bin/env bash
-    timestamp=$(date +%Y%m%d_%H%M%S)
-    echo "📦 Creating project archive: markdown_lab_${timestamp}.tar.gz"
-    
-    # Create archive excluding common ignored files
-    tar -czf "markdown_lab_${timestamp}.tar.gz" \
-        --exclude='target' \
-        --exclude='.venv' \
-        --exclude='__pycache__' \
-        --exclude='.pytest_cache' \
-        --exclude='.request_cache' \
-        --exclude='*.pyc' \
-        --exclude='.git' \
-        .
-    
-    echo "✅ Archive created: markdown_lab_${timestamp}.tar.gz"
+    set -euo pipefail
+    case "{{type}}" in
+        "clean-tests")
+            echo "🧹 Cleaning up test files..."
+            rm -f test_output.* e2e_test.* test_urls.txt
+            rm -rf e2e_chunks/ load_test_output/
+            ;;
+        "archive")
+            timestamp=$(date +%Y%m%d_%H%M%S)
+            echo "📦 Creating project archive: markdown_lab_${timestamp}.tar.gz"
+            tar -czf "markdown_lab_${timestamp}.tar.gz" \
+                --exclude='target' --exclude='.venv' --exclude='__pycache__' \
+                --exclude='.pytest_cache' --exclude='.request_cache' \
+                --exclude='*.pyc' --exclude='.git' .
+            echo "✅ Archive created: markdown_lab_${timestamp}.tar.gz"
+            ;;
+        "update")
+            echo "📦 Updating dependencies..."
+            uv sync --upgrade
+            cargo update
+            ;;
+        "hooks")
+            echo "🪝 Installing pre-commit hooks..."
+            just _activate_venv && pre-commit install
+            ;;
+        *)
+            echo "❌ Invalid type. Use: clean-tests, archive, update, hooks"
+            exit 1
+            ;;
+    esac

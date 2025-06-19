@@ -21,13 +21,13 @@ Check out [deepwiki](https://deepwiki.com/ursisterbtw/markdown_lab/) for a detai
 - 📝 Converts HTML to clean Markdown, JSON, or XML formats
 - 🧩 Implements intelligent chunking for RAG (Retrieval-Augmented Generation) systems
 - 🔄 Handles various HTML elements:
-    - Headers (h1-h6)
-    - Paragraphs
-    - Links with resolved relative URLs
-    - Images with resolved relative URLs
-    - Ordered and unordered lists
-    - Blockquotes
-    - Code blocks
+  - Headers (h1-h6)
+  - Paragraphs
+  - Links with resolved relative URLs
+  - Images with resolved relative URLs
+  - Ordered and unordered lists
+  - Blockquotes
+  - Code blocks
 - 📋 Preserves document structure
 - 🪵 Comprehensive logging
 - ✅ Robust error handling with exponential backoff
@@ -348,44 +348,44 @@ just cli-test            # Test CLI functionality
 
 - `markdown_lab/`: Main Python package
 
-    - `__init__.py`: Package initialization
-    - `__main__.py`: Command-line entry point
-    - `core/`: Core functionality
-        - `scraper.py`: Main scraper implementation
-        - `cache.py`: Request caching
-        - `throttle.py`: Rate limiting for web requests
-    - `utils/`: Utility modules
-        - `chunk_utils.py`: Utilities for chunking text for RAG
-        - `sitemap_utils.py`: Sitemap parsing and URL discovery
-        - `version.py`: Version information
-    - `markdown_lab_rs.py`: Python interface to Rust components
+  - `__init__.py`: Package initialization
+  - `__main__.py`: Command-line entry point
+  - `core/`: Core functionality
+    - `scraper.py`: Main scraper implementation
+    - `cache.py`: Request caching
+    - `throttle.py`: Rate limiting for web requests
+  - `utils/`: Utility modules
+    - `chunk_utils.py`: Utilities for chunking text for RAG
+    - `sitemap_utils.py`: Sitemap parsing and URL discovery
+    - `version.py`: Version information
+  - `markdown_lab_rs.py`: Python interface to Rust components
 
 - `src/`: Rust source code
 
-    - `lib.rs`: Main library and Python bindings
-    - `html_parser.rs`: HTML parsing utilities
-    - `markdown_converter.rs`: HTML to Markdown conversion
-    - `chunker.rs`: Markdown chunking logic
-    - `js_renderer.rs`: JavaScript page rendering
+  - `lib.rs`: Main library and Python bindings
+  - `html_parser.rs`: HTML parsing utilities
+  - `markdown_converter.rs`: HTML to Markdown conversion
+  - `chunker.rs`: Markdown chunking logic
+  - `js_renderer.rs`: JavaScript page rendering
 
 - `tests/`: Test files
 
-    - `unit/`: Python unit tests
-    - `integration/`: Integration tests
-    - `rust/`: Rust and Python binding tests
+  - `unit/`: Python unit tests
+  - `integration/`: Integration tests
+  - `rust/`: Rust and Python binding tests
 
 - `benches/`: Benchmark files
 
-    - Performance tests for core operations
+  - Performance tests for core operations
 
 - `examples/`: Example scripts and demos
 
-    - `demo_formats.py`: Demo of different output formats
-    - `hello.py`: Simple hello world example
+  - `demo_formats.py`: Demo of different output formats
+  - `hello.py`: Simple hello world example
 
 - `docs/`: Documentation
-    - Various documentation files and guides
-    - `assets/`: Documentation assets like images
+  - Various documentation files and guides
+  - `assets/`: Documentation assets like images
 
 ### Running with Real JavaScript Rendering
 
