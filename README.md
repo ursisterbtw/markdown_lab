@@ -10,17 +10,19 @@ through sitemap parsing. The hybrid architecture uses Python for high-level oper
 
 Check out [deepwiki](https://deepwiki.com/ursisterbtw/markdown_lab/) for a detailed breakdown of the repository.
 
-[![Python CI](https://github.com/ursisterbtw/markdown_lab/actions/workflows/CI.yml/badge.svg)](https://github.com/ursisterbtw/markdown_lab/actions/workflows/CI.yml)
-[![Rust](https://github.com/ursisterbtw/markdown_lab/actions/workflows/rust.yml/badge.svg)](https://github.com/ursisterbtw/markdown_lab/actions/workflows/rust.yml)
+[![CI](https://github.com/ursisterbtw/markdown_lab/actions/workflows/ci.yml/badge.svg)](https://github.com/ursisterbtw/markdown_lab/actions/workflows/ci.yml)
 [![Release](https://github.com/ursisterbtw/markdown_lab/actions/workflows/release.yml/badge.svg)](https://github.com/ursisterbtw/markdown_lab/actions/workflows/release.yml)
 
 ## Features
 
-- 🌐 Scrapes any accessible website with robust error handling and rate limiting
-- 🗺️ Parses sitemap.xml to discover and scrape the most relevant content
-- 📝 Converts HTML to clean Markdown, JSON, or XML formats
-- 🧩 Implements intelligent chunking for RAG (Retrieval-Augmented Generation) systems
-- 🔄 Handles various HTML elements:
+- 🎨 **Modern CLI Interface**: Beautiful terminal output with Typer and Rich, progress bars, and interactive features
+- 🖥️ **Terminal User Interface (TUI)**: Full-featured interactive interface for complex operations
+- 🌐 **Web Scraping**: Scrapes any accessible website with robust error handling and rate limiting
+- 🗺️ **Sitemap Integration**: Parses sitemap.xml to discover and scrape the most relevant content
+- 📝 **Multiple Output Formats**: Converts HTML to clean Markdown, JSON, or XML formats
+- 🧩 **RAG Chunking**: Implements intelligent chunking for Retrieval-Augmented Generation systems
+- ⚡ **Parallel Processing**: Batch URL processing with configurable worker threads
+- 🔄 **Comprehensive HTML Support**:
     - Headers (h1-h6)
     - Paragraphs
     - Links with resolved relative URLs
@@ -28,13 +30,13 @@ Check out [deepwiki](https://deepwiki.com/ursisterbtw/markdown_lab/) for a detai
     - Ordered and unordered lists
     - Blockquotes
     - Code blocks
-- 📋 Preserves document structure
-- 🪵 Comprehensive logging
-- ✅ Robust error handling with exponential backoff
-- 🏎️ Performance optimizations and best practices
-- ⚡ Optimized HTML parsing with cached selectors
-- 🔧 Centralized configuration management
-- 🌐 Unified HTTP client with connection pooling
+- 📊 **Real-time Progress**: Live progress tracking with rich terminal output
+- 📋 **Document Structure Preservation**: Maintains semantic structure during conversion
+- 🪵 **Comprehensive Logging**: Detailed logging with configurable levels
+- ✅ **Robust Error Handling**: Exponential backoff and graceful failure recovery
+- 🏎️ **Performance Optimized**: Rust-powered HTML parsing with cached selectors
+- 🔧 **Centralized Configuration**: Unified configuration management system
+- 🌐 **Connection Pooling**: Efficient HTTP client with connection reuse
 
 ## Installation
 
@@ -45,101 +47,118 @@ cd markdown_lab
 # Quick setup with justfile (recommended)
 just setup
 
-# Or manual setup using UV
+# Or manual setup using UV (Python 3.12+ required)
 uv sync
 source .venv/bin/activate
 maturin develop
-
-# Or using traditional pip
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-cargo build --release
 ```
 
 ## Usage
 
-### Basic Conversion
+### Modern CLI Interface (Recommended)
+
+The project features a modern CLI built with Typer and Rich for beautiful terminal output:
 
 ```bash
-# Convert to Markdown (default)
-python -m markdown_lab https://www.example.com -o output.md
+# Convert single URLs
+mlab convert "https://example.com" --output article.md --format markdown
+mlab convert "https://docs.example.com" --format json --chunks --chunk-size 1500
 
-# Convert to JSON
-python -m markdown_lab https://www.example.com -o output.json -f json
+# Batch convert with progress bars
+mlab batch links.txt --output batch_results --parallel --max-workers 8
 
-# Convert to XML
-python -m markdown_lab https://www.example.com -o output.xml -f xml
+# Convert via sitemap discovery
+mlab sitemap "https://example.com" --min-priority 0.7 --limit 50
+
+# Launch interactive Terminal User Interface
+mlab-tui
+
+# Show system status
+mlab status
+
+# Manage configuration
+mlab config
 ```
 
-### With RAG Chunking
+### Interactive Features
 
 ```bash
-python -m markdown_lab https://www.example.com -o output.md --save-chunks --chunk-dir my_chunks
+# Convert with live progress updates
+mlab convert "https://example.com" --interactive --output article.md
+
+# Batch processing with rich progress bars
+mlab batch links.txt --output results --interactive --parallel
+
+# Content chunking for RAG applications
+mlab convert "https://docs.example.com" --chunks --chunk-size 1500 --chunk-overlap 200
 ```
 
-### Scraping with Sitemap
+### Legacy CLI Interface
+
+The original interface is still available for compatibility:
 
 ```bash
-python -m markdown_lab https://www.example.com -o output_dir --use-sitemap --save-chunks
+# Using legacy CLI directly
+MARKDOWN_LAB_LEGACY=1 python -m markdown_lab "https://example.com" --output article.md
+# or
+mlab-legacy "https://example.com" --output article.md
+
+# Convert to different formats
+mlab-legacy "https://example.com" --output output.json --format json
+mlab-legacy "https://example.com" --output output.xml --format xml
 ```
 
-### Scraping with a List of URLs
-
-The library automatically looks for a `links.txt` file in the current directory. This file should contain one URL per line (lines starting with # are treated as comments).
+### Advanced Usage Examples
 
 ```bash
-# Automatically use links.txt in the current directory
-python -m markdown_lab -o output_dir
-
-# Or specify a different file
-python -m markdown_lab -o output_dir --links-file my_urls.txt
-```
-
-### Parallel URL Processing
-
-For faster processing of multiple URLs, you can enable parallel processing:
-
-```bash
-# Process URLs from links.txt in parallel with 8 workers
-python -m markdown_lab -o output_dir --parallel --max-workers 8
-```
-
-### Advanced Sitemap Scraping
-
-```bash
-python -m markdown_lab https://www.example.com -o output_dir \
-    --use-sitemap \
+# Comprehensive sitemap scraping with modern CLI
+mlab sitemap "https://example.com" \
     --min-priority 0.5 \
     --include "blog/*" "products/*" \
     --exclude "*.pdf" "temp/*" \
     --limit 50 \
-    --save-chunks \
+    --chunks \
     --chunk-dir my_chunks \
-    --requests-per-second 2.0
+    --rate-limit 2.0
+
+# Parallel batch processing with progress tracking
+mlab batch urls.txt \
+    --output results \
+    --parallel \
+    --max-workers 8 \
+    --format json \
+    --interactive
 ```
 
-### Command Line Arguments
+### Modern CLI Commands
 
-| Argument                | Description                                | Default     |
-| ----------------------- | ------------------------------------------ | ----------- |
-| `url`                   | The URL to scrape                          | (required)  |
-| `-o, --output`          | Output file/directory                      | `output.md` |
-| `-f, --format`          | Output format (markdown, json, xml)        | `markdown`  |
-| `--save-chunks`         | Save content chunks for RAG                | False       |
-| `--chunk-dir`           | Directory to save chunks                   | `chunks`    |
-| `--chunk-format`        | Format for chunks (`json`, `jsonl`)        | `jsonl`     |
-| `--chunk-size`          | Maximum chunk size (chars)                 | 1000        |
-| `--chunk-overlap`       | Overlap between chunks (chars)             | 200         |
-| `--requests-per-second` | Rate limit for requests                    | 1.0         |
-| `--use-sitemap`         | Use sitemap.xml to discover URLs           | False       |
-| `--min-priority`        | Minimum priority for sitemap URLs          | None        |
-| `--include`             | Regex patterns for URLs to include         | None        |
-| `--exclude`             | Regex patterns for URLs to exclude         | None        |
-| `--limit`               | Maximum number of URLs to scrape           | None        |
-| `--links-file`          | Path to file with URLs to scrape           | `links.txt` |
-| `--parallel`            | Use parallel processing for multiple URLs  | False       |
-| `--max-workers`         | Max parallel workers when using --parallel | 4           |
+| Command | Description | Example |
+|---------|-------------|---------|
+| `mlab convert <url>` | Convert single URL | `mlab convert "https://example.com" --output article.md` |
+| `mlab batch <file>` | Batch convert URLs from file | `mlab batch links.txt --parallel --max-workers 8` |
+| `mlab sitemap <url>` | Convert via sitemap discovery | `mlab sitemap "https://example.com" --limit 50` |
+| `mlab-tui` | Launch Terminal User Interface | `mlab-tui` |
+| `mlab status` | Show system status | `mlab status` |
+| `mlab config` | Manage configuration | `mlab config` |
+
+### Command Options
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--output, -o` | Output file/directory | auto-generated |
+| `--format, -f` | Output format (markdown, json, xml) | `markdown` |
+| `--chunks` | Enable content chunking for RAG | False |
+| `--chunk-size` | Maximum chunk size (characters) | 1500 |
+| `--chunk-overlap` | Overlap between chunks (characters) | 200 |
+| `--chunk-dir` | Directory to save chunks | `chunks` |
+| `--interactive, -i` | Enable interactive progress display | False |
+| `--parallel` | Use parallel processing | False |
+| `--max-workers` | Maximum parallel workers | 4 |
+| `--rate-limit` | Rate limit for requests (req/sec) | 2.0 |
+| `--min-priority` | Minimum sitemap URL priority | 0.5 |
+| `--include` | URL patterns to include | None |
+| `--exclude` | URL patterns to exclude | None |
+| `--limit` | Maximum URLs to process | None |
 
 ### As a Module
 
@@ -409,24 +428,27 @@ See `docs/JS_RENDERING.md` for more details.
 
 ### Core Dependencies
 
-- requests: Web scraping and HTTP requests (being migrated to unified HTTP client)
-- beautifulsoup4: HTML parsing fallback
-- psutil: Performance monitoring
+- **Python 3.12+**: Required minimum Python version
+- **requests**: Web scraping and HTTP requests
+- **beautifulsoup4**: HTML parsing fallback
+- **typer**: Modern CLI framework with rich terminal output
+- **rich**: Beautiful terminal formatting and progress bars
+- **textual**: Terminal User Interface framework
 
 ### Development Dependencies
 
-- pytest: Testing framework with benchmarking support
-- mypy: Type checking with strict configuration
-- black: Code formatting
-- ruff: Fast Python linter
-- maturin: Rust-Python integration
+- **pytest**: Testing framework with benchmarking support
+- **mypy**: Type checking with strict configuration
+- **ruff**: Fast Python linter and formatter
+- **maturin**: Rust-Python integration
+- **uv**: Fast Python package manager
 
 ### Rust Dependencies
 
-- pyo3: Python bindings
-- scraper: High-performance HTML parsing with cached selectors
-- serde: Serialization for JSON/XML output
-- once_cell: Cached selector compilation
+- **pyo3**: Python bindings
+- **scraper**: High-performance HTML parsing with cached selectors
+- **serde**: Serialization for JSON/XML output
+- **once_cell**: Cached selector compilation
 
 ## Contributing
 
