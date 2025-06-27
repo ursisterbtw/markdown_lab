@@ -23,6 +23,9 @@ log = logging.getLogger(__name__)
 
 # Default directories/files to exclude from scanning
 DEFAULT_EXCLUDE_DIRS: Set[str] = {
+    ".request_cache",
+    ".ruff_cache",
+    ".pytest_cache",
     ".git",
     "__pycache__",
     ".DS_Store",
