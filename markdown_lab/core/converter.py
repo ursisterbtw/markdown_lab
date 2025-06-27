@@ -383,22 +383,26 @@ class Converter:
         filename = self._generate_output_filename(url, output_format, output_path)
         content, markdown_content = self.convert_url(url, output_format)
         self.save_content(content, filename)
-        
-        if save_chunks and chunk_dir:
-            self._save_content_chunks(markdown_content, url, filename, chunk_dir, chunk_format)
 
-    def _generate_output_filename(self, url: str, output_format: str, output_path: Path) -> str:
+        if save_chunks and chunk_dir:
+            self._save_content_chunks(
+                markdown_content, url, filename, chunk_dir, chunk_format
+            )
+
+    def _generate_output_filename(
+        self, url: str, output_format: str, output_path: Path
+    ) -> str:
         """Generate the full output file path for a URL."""
         filename = self.get_filename_from_url(url, output_format)
         return str(output_path / filename)
 
     def _save_content_chunks(
-        self, 
-        markdown_content: str, 
-        url: str, 
-        output_filename: str, 
-        chunk_dir: str, 
-        chunk_format: str
+        self,
+        markdown_content: str,
+        url: str,
+        output_filename: str,
+        chunk_dir: str,
+        chunk_format: str,
     ) -> None:
         """Save content chunks if chunks are generated successfully."""
         if chunks := self.create_chunks(markdown_content, url):

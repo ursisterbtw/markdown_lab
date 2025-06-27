@@ -1,11 +1,13 @@
-import time
 from unittest.mock import Mock, patch
 
 import pytest
 
 from markdown_lab.core.client import HttpClient as CoreHttpClient
-from markdown_lab.network.client import HttpClient as NetworkHttpClient, CachedHttpClient
 from markdown_lab.core.config import MarkdownLabConfig
+from markdown_lab.network.client import (
+    CachedHttpClient,
+)
+from markdown_lab.network.client import HttpClient as NetworkHttpClient
 
 
 @pytest.fixture
@@ -51,11 +53,7 @@ def sample_html():
 @pytest.fixture
 def sample_config():
     """Sample configuration for testing."""
-    return MarkdownLabConfig(
-        timeout=60,
-        max_retries=5,
-        requests_per_second=2.0
-    )
+    return MarkdownLabConfig(timeout=60, max_retries=5, requests_per_second=2.0)
 
 
 class TestCoreClient:
@@ -65,7 +63,7 @@ class TestCoreClient:
         """Test CoreHttpClient initializes with default parameters."""
         client = CoreHttpClient()
         assert client is not None
-        assert hasattr(client, 'config')
+        assert hasattr(client, "config")
 
     def test_core_client_initialization_with_config(self, sample_config):
         """Test CoreHttpClient initializes with custom configuration."""
@@ -77,7 +75,7 @@ class TestCoreClient:
         client = CoreHttpClient(config=None)
         assert client is not None
 
-    @patch('requests.Session.get')
+    @patch("requests.Session.get")
     def test_get_valid_url(self, mock_get, core_client, mock_response):
         """Test GET request to a valid URL."""
         mock_get.return_value = mock_response
@@ -86,7 +84,7 @@ class TestCoreClient:
         assert isinstance(result, str)
         assert "Test HTML" in result
 
-    @patch('requests.Session.get')
+    @patch("requests.Session.get")
     def test_get_with_skip_cache(self, mock_get, core_client, mock_response):
         """Test GET request with cache skipping."""
         mock_get.return_value = mock_response
@@ -103,15 +101,15 @@ class TestNetworkClient:
         config = MarkdownLabConfig()
         client = NetworkHttpClient(config)
         assert client is not None
-        assert hasattr(client, 'config')
-        assert hasattr(client, 'session')
+        assert hasattr(client, "config")
+        assert hasattr(client, "session")
 
     def test_network_client_with_custom_config(self, sample_config):
         """Test NetworkHttpClient initializes with custom configuration."""
         client = NetworkHttpClient(sample_config)
         assert client.config == sample_config
 
-    @patch('requests.Session.request')
+    @patch("requests.Session.request")
     def test_get_success(self, mock_request, network_client, mock_response):
         """Test successful GET request."""
         mock_request.return_value = mock_response
@@ -120,7 +118,7 @@ class TestNetworkClient:
         assert isinstance(result, str)
         mock_request.assert_called_once()
 
-    @patch('requests.Session.request')
+    @patch("requests.Session.request")
     def test_head_request(self, mock_request, network_client, mock_response):
         """Test HEAD request."""
         mock_request.return_value = mock_response
@@ -128,7 +126,7 @@ class TestNetworkClient:
         assert result is not None
         mock_request.assert_called_once_with("HEAD", "https://example.com", timeout=30)
 
-    @patch('requests.Session.request')
+    @patch("requests.Session.request")
     def test_get_many_urls(self, mock_request, network_client, mock_response):
         """Test fetching multiple URLs."""
         mock_request.return_value = mock_response
@@ -151,9 +149,9 @@ class TestCachedHttpClient:
         config = MarkdownLabConfig()
         client = CachedHttpClient(config)
         assert client is not None
-        assert hasattr(client, 'cache')
+        assert hasattr(client, "cache")
 
-    @patch('requests.Session.request')
+    @patch("requests.Session.request")
     def test_cached_get_success(self, mock_request, cached_client, mock_response):
         """Test successful cached GET request."""
         mock_request.return_value = mock_response
