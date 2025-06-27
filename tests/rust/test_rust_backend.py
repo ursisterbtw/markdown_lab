@@ -1,18 +1,19 @@
-import pytest
-import unittest.mock as mock
-from unittest.mock import patch, MagicMock, call
-import tempfile
 import os
-import sys
-from pathlib import Path
 import subprocess
-import json
-import time
+import sys
+import tempfile
 import threading
-from typing import Dict, Any, List
+import time
+from pathlib import Path
+from unittest.mock import MagicMock, patch
+
+import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'git'))
+import contextlib
+
 from markdown_lab.core.rust_backend import RustBackend, get_rust_backend
+
 
 @pytest.fixture
 def rust_backend():
@@ -282,8 +283,8 @@ class TestRustBackendFailureConditions:
 
     def test_nonexistent_file_handling(self, rust_backend):
         """Test handling of non-existent files."""
-        nonexistent_file = "/definitely/does/not/exist/file.rs"
         if hasattr(rust_backend, 'compile'):
+            nonexistent_file = "/definitely/does/not/exist/file.rs"
             with pytest.raises((FileNotFoundError, IOError, ValueError, Exception)):
                 rust_backend.compile(nonexistent_file)
 
@@ -353,7 +354,7 @@ class TestRustBackendFailureConditions:
             for cfg in invalid_configs:
                 try:
                     rust_backend.set_config(cfg)
-                except (ValueError, TypeError, Exception) as e:
+                except Exception as e:
                     assert e is not None
 
     def test_rust_backend_after_disposal(self, rust_backend):
@@ -381,7 +382,7 @@ class TestRustBackendMocking:
         mock_exists.return_value = True
         mock_run.return_value = mock_subprocess_success
         if hasattr(rust_backend, 'compile'):
-            result = rust_backend.compile("/fake/path/main.rs")
+            rust_backend.compile("/fake/path/main.rs")
             mock_exists.assert_called()
             mock_run.assert_called()
 
@@ -394,8 +395,7 @@ class TestRustBackendMocking:
         if hasattr(rust_backend, 'compile'):
             rust_backend.compile(str(source_file))
             mock_run.assert_called()
-            call_args = mock_run.call_args
-            if call_args:
+            if call_args := mock_run.call_args:
                 cmd = call_args[0][0] if isinstance(call_args[0], (list, tuple)) else call_args[0]
                 assert any('rustc' in str(arg) for arg in (cmd if isinstance(cmd, (list, tuple)) else [cmd]))
 
@@ -411,7 +411,7 @@ class TestRustBackendMocking:
         source_file = temp_dir / "main.rs"
         source_file.write_text(sample_rust_code)
         if hasattr(rust_backend, 'compile_with_streaming'):
-            result = rust_backend.compile_with_streaming(str(source_file))
+            rust_backend.compile_with_streaming(str(source_file))
             mock_popen.assert_called()
 
     @patch('os.environ')
@@ -534,10 +534,8 @@ class TestRustBackendPerformanceAndResources:
         source_file.write_text(invalid_rust_code)
         initial_files = len(list(temp_dir.glob("*")))
         if hasattr(rust_backend, 'compile'):
-            try:
+            with contextlib.suppress(Exception):
                 rust_backend.compile(str(source_file))
-            except Exception:
-                pass
         if hasattr(rust_backend, 'cleanup'):
             rust_backend.cleanup()
         final_files = len(list(temp_dir.glob("*")))
@@ -646,7 +644,6 @@ def test_parametrized_rust_code_scenarios(rust_code, expected_behavior, temp_dir
 @pytest.mark.slow
 def test_compilation_performance_benchmark(temp_dir):
     """Benchmark compilation performance (marked as slow test)."""
-    import time
     rust_code = '''
     fn fibonacci(n: u32) -> u32 {
         match n {

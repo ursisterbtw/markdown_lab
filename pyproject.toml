@@ -15,6 +15,12 @@ dependencies = [
   "click>=8.0.0",
   "maturin>=1.9.0",
   "patchelf>=0.17.2.2",
+  "sourcery>=1.37.0",
+  "black>=25.1.0",
+  "isort>=6.0.1",
+  "pylint>=3.3.7",
+  "ruff>=0.11.13",
+  "ty>=0.0.1a12",
 ]
 
 [project.optional-dependencies]
@@ -25,6 +31,7 @@ dev = [
   "mypy>=1.5.1",
   "isort>=5.12.0",
   "sourcery>=1.11.0",
+  "pytest-benchmark>=4.0.0",
 ]
 test = ["pytest>=7.4.0", "pytest-benchmark>=4.0.0"]
 js = ["playwright>=1.37.0"]
@@ -41,16 +48,24 @@ Documentation = "https://github.com/ursisterbtw/markdown-lab#readme"
 Issues = "https://github.com/ursisterbtw/markdown-lab/issues"
 
 [tool.pytest.ini_options]
-benchmark_min_rounds = 5
-benchmark_max_time = 1.0
-benchmark_save = true
-benchmark_save_data = true
-benchmark_enable = true
-benchmark_group_by = "group"
-benchmark_sort = "name"
-benchmark_columns = [
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "benchmark: marks tests as benchmarks",
+    "integration: marks tests as integration tests", 
+    "unit: marks tests as unit tests",
+]
+addopts = "--benchmark-disable"
+
+[tool.pytest-benchmark]
+min_rounds = 5
+max_time = 1.0
+save = true
+save_data = true
+group_by = "group"
+sort = "name"
+columns = [
   "min",
-  "max",
+  "max", 
   "mean",
   "stddev",
   "median",
@@ -59,13 +74,13 @@ benchmark_columns = [
   "rounds",
   "iterations",
 ]
-benchmark_timer = "time.perf_counter"
-benchmark_disable_gc = true
-benchmark_warmup = true
-benchmark_skip = false
-benchmark_only = false
-benchmark_max_iterations = 100000
-benchmark_min_time = 0.000005
+timer = "time.perf_counter"
+disable_gc = true
+warmup = true
+skip = false
+only = false
+max_iterations = 100000
+min_time = 0.000005
 
 [tool.black]
 line-length = 88
@@ -95,6 +110,11 @@ strict_optional = true
 [build-system]
 requires = ["wheel", "setuptools", "maturin>=1.6,<2.0"]
 build-backend = "maturin"
+
+[dependency-groups]
+dev = [
+    "pytest-benchmark>=5.1.0",
+]
 
 [tool.maturin]
 features = ["pyo3/extension-module"]
