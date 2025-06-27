@@ -18,6 +18,8 @@ def mock_response():
     mock_resp.json.return_value = {"status": "success", "data": "test"}
     mock_resp.headers = {"content-type": "text/html"}
     mock_resp.raise_for_status.return_value = None
+    # Mock the elapsed time properly
+    mock_resp.elapsed.total_seconds.return_value = 0.123
     return mock_resp
 
 
