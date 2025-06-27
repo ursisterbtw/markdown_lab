@@ -511,9 +511,4 @@ def test_rust_backend_class_exists():
 
 def test_rust_backend_has_docstrings():
     """Test that RustBackend class and methods have proper documentation."""
-    if hasattr(RustBackend, '__doc__'):
-        assert RustBackend.__doc__ is not None
-
-    for method_name in ['compile', '__init__']:
-        if hasattr(RustBackend, method_name):
-            getattr(RustBackend, method_name)
+            assert getattr(RustBackend, method_name).__doc__ is not None
