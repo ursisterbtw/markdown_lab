@@ -1,14 +1,12 @@
 """Comprehensive unit tests for rust_backend module."""
-import pytest
-import unittest.mock as mock
-from unittest.mock import patch, MagicMock, call, Mock
-import tempfile
 import os
-import sys
 import subprocess
-import json
+import sys
+import tempfile
 from pathlib import Path
-from io import StringIO
+from unittest.mock import MagicMock, patch
+
+import pytest
 
 # Add the project root to Python path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
@@ -24,7 +22,10 @@ except ImportError:
 
 # Import any custom exceptions
 try:
-    from git.markdown_lab.core.rust_backend import RustBackendError, RustCompilationError
+    from git.markdown_lab.core.rust_backend import (
+        RustBackendError,
+        RustCompilationError,
+    )
 except ImportError:
     # Define mock exceptions if they don't exist
     class RustBackendError(Exception):
@@ -149,7 +150,7 @@ class TestRustBackendCompilation:
             stderr=""
         )
 
-        result = rust_backend_instance.compile(simple_rust_code, "test_program")
+        rust_backend_instance.compile(simple_rust_code, "test_program")
 
         mock_run.assert_called_once()
         call_args = mock_run.call_args[0][0] if mock_run.call_args else []
@@ -309,7 +310,7 @@ class TestRustBackendParameterized:
         """Test compilation with various valid Rust source code patterns."""
         mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
 
-        result = rust_backend_instance.compile(source_variant, "test_variant")
+        rust_backend_instance.compile(source_variant, "test_variant")
         mock_run.assert_called()
 
 
@@ -388,7 +389,7 @@ fn main() {
 }
 '''
 
-        result = backend.compile(source_code, "integration_test")
+        backend.compile(source_code, "integration_test")
         mock_run.assert_called()
 
         if hasattr(backend, 'get_build_artifacts'):
@@ -404,9 +405,9 @@ fn main() {
 
         mock_run.return_value = MagicMock(returncode=0, stdout="success")
         if hasattr(rust_backend_instance, 'retry_compilation'):
-            result = rust_backend_instance.retry_compilation("fn main() {}", "retry_test")
+            rust_backend_instance.retry_compilation("fn main() {}", "retry_test")
         else:
-            result = rust_backend_instance.compile("fn main() {}", "retry_test2")
+            rust_backend_instance.compile("fn main() {}", "retry_test2")
 
 
 @pytest.mark.slow
@@ -423,7 +424,7 @@ class TestRustBackendStress:
         large_code += "    let mut sum = 0;\n" * code_size
         large_code += "    println!(\"Sum: {}\", sum);\n}\n"
 
-        result = rust_backend_instance.compile(large_code, f"large_test_{code_size}")
+        rust_backend_instance.compile(large_code, f"large_test_{code_size}")
         mock_run.assert_called()
 
     @patch('subprocess.run')
@@ -449,7 +450,9 @@ class TestRustBackendStress:
         for thread in threads:
             thread.join()
 
-        assert len(errors) == 0 or all(isinstance(e, (RustBackendError, Exception)) for e in errors)
+        assert not errors or all(
+            isinstance(e, (RustBackendError, Exception)) for e in errors
+        )
 
 
 class TestRustBackendEdgeCases:
@@ -465,7 +468,7 @@ class TestRustBackendEdgeCases:
         """Test handling of special characters in source code."""
         mock_run.return_value = MagicMock(returncode=0)
 
-        result = rust_backend_instance.compile(special_chars, "special_chars_test")
+        rust_backend_instance.compile(special_chars, "special_chars_test")
         mock_run.assert_called()
 
     def test_configuration_edge_cases(self, sample_rust_config):
@@ -488,10 +491,9 @@ class TestRustBackendEdgeCases:
 def test_module_imports():
     """Test that all required modules can be imported."""
     try:
+        import pathlib
         import subprocess
         import tempfile
-        import pathlib
-        assert True
     except ImportError as e:
         pytest.fail(f"Required module import failed: {e}")
 
@@ -509,11 +511,6 @@ def test_rust_backend_class_exists():
 
 def test_rust_backend_has_docstrings():
     """Test that RustBackend class and methods have proper documentation."""
-    if hasattr(RustBackend, '__doc__'):
-        assert RustBackend.__doc__ is not None
-
-    for method_name in ['compile', '__init__']:
-        if hasattr(RustBackend, method_name):
-            method = getattr(RustBackend, method_name)
-            if hasattr(method, '__doc__'):
-                pass
+    for method_name in dir(RustBackend):
+        if not method_name.startswith('_'):  # Skip private methods
+            assert getattr(RustBackend, method_name).__doc__ is not None

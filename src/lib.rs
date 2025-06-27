@@ -47,6 +47,14 @@ fn markdown_lab_rs(py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(convert_html_to_format, py)?)?;
     m.add_function(wrap_pyfunction!(chunk_markdown, py)?)?;
     m.add_function(wrap_pyfunction!(render_js_page, py)?)?;
+    
+    // Expose HTML parser functions for Python access
+    m.add_function(wrap_pyfunction!(clean_html, py)?)?;
+    m.add_function(wrap_pyfunction!(clean_html_advanced, py)?)?;
+    m.add_function(wrap_pyfunction!(extract_main_content, py)?)?;
+    m.add_function(wrap_pyfunction!(extract_links, py)?)?;
+    m.add_function(wrap_pyfunction!(resolve_url, py)?)?;
+    
     Ok(())
 }
 
@@ -95,4 +103,40 @@ fn render_js_page(url: &str, wait_time: Option<u64>) -> PyResult<String> {
         .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))?;
 
     Ok(html)
+}
+
+/// Python wrapper for clean_html function
+#[pyfunction]
+fn clean_html(html: &str) -> PyResult<String> {
+    html_parser::clean_html(html)
+        .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))
+}
+
+/// Python wrapper for clean_html_advanced function
+#[pyfunction]
+fn clean_html_advanced(html: &str) -> PyResult<String> {
+    html_parser::clean_html_advanced(html)
+        .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))
+}
+
+/// Python wrapper for extract_main_content function
+#[pyfunction]
+fn extract_main_content(html: &str) -> PyResult<String> {
+    let main_content = html_parser::extract_main_content(html)
+        .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))?;
+    Ok(main_content.root_element().html())
+}
+
+/// Python wrapper for extract_links function
+#[pyfunction]
+fn extract_links(html: &str, base_url: &str) -> PyResult<Vec<String>> {
+    html_parser::extract_links(html, base_url)
+        .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))
+}
+
+/// Python wrapper for resolve_url function
+#[pyfunction]
+fn resolve_url(base_url: &str, relative_url: &str) -> PyResult<String> {
+    html_parser::resolve_url(base_url, relative_url)
+        .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))
 }

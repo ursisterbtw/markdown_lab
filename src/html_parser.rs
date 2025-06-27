@@ -67,6 +67,7 @@ static SELECTOR_CACHE: Lazy<HashMap<&'static str, Selector>> = Lazy::new(|| {
 /// # Examples
 ///
 /// ```
+/// use markdown_lab_rs::html_parser::extract_main_content;
 /// let html = r#"<html><body><main><p>Hello</p></main></body></html>"#;
 /// let main_content = extract_main_content(html).unwrap();
 /// assert!(main_content.root_element().html().contains("Hello"));
@@ -107,6 +108,7 @@ pub fn extract_main_content(html: &str) -> Result<Html, ParserError> {
 /// # Examples
 ///
 /// ```
+/// use markdown_lab_rs::html_parser::clean_html;
 /// let html = r#"<body><script>bad()</script><main>Content</main></body>"#;
 /// let cleaned = clean_html(html).unwrap();
 /// assert!(cleaned.contains("Content"));
@@ -144,6 +146,7 @@ pub fn clean_html(html: &str) -> Result<String, ParserError> {
 /// # Examples
 ///
 /// ```
+/// use markdown_lab_rs::html_parser::clean_html_advanced;
 /// let html = r#"<html><body><script>bad()</script><main>Good Content</main></body></html>"#;
 /// let cleaned = clean_html_advanced(html).unwrap();
 /// assert!(cleaned.contains("Good Content"));
@@ -175,6 +178,7 @@ pub fn clean_html_advanced(html: &str) -> Result<String, ParserError> {
 /// # Examples
 ///
 /// ```
+/// use markdown_lab_rs::html_parser::extract_links;
 /// let html = r#"<a href="/about">About</a><a href="https://example.com/contact">Contact</a>"#;
 /// let links = extract_links(html, "https://example.com").unwrap();
 /// assert_eq!(links, vec![
@@ -229,6 +233,7 @@ pub fn extract_links(html: &str, base_url: &str) -> Result<Vec<String>, ParserEr
 /// # Examples
 ///
 /// ```
+/// use markdown_lab_rs::html_parser::resolve_url;
 /// let abs = resolve_url("https://example.com/path/", "subpage.html").unwrap();
 /// assert_eq!(abs, "https://example.com/path/subpage.html");
 ///
@@ -252,6 +257,7 @@ pub fn resolve_url(base_url: &str, relative_url: &str) -> Result<String, ParserE
 /// # Examples
 ///
 /// ```
+/// use markdown_lab_rs::html_parser::get_element_text;
 /// use scraper::{Html, Selector};
 /// let html = Html::parse_fragment("<div>Hello   <b>world</b>!</div>");
 /// let selector = Selector::parse("div").unwrap();
