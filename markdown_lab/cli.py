@@ -104,7 +104,7 @@ def print_banner():
 ║                        🔬 Markdown Lab                       ║
 ║              HTML to Markdown Converter Suite                ║
 ║                                                              ║
-║  Convert web content to Markdown, JSON, or XML              ║
+║  Convert web content to Markdown, JSON, or XML               ║
 ║  with semantic chunking for RAG applications                 ║
 ╚══════════════════════════════════════════════════════════════╝
     """
