@@ -75,7 +75,16 @@ pub fn parse_html_to_document(html: &str, base_url_str: &str) -> Result<Document
     let document_html = Html::parse_document(html);
     let base_url = Url::parse(base_url_str)?;
 
-    // Get title
+    let title = extract_document_title(&document_html)?;
+    let mut document = create_document_structure(&title, base_url_str);
+
+    populate_document_content(&mut document, &document_html, &base_url)?;
+
+    Ok(document)
+}
+
+/// Extract the document title from HTML
+fn extract_document_title(document_html: &Html) -> Result<String, MarkdownError> {
     let title_selector =
         Selector::parse("title").map_err(|e| MarkdownError::SelectorError(e.to_string()))?;
     let title = document_html
@@ -83,11 +92,14 @@ pub fn parse_html_to_document(html: &str, base_url_str: &str) -> Result<Document
         .next()
         .map(|element| element.text().collect::<String>())
         .unwrap_or_else(|| "No Title".to_string());
+    Ok(title.trim().to_string())
+}
 
-    // Initialize document structure
-    let mut document = Document {
-        title: title.trim().to_string(),
-        base_url: base_url_str.to_string(),
+/// Create the initial document structure
+fn create_document_structure(title: &str, base_url: &str) -> Document {
+    Document {
+        title: title.to_string(),
+        base_url: base_url.to_string(),
         headings: Vec::new(),
         paragraphs: Vec::new(),
         links: Vec::new(),
@@ -95,9 +107,27 @@ pub fn parse_html_to_document(html: &str, base_url_str: &str) -> Result<Document
         lists: Vec::new(),
         code_blocks: Vec::new(),
         blockquotes: Vec::new(),
-    };
+    }
+}
 
-    // Process headings
+/// Populate document with content from HTML
+fn populate_document_content(
+    document: &mut Document, 
+    document_html: &Html, 
+    base_url: &Url
+) -> Result<(), MarkdownError> {
+    process_headings(document, document_html)?;
+    process_paragraphs(document, document_html)?;
+    process_links(document, document_html, base_url)?;
+    process_images(document, document_html, base_url)?;
+    process_lists(document, document_html)?;
+    process_code_blocks(document, document_html)?;
+    process_blockquotes(document, document_html)?;
+    Ok(())
+}
+
+/// Process heading elements (h1-h6)
+fn process_headings(document: &mut Document, document_html: &Html) -> Result<(), MarkdownError> {
     for i in 1..=6 {
         let heading_selector = Selector::parse(&format!("h{}", i))
             .map_err(|e| MarkdownError::SelectorError(e.to_string()))?;
@@ -112,8 +142,11 @@ pub fn parse_html_to_document(html: &str, base_url_str: &str) -> Result<Document
             }
         }
     }
+    Ok(())
+}
 
-    // Process paragraphs
+/// Process paragraph elements
+fn process_paragraphs(document: &mut Document, document_html: &Html) -> Result<(), MarkdownError> {
     let p_selector =
         Selector::parse("p").map_err(|e| MarkdownError::SelectorError(e.to_string()))?;
     for element in document_html.select(&p_selector) {
@@ -122,93 +155,75 @@ pub fn parse_html_to_document(html: &str, base_url_str: &str) -> Result<Document
             document.paragraphs.push(text);
         }
     }
+    Ok(())
+}
 
-    // Process links
+/// Process link elements
+fn process_links(
+    document: &mut Document, 
+    document_html: &Html, 
+    base_url: &Url
+) -> Result<(), MarkdownError> {
     let a_selector =
         Selector::parse("a[href]").map_err(|e| MarkdownError::SelectorError(e.to_string()))?;
     for element in document_html.select(&a_selector) {
         if let Some(href) = element.value().attr("href") {
             let text = element.text().collect::<String>().trim().to_string();
             if !text.is_empty() {
-                // Resolve relative URLs
-                let absolute_url = base_url
-                    .join(href)
-                    .unwrap_or_else(|_| Url::parse(href).unwrap_or(base_url.clone()))
-                    .to_string();
-
-                document.links.push(Link {
-                    text,
-                    url: absolute_url,
-                });
+                let absolute_url = resolve_url_against_base(base_url, href);
+                document.links.push(Link { text, url: absolute_url });
             }
         }
     }
+    Ok(())
+}
 
-    // Process images
+/// Process image elements
+fn process_images(
+    document: &mut Document, 
+    document_html: &Html, 
+    base_url: &Url
+) -> Result<(), MarkdownError> {
     let img_selector =
         Selector::parse("img[src]").map_err(|e| MarkdownError::SelectorError(e.to_string()))?;
     for element in document_html.select(&img_selector) {
         if let Some(src) = element.value().attr("src") {
             let alt = element.value().attr("alt").unwrap_or("image").to_string();
-
-            // Resolve relative URLs
-            let absolute_url = base_url
-                .join(src)
-                .unwrap_or_else(|_| Url::parse(src).unwrap_or(base_url.clone()))
-                .to_string();
-
-            document.images.push(Image {
-                alt,
-                src: absolute_url,
-            });
+            let absolute_url = resolve_url_against_base(base_url, src);
+            document.images.push(Image { alt, src: absolute_url });
         }
     }
+    Ok(())
+}
 
-    // Process lists
-    let ul_selector =
-        Selector::parse("ul").map_err(|e| MarkdownError::SelectorError(e.to_string()))?;
+/// Process list elements (both ordered and unordered)
+fn process_lists(document: &mut Document, document_html: &Html) -> Result<(), MarkdownError> {
     let li_selector =
         Selector::parse("li").map_err(|e| MarkdownError::SelectorError(e.to_string()))?;
-
+    
+    // Process unordered lists
+    let ul_selector =
+        Selector::parse("ul").map_err(|e| MarkdownError::SelectorError(e.to_string()))?;
     for ul in document_html.select(&ul_selector) {
-        let mut items = Vec::new();
-        for li in ul.select(&li_selector) {
-            let text = li.text().collect::<String>().trim().to_string();
-            if !text.is_empty() {
-                items.push(text);
-            }
-        }
-
-        if !items.is_empty() {
-            document.lists.push(List {
-                ordered: false,
-                items,
-            });
+        if let Some(list) = extract_list_items(&ul, &li_selector, false) {
+            document.lists.push(list);
         }
     }
 
     // Process ordered lists
     let ol_selector =
         Selector::parse("ol").map_err(|e| MarkdownError::SelectorError(e.to_string()))?;
-
     for ol in document_html.select(&ol_selector) {
-        let mut items = Vec::new();
-        for li in ol.select(&li_selector) {
-            let text = li.text().collect::<String>().trim().to_string();
-            if !text.is_empty() {
-                items.push(text);
-            }
-        }
-
-        if !items.is_empty() {
-            document.lists.push(List {
-                ordered: true,
-                items,
-            });
+        if let Some(list) = extract_list_items(&ol, &li_selector, true) {
+            document.lists.push(list);
         }
     }
+    
+    Ok(())
+}
 
-    // Process code blocks
+/// Process code block elements
+fn process_code_blocks(document: &mut Document, document_html: &Html) -> Result<(), MarkdownError> {
     let pre_selector =
         Selector::parse("pre, code").map_err(|e| MarkdownError::SelectorError(e.to_string()))?;
     for element in document_html.select(&pre_selector) {
@@ -228,8 +243,11 @@ pub fn parse_html_to_document(html: &str, base_url_str: &str) -> Result<Document
             });
         }
     }
+    Ok(())
+}
 
-    // Process blockquotes
+/// Process blockquote elements
+fn process_blockquotes(document: &mut Document, document_html: &Html) -> Result<(), MarkdownError> {
     let blockquote_selector =
         Selector::parse("blockquote").map_err(|e| MarkdownError::SelectorError(e.to_string()))?;
     for element in document_html.select(&blockquote_selector) {
@@ -238,8 +256,36 @@ pub fn parse_html_to_document(html: &str, base_url_str: &str) -> Result<Document
             document.blockquotes.push(text);
         }
     }
+    Ok(())
+}
 
-    Ok(document)
+/// Helper function to resolve URLs against a base URL
+fn resolve_url_against_base(base_url: &Url, href: &str) -> String {
+    base_url
+        .join(href)
+        .unwrap_or_else(|_| Url::parse(href).unwrap_or(base_url.clone()))
+        .to_string()
+}
+
+/// Helper function to extract list items
+fn extract_list_items(
+    list_element: &scraper::ElementRef, 
+    li_selector: &Selector, 
+    ordered: bool
+) -> Option<List> {
+    let mut items = Vec::new();
+    for li in list_element.select(li_selector) {
+        let text = li.text().collect::<String>().trim().to_string();
+        if !text.is_empty() {
+            items.push(text);
+        }
+    }
+
+    if !items.is_empty() {
+        Some(List { ordered, items })
+    } else {
+        None
+    }
 }
 
 /// Convert document to markdown format
