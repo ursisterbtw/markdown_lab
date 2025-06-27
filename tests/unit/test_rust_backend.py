@@ -511,4 +511,6 @@ def test_rust_backend_class_exists():
 
 def test_rust_backend_has_docstrings():
     """Test that RustBackend class and methods have proper documentation."""
+    for method_name in dir(RustBackend):
+        if not method_name.startswith('_'):  # Skip private methods
             assert getattr(RustBackend, method_name).__doc__ is not None

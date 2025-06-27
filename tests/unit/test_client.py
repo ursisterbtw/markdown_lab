@@ -2,7 +2,6 @@ import time
 from unittest.mock import Mock, patch
 
 import pytest
-from requests.exceptions import ConnectionError, RequestException, Timeout
 
 from markdown_lab.core.client import HttpClient as CoreHttpClient
 from markdown_lab.network.client import HttpClient as NetworkHttpClient, CachedHttpClient
@@ -29,7 +28,7 @@ def core_client():
     return CoreHttpClient()
 
 
-@pytest.fixture  
+@pytest.fixture
 def network_client():
     """Fixture for NetworkHttpClient instance."""
     config = MarkdownLabConfig()
@@ -85,7 +84,7 @@ class TestCoreClient:
         result = core_client.get("https://httpbin.org/html")
         assert result is not None
         assert isinstance(result, str)
-        assert "<html>" in result or "Test HTML" in result
+        assert "Test HTML" in result
 
     @patch('requests.Session.get')
     def test_get_with_skip_cache(self, mock_get, core_client, mock_response):
@@ -136,7 +135,7 @@ class TestNetworkClient:
         urls = ["https://example1.com", "https://example2.com"]
         results = network_client.get_many(urls)
         assert isinstance(results, dict)
-        assert len(results) <= len(urls)  # Some might fail
+        assert len(results) == len(urls)  # All mocked requests should succeed
 
     def test_context_manager(self, sample_config):
         """Test NetworkHttpClient as context manager."""
