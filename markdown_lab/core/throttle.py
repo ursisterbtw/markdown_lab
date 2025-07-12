@@ -2,6 +2,7 @@
 Utility module for rate limiting requests.
 """
 
+import asyncio
 import time
 
 
@@ -31,3 +32,33 @@ class RequestThrottler:
             time.sleep(self.min_interval - time_since_last)
 
         self.last_request_time = time.time()
+
+
+class AsyncRequestThrottler:
+    """Async version of RequestThrottler for use with async HTTP clients."""
+
+    def __init__(self, requests_per_second: float = 1.0):
+        """
+        Initialize the async throttler.
+
+        Args:
+            requests_per_second: Maximum number of requests per second
+        """
+        self.min_interval = 1.0 / max(0.1, requests_per_second)
+        self.last_request_time: float = 0.0
+        self._lock = asyncio.Lock()
+
+    async def throttle(self) -> None:
+        """
+        Async version of throttle that enforces rate limits.
+
+        Uses an async lock to ensure thread-safe operation in concurrent contexts.
+        """
+        async with self._lock:
+            current_time = time.time()
+            time_since_last = current_time - self.last_request_time
+
+            if time_since_last < self.min_interval:
+                await asyncio.sleep(self.min_interval - time_since_last)
+
+            self.last_request_time = time.time()

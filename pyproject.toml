@@ -6,9 +6,19 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
   "requests>=2.31.0",
+  "httpx[http2]>=0.27.0",
+  "aiofiles>=24.1.0",
   "beautifulsoup4>=4.12.2",
+  "lxml>=5.1.0",
+  "pydantic>=2.6.0",
+  "pydantic-settings>=2.2.0",
+  "structlog>=24.1.0",
+  "opentelemetry-api>=1.22.0",
+  "opentelemetry-sdk>=1.22.0",
+  "opentelemetry-exporter-otlp>=1.22.0",
   "psutil>=5.9.5;platform_system!='Linux'",
   "pytest>=8.4.0",
+  "pytest-asyncio>=0.24.0",
   "typer>=0.9.0",
   "rich>=13.0.0",
   "textual>=3.0.0",
@@ -21,6 +31,7 @@ dependencies = [
   "pylint>=3.3.7",
   "ruff>=0.11.13",
   "ty>=0.0.1a12",
+  "hypothesis>=6.100.0",
 ]
 
 [project.optional-dependencies]
@@ -48,13 +59,14 @@ Documentation = "https://github.com/ursisterbtw/markdown-lab#readme"
 Issues = "https://github.com/ursisterbtw/markdown-lab/issues"
 
 [tool.pytest.ini_options]
+asyncio_mode = "auto"
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     "benchmark: marks tests as benchmarks",
     "integration: marks tests as integration tests",
     "unit: marks tests as unit tests",
 ]
-addopts = "--benchmark-disable"
+addopts = []
 testpaths = ["tests"]
 python_files = ["test_*.py", "*_test.py"]
 python_classes = ["Test*"]
