@@ -235,8 +235,153 @@ RUST_LOG=debug pytest tests/integration/test_html_processing.py -v -s
 
 ### Project Status
 
-Currently in active refactoring (see TASKS.md):
+Major modernization completed (see TASKS.md and PLANNING.md):
 
 - Phase 1 Foundation: ✅ COMPLETED (6/16 tasks)
-- ~350+ lines removed, 40-50% parsing performance improvement
-- Working towards 25-35% total code reduction goal
+- Phase 2-6: ✅ LARGELY COMPLETED (13/16 modernization tasks completed)
+- ~350+ lines removed, 40-50% parsing performance improvement achieved
+- Advanced async architecture with httpx and HTTP/2 support implemented
+- Comprehensive structured logging and telemetry systems deployed
+- Property-based testing with hypothesis integrated
+- Advanced caching and rate limiting systems operational
+- Modern Pydantic configuration management in place
+
+## Modernization Development Workflows
+
+### Async Development
+
+When implementing async features:
+
+1. **Use httpx instead of requests**:
+   ```python
+   # Old
+   import requests
+   response = requests.get(url)
+   
+   # New
+   import httpx
+   async with httpx.AsyncClient() as client:
+       response = await client.get(url)
+   ```
+
+2. **Provide sync wrappers for backward compatibility**:
+   ```python
+   def scrape_sync(url: str) -> str:
+       return asyncio.run(scrape_async(url))
+   ```
+
+3. **Use asyncio.gather() for concurrent operations**:
+   ```python
+   results = await asyncio.gather(*tasks, return_exceptions=True)
+   ```
+
+### Rust Optimization Patterns
+
+1. **Use Cow<str> for zero-copy strings**:
+   ```rust
+   use std::borrow::Cow;
+   
+   fn process<'a>(text: &'a str) -> Cow<'a, str> {
+       if needs_modification(text) {
+           Cow::Owned(modify(text))
+       } else {
+           Cow::Borrowed(text)
+       }
+   }
+   ```
+
+2. **Enable parallel processing with rayon**:
+   ```rust
+   use rayon::prelude::*;
+   
+   documents.par_iter()
+       .map(|doc| process(doc))
+       .collect()
+   ```
+
+3. **Optimize PyO3 bindings with downcast**:
+   ```rust
+   if let Ok(py_str) = value.downcast::<PyString>() {
+       // Zero-cost access
+   }
+   ```
+
+### Testing Best Practices
+
+1. **Property-based tests with hypothesis**:
+   ```python
+   from hypothesis import given, strategies as st
+   
+   @given(html=st.text(min_size=10, max_size=10000))
+   def test_property(html):
+       # Test invariants
+   ```
+
+2. **Performance benchmarks**:
+   ```bash
+   just bench           # Run all benchmarks
+   just bench-viz       # Visualize results
+   ```
+
+3. **Async test patterns**:
+   ```python
+   import pytest
+   
+   @pytest.mark.asyncio
+   async def test_async_function():
+       result = await async_function()
+       assert result
+   ```
+
+### Monitoring & Logging
+
+1. **Structured logging with context**:
+   ```python
+   import structlog
+   logger = structlog.get_logger()
+   
+   logger.info("operation_started", 
+               url=url, 
+               method="GET",
+               timeout=30)
+   ```
+
+2. **OpenTelemetry tracing**:
+   ```python
+   from opentelemetry import trace
+   tracer = trace.get_tracer(__name__)
+   
+   with tracer.start_as_current_span("scrape_website"):
+       # Operation
+   ```
+
+3. **Real-time metrics in TUI**:
+   ```python
+   # Access metrics dashboard
+   mlab-tui --metrics
+   ```
+
+### Configuration Management
+
+1. **Pydantic settings with validation**:
+   ```python
+   from pydantic import BaseSettings, Field
+   
+   class Settings(BaseSettings):
+       timeout: int = Field(30, ge=1, le=300)
+       
+       class Config:
+           env_prefix = "MARKDOWN_LAB_"
+   ```
+
+2. **Environment overrides**:
+   ```bash
+   export MARKDOWN_LAB_TIMEOUT=60
+   export MARKDOWN_LAB_PARALLEL_WORKERS=8
+   ```
+
+3. **Configuration profiles**:
+   ```bash
+   mlab --profile production
+   mlab --profile development
+   ```
