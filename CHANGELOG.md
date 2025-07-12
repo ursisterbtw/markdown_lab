@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+
 - **XML/JSON Conversion Error (2025-06-19)**: Fixed `AttributeError: module 'markdown_lab.markdown_lab_rs' has no attribute 'convert_html'` that prevented XML and JSON output formats from working
   - **Root Cause**: Function name mismatch between Python backend calling `convert_html()` and Rust module exporting `convert_html_to_format()`
   - **Solution**: Updated `markdown_lab/core/rust_backend.py:76` to call correct function name
@@ -21,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Note**: Any CI/CD failures related to benchmarks are likely environment-specific rather than code issues
 
 ### Changed
+
 - **Code Review Improvements (2025-06-19)**: Addressed maintainability and architecture feedback
   - **Documentation**: Consolidated fix documentation into centralized CHANGELOG.md to reduce maintenance overhead
   - **Architecture**: Simplified `rust_backend.py` by removing special-case conditional logic for markdown format
@@ -29,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.0] - Initial Release
 
 ### Added
+
 - HTML to Markdown conversion with Rust backend
 - Multiple output formats: Markdown, JSON, XML
 - Modern CLI interface with Typer and Rich

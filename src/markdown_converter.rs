@@ -112,9 +112,9 @@ fn create_document_structure(title: &str, base_url: &str) -> Document {
 
 /// Populate document with content from HTML
 fn populate_document_content(
-    document: &mut Document, 
-    document_html: &Html, 
-    base_url: &Url
+    document: &mut Document,
+    document_html: &Html,
+    base_url: &Url,
 ) -> Result<(), MarkdownError> {
     process_headings(document, document_html)?;
     process_paragraphs(document, document_html)?;
@@ -160,9 +160,9 @@ fn process_paragraphs(document: &mut Document, document_html: &Html) -> Result<(
 
 /// Process link elements
 fn process_links(
-    document: &mut Document, 
-    document_html: &Html, 
-    base_url: &Url
+    document: &mut Document,
+    document_html: &Html,
+    base_url: &Url,
 ) -> Result<(), MarkdownError> {
     let a_selector =
         Selector::parse("a[href]").map_err(|e| MarkdownError::SelectorError(e.to_string()))?;
@@ -171,7 +171,10 @@ fn process_links(
             let text = element.text().collect::<String>().trim().to_string();
             if !text.is_empty() {
                 let absolute_url = resolve_url_against_base(base_url, href);
-                document.links.push(Link { text, url: absolute_url });
+                document.links.push(Link {
+                    text,
+                    url: absolute_url,
+                });
             }
         }
     }
@@ -180,9 +183,9 @@ fn process_links(
 
 /// Process image elements
 fn process_images(
-    document: &mut Document, 
-    document_html: &Html, 
-    base_url: &Url
+    document: &mut Document,
+    document_html: &Html,
+    base_url: &Url,
 ) -> Result<(), MarkdownError> {
     let img_selector =
         Selector::parse("img[src]").map_err(|e| MarkdownError::SelectorError(e.to_string()))?;
@@ -190,7 +193,10 @@ fn process_images(
         if let Some(src) = element.value().attr("src") {
             let alt = element.value().attr("alt").unwrap_or("image").to_string();
             let absolute_url = resolve_url_against_base(base_url, src);
-            document.images.push(Image { alt, src: absolute_url });
+            document.images.push(Image {
+                alt,
+                src: absolute_url,
+            });
         }
     }
     Ok(())
@@ -200,7 +206,7 @@ fn process_images(
 fn process_lists(document: &mut Document, document_html: &Html) -> Result<(), MarkdownError> {
     let li_selector =
         Selector::parse("li").map_err(|e| MarkdownError::SelectorError(e.to_string()))?;
-    
+
     // Process unordered lists
     let ul_selector =
         Selector::parse("ul").map_err(|e| MarkdownError::SelectorError(e.to_string()))?;
@@ -218,7 +224,7 @@ fn process_lists(document: &mut Document, document_html: &Html) -> Result<(), Ma
             document.lists.push(list);
         }
     }
-    
+
     Ok(())
 }
 
@@ -269,9 +275,9 @@ fn resolve_url_against_base(base_url: &Url, href: &str) -> String {
 
 /// Helper function to extract list items
 fn extract_list_items(
-    list_element: &scraper::ElementRef, 
-    li_selector: &Selector, 
-    ordered: bool
+    list_element: &scraper::ElementRef,
+    li_selector: &Selector,
+    ordered: bool,
 ) -> Option<List> {
     let mut items = Vec::new();
     for li in list_element.select(li_selector) {

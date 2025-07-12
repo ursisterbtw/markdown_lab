@@ -51,10 +51,14 @@ Issues = "https://github.com/ursisterbtw/markdown-lab/issues"
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     "benchmark: marks tests as benchmarks",
-    "integration: marks tests as integration tests", 
+    "integration: marks tests as integration tests",
     "unit: marks tests as unit tests",
 ]
 addopts = "--benchmark-disable"
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
 
 [tool.pytest-benchmark]
 min_rounds = 5
@@ -65,7 +69,7 @@ group_by = "group"
 sort = "name"
 columns = [
   "min",
-  "max", 
+  "max",
   "mean",
   "stddev",
   "median",

@@ -47,14 +47,14 @@ fn markdown_lab_rs(py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(convert_html_to_format, py)?)?;
     m.add_function(wrap_pyfunction!(chunk_markdown, py)?)?;
     m.add_function(wrap_pyfunction!(render_js_page, py)?)?;
-    
+
     // Expose HTML parser functions for Python access
     m.add_function(wrap_pyfunction!(clean_html, py)?)?;
     m.add_function(wrap_pyfunction!(clean_html_advanced, py)?)?;
     m.add_function(wrap_pyfunction!(extract_main_content, py)?)?;
     m.add_function(wrap_pyfunction!(extract_links, py)?)?;
     m.add_function(wrap_pyfunction!(resolve_url, py)?)?;
-    
+
     Ok(())
 }
 

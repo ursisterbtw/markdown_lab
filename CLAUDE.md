@@ -1,3 +1,7 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
 # Commands & Guidelines for markdown_lab
 
 ## Modern CLI Interface (Recommended)
@@ -137,23 +141,23 @@ If you prefer direct commands without justfile or the modern CLI:
 ## Repository Structure
 
 - **src/**: Rust code with PyO3 bindings
-    - **html_parser.rs**: Optimized HTML parsing with cached selectors
-    - **markdown_converter.rs**: HTML to Markdown/JSON/XML conversion
-    - **chunker.rs**: Semantic content chunking for RAG
-    - **lib.rs**: PyO3 bindings and Python module exports
+  - **html_parser.rs**: Optimized HTML parsing with cached selectors
+  - **markdown_converter.rs**: HTML to Markdown/JSON/XML conversion
+  - **chunker.rs**: Semantic content chunking for RAG
+  - **lib.rs**: PyO3 bindings and Python module exports
 - **markdown_lab/**: Main Python package
-    - **core/**: Core functionality
-        - **config.py**: Centralized configuration management
-        - **errors.py**: Unified error hierarchy with structured exceptions
-        - **scraper.py**: Main scraper implementation
-        - **cache.py**: Request caching
-        - **throttle.py**: Rate limiting for web requests
-    - **network/**: HTTP client and networking utilities
-        - **client.py**: Unified HTTP client with connection pooling
-    - **utils/**: Utility modules
-        - **chunk_utils.py**: Utilities for chunking text for RAG
-        - **sitemap_utils.py**: Sitemap parsing and URL discovery
-    - **markdown_lab_rs.py**: Python interface to Rust implementations
+  - **core/**: Core functionality
+    - **config.py**: Centralized configuration management
+    - **errors.py**: Unified error hierarchy with structured exceptions
+    - **scraper.py**: Main scraper implementation
+    - **cache.py**: Request caching
+    - **throttle.py**: Rate limiting for web requests
+  - **network/**: HTTP client and networking utilities
+    - **client.py**: Unified HTTP client with connection pooling
+  - **utils/**: Utility modules
+    - **chunk_utils.py**: Utilities for chunking text for RAG
+    - **sitemap_utils.py**: Sitemap parsing and URL discovery
+  - **markdown_lab_rs.py**: Python interface to Rust implementations
 - **tests/**: Test files for both Python and Rust components
 - **benches/**: Performance benchmarks
 
@@ -161,11 +165,78 @@ If you prefer direct commands without justfile or the modern CLI:
 
 - **Markdown**: Human-readable plain text format (default)
 - **JSON**: Structured data format for programmatic usage
-    - Document structure with title, headers, paragraphs, links, images, etc.
-    - Serialized with proper indentation for readability
+  - Document structure with title, headers, paragraphs, links, images, etc.
+  - Serialized with proper indentation for readability
 - **XML**: Markup format for document interchange
-    - Document structure with proper XML tags and hierarchy
-    - Includes XML declaration and proper escaping
+  - Document structure with proper XML tags and hierarchy
+  - Includes XML declaration and proper escaping
 - Use `-f/--format` CLI argument to specify output format
 - All formats support the same HTML elements and content structure
 
+## Architecture Overview
+
+This is a hybrid Python-Rust application where:
+
+- **Python** handles high-level orchestration, CLI/TUI, web scraping, and configuration
+- **Rust** powers performance-critical HTML parsing, format conversion, and content chunking
+
+### Key Architecture Points
+
+1. **Rust-Python Integration**: Uses PyO3 bindings via maturin. Rust functions are exposed through `markdown_lab_rs` module
+2. **Centralized Configuration**: All settings managed through `markdown_lab/core/config.py`
+3. **Unified Error Handling**: Custom exception hierarchy in `markdown_lab/core/errors.py`
+4. **HTTP Client**: Connection pooling and rate limiting in `markdown_lab/network/client.py`
+5. **Format Conversion Flow**: HTML → Rust parser → Format-specific converter → Output
+
+### Performance Optimizations
+
+- Cached CSS selectors in Rust HTML parser
+- Connection pooling for HTTP requests
+- Parallel processing for batch operations
+- Efficient memory usage with streaming where possible
+
+## Development Tips
+
+### Running Single Tests
+
+```bash
+# Python test
+pytest tests/unit/test_converter.py::test_specific_function -v
+
+# Rust test
+cargo test test_name -- --nocapture
+
+# Integration test with logging
+RUST_LOG=debug pytest tests/integration/test_html_processing.py -v -s
+```
+
+### Debugging
+
+- Enable Rust logs: `RUST_LOG=debug`
+- Python debug mode: Set `debug=True` in config or use `--debug` CLI flag
+- Check binding issues: `just test-bindings`
+
+### Common Development Patterns
+
+1. **Adding a new output format**:
+   - Create formatter in `markdown_lab/formats/`
+   - Register in `markdown_lab/core/converter.py`
+   - Add tests in `tests/unit/test_formats.py`
+
+2. **Modifying HTML parsing**:
+   - Edit `src/html_parser.rs` or `src/markdown_converter.rs`
+   - Run `just dev-cycle` to rebuild and test
+   - Benchmark changes with `cargo bench`
+
+3. **Adding CLI commands**:
+   - Add command in `markdown_lab/cli/commands.py`
+   - Update help text and examples
+   - Add integration test
+
+### Project Status
+
+Currently in active refactoring (see TASKS.md):
+
+- Phase 1 Foundation: ✅ COMPLETED (6/16 tasks)
+- ~350+ lines removed, 40-50% parsing performance improvement
+- Working towards 25-35% total code reduction goal
