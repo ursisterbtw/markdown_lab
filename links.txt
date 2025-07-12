@@ -1,1 +1,17 @@
 https://terminaltrove.com/new
+https://ai.pydantic.dev/
+https://docs.mem0.ai/
+https://docs.cursor.com/
+https://docs.windsurf.com/windsurf/
+https://nix.dev/reference/
+https://nixos.org/manual/
+https://docs.dagger.io/
+https://docs.cursor.com/
+https://lmstudio.ai/docs/
+https://doc.rust-lang.org/book/
+https://doc.rust-lang.org/rust-by-exa
+https://docs.upsonic.ai/
+https://docs.n8n.io/
+https://ast-grep.github.io/guide/
+https://ast-grep.github.io/reference/
+https://github.com/ast-grep/ast-grep

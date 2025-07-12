@@ -16,5 +16,6 @@
         ".ruff_cache": true,
         ".pytest_cache": true,
         ".mypy_cache": true,
+        ".request_cache": true
     }
 }
