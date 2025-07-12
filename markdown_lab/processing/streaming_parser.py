@@ -200,14 +200,57 @@ class StreamingHTMLParser:
                         yield (element.tag, text.strip())
 
     def _extract_text(self, element: Element) -> str:
-        """Extract all text from an element."""
+        """
+        Extract all text from an element recursively.
+        
+        This implementation properly handles nested text content by
+        recursively traversing all child elements and collecting
+        text content from all levels of the hierarchy.
+        
+        Args:
+            element: The HTML element to extract text from
+            
+        Returns:
+            All text content from the element and its children
+        """
+        # Use lxml's built-in text_content() for comprehensive text extraction
+        # This handles all nested text nodes correctly
+        try:
+            return element.text_content()
+        except AttributeError:
+            # Fallback to manual recursive extraction if text_content() unavailable
+            return self._extract_text_recursive(element)
+
+    def _extract_text_recursive(self, element: Element) -> str:
+        """
+        Fallback recursive text extraction for comprehensive content capture.
+        
+        Manually walks the element tree to collect all text content,
+        ensuring no nested text is missed.
+        
+        Args:
+            element: The HTML element to extract text from
+            
+        Returns:
+            All text content from the element and its children
+        """
         texts = []
 
+        # Add direct text content
         if element.text:
-            texts.append(element.text)
+            texts.append(element.text.strip())
 
-        texts.extend(child.tail for child in element if child.tail)
-        return " ".join(texts)
+        # Recursively extract from all children
+        for child in element:
+            if child_text := self._extract_text_recursive(child):
+                texts.append(child_text)
+
+            # Add tail text after the child element
+            if child.tail:
+                texts.append(child.tail.strip())
+
+        # Filter out empty strings and join with spaces
+        return " ".join(text for text in texts if text)
 
     async def count_elements(self, url: str) -> Dict[str, int]:
         """

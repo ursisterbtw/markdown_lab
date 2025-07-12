@@ -38,6 +38,21 @@ class TestTokenBucket:
         assert bucket.try_acquire(101) is False
         assert bucket.available_tokens == 100  # No tokens consumed
 
+    def test_try_acquire_negative_tokens(self):
+        """Test that negative token requests are rejected or handled properly."""
+        bucket = TokenBucket(rate=10.0, capacity=100)
+        # Depending on implementation, this could raise an exception or return False.
+        # Adjust the assertion as per the TokenBucket's expected behavior.
+        try:
+            result = bucket.try_acquire(-5)
+            # If no exception, should return False (or similar safe value)
+            assert result is False
+        except ValueError:
+            pass
+        except Exception:
+            # Any other exception is not expected
+            assert False, "Unexpected exception type for negative token request"
+
     def test_refill_over_time(self):
         """Test tokens refill at the specified rate."""
         bucket = TokenBucket(rate=10.0, capacity=100)
@@ -164,6 +179,27 @@ class TestRateLimiter:
             pass
         elapsed = time.time() - start
         assert 0.05 <= elapsed <= 0.15  # ~0.1 seconds
+
+    def test_limit_sync_context_manager_exception(self):
+        """Test that exceptions inside the context manager do not leak tokens."""
+        limiter = RateLimiter()
+        bucket_name = "default"
+        # Get initial token count
+        initial_tokens = limiter.buckets[bucket_name].tokens
+
+        class CustomError(Exception):
+            pass
+
+        try:
+            with limiter.limit_sync(bucket_name):
+                raise CustomError("Test exception inside context manager")
+        except CustomError:
+            pass
+
+        # After exception, token count should be decremented by 1 (for the context entry)
+        # and not leak tokens (i.e., not be decremented further)
+        after_tokens = limiter.buckets[bucket_name].tokens
+        assert after_tokens == initial_tokens - 1
 
     @pytest.mark.asyncio
     async def test_limit_async_context_manager(self):

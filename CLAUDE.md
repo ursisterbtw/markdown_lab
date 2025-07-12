@@ -253,6 +253,7 @@ Major modernization completed (see TASKS.md and PLANNING.md):
 When implementing async features:
 
 1. **Use httpx instead of requests**:
+
    ```python
    # Old
    import requests
@@ -265,12 +266,14 @@ When implementing async features:
    ```
 
 2. **Provide sync wrappers for backward compatibility**:
+
    ```python
    def scrape_sync(url: str) -> str:
        return asyncio.run(scrape_async(url))
    ```
 
 3. **Use asyncio.gather() for concurrent operations**:
+
    ```python
    results = await asyncio.gather(*tasks, return_exceptions=True)
    ```
@@ -278,6 +281,7 @@ When implementing async features:
 ### Rust Optimization Patterns
 
 1. **Use Cow<str> for zero-copy strings**:
+
    ```rust
    use std::borrow::Cow;
    
@@ -291,6 +295,7 @@ When implementing async features:
    ```
 
 2. **Enable parallel processing with rayon**:
+
    ```rust
    use rayon::prelude::*;
    
@@ -300,6 +305,7 @@ When implementing async features:
    ```
 
 3. **Optimize PyO3 bindings with downcast**:
+
    ```rust
    if let Ok(py_str) = value.downcast::<PyString>() {
        // Zero-cost access
@@ -309,6 +315,7 @@ When implementing async features:
 ### Testing Best Practices
 
 1. **Property-based tests with hypothesis**:
+
    ```python
    from hypothesis import given, strategies as st
    
@@ -318,12 +325,14 @@ When implementing async features:
    ```
 
 2. **Performance benchmarks**:
+
    ```bash
    just bench           # Run all benchmarks
    just bench-viz       # Visualize results
    ```
 
 3. **Async test patterns**:
+
    ```python
    import pytest
    
@@ -336,6 +345,7 @@ When implementing async features:
 ### Monitoring & Logging
 
 1. **Structured logging with context**:
+
    ```python
    import structlog
    logger = structlog.get_logger()
@@ -347,6 +357,7 @@ When implementing async features:
    ```
 
 2. **OpenTelemetry tracing**:
+
    ```python
    from opentelemetry import trace
    tracer = trace.get_tracer(__name__)
@@ -356,6 +367,7 @@ When implementing async features:
    ```
 
 3. **Real-time metrics in TUI**:
+
    ```python
    # Access metrics dashboard
    mlab-tui --metrics
@@ -364,6 +376,7 @@ When implementing async features:
 ### Configuration Management
 
 1. **Pydantic settings with validation**:
+
    ```python
    from pydantic import BaseSettings, Field
    
@@ -375,12 +388,14 @@ When implementing async features:
    ```
 
 2. **Environment overrides**:
+
    ```bash
    export MARKDOWN_LAB_TIMEOUT=60
    export MARKDOWN_LAB_PARALLEL_WORKERS=8
    ```
 
 3. **Configuration profiles**:
+
    ```bash
    mlab --profile production
    mlab --profile development

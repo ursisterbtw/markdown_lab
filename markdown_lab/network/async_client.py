@@ -36,6 +36,9 @@ class AsyncHttpClient:
         self.throttler = AsyncRequestThrottler(config.requests_per_second)
         self._client: Optional[httpx.AsyncClient] = None
 
+        # Registry to deduplicate in-flight requests per cache key
+        self._inflight_requests: Dict[str, asyncio.Task] = {}
+
         # Configure token bucket rate limiter
         self.rate_limiter = get_rate_limiter()
         self.rate_limiter.configure_bucket(
@@ -106,6 +109,8 @@ class AsyncHttpClient:
         """
         Perform an async GET request to the specified URL with retry logic and caching.
 
+        Implements in-flight request deduplication to prevent cache stampede.
+
         Args:
             url: The URL to send the GET request to.
             use_cache: Whether to use caching for this request.
@@ -118,21 +123,56 @@ class AsyncHttpClient:
         Raises:
             NetworkError: If the request fails after all retry attempts.
         """
-        if use_cache:
-            # Create cache key from URL and relevant kwargs
-            cache_key = self._create_cache_key(url, kwargs)
+        if not use_cache:
+            # No caching, make direct request
+            return await self._request_with_retries("GET", url, **kwargs)
+        # Create cache key from URL and relevant kwargs
+        cache_key = self._create_cache_key(url, kwargs)
 
-            # Try cache first
-            cached_result = await self.cache.get(cache_key)
-            if cached_result is not None:
-                logger.debug(f"Cache hit for URL: {url}")
-                return cached_result
+        # Try cache first
+        cached_result = await self.cache.get(cache_key)
+        if cached_result is not None:
+            logger.debug(f"Cache hit for URL: {url}")
+            return cached_result
 
-        # Perform request
+        # Deduplicate in-flight requests for the same cache key
+        inflight = self._inflight_requests.get(cache_key)
+        if inflight is not None and not inflight.done():
+            logger.debug(f"Awaiting in-flight request for URL: {url}")
+            try:
+                return await inflight
+            except Exception:
+                # If in-flight request failed, continue to make our own request
+                pass
+
+        # Create task for this request
+        task = asyncio.create_task(self._get_and_cache(url, cache_key, cache_ttl, **kwargs))
+        self._inflight_requests[cache_key] = task
+
+        try:
+            return await task
+        finally:
+            # Clean up the registry
+            self._inflight_requests.pop(cache_key, None)
+
+    async def _get_and_cache(self, url: str, cache_key: str, cache_ttl: float, **kwargs) -> str:
+        """
+        Helper method to perform GET request and cache the result.
+        
+        Args:
+            url: The URL to request
+            cache_key: Cache key for storing the result
+            cache_ttl: Cache time-to-live in seconds
+            **kwargs: Additional arguments passed to httpx
+            
+        Returns:
+            The response body as a string
+        """
+        # Perform the actual request
         result = await self._request_with_retries("GET", url, **kwargs)
 
         # Cache successful result
-        if use_cache and result:
+        if result:
             await self.cache.set(cache_key, result, ttl=cache_ttl)
             logger.debug(f"Cached response for URL: {url}")
 
@@ -156,38 +196,54 @@ class AsyncHttpClient:
             "HEAD", url, return_response=True, **kwargs
         )
 
-    async def get_many(self, urls: List[str], **kwargs) -> Dict[str, str]:
+    async def get_many(self, urls: List[str], use_cache: bool = True, **kwargs) -> Dict[str, str]:
         """
         Perform concurrent GET requests on a list of URLs with rate limiting.
+
+        Checks the cache for each URL before making network requests to avoid redundant calls.
 
         Uses asyncio.gather for efficient concurrent processing. Failed requests
         are logged and skipped rather than failing the entire batch.
 
         Args:
             urls: List of URLs to fetch.
+            use_cache: Whether to use caching for requests.
             **kwargs: Additional arguments passed to each request.
 
         Returns:
             Dictionary mapping successful URLs to their response content.
         """
+        cached_results = {}
+        urls_to_fetch = []
+
+        if use_cache:
+            # Check cache for each URL
+            for url in urls:
+                cache_key = self._create_cache_key(url, kwargs)
+                cached = await self.cache.get(cache_key)
+                if cached is not None:
+                    cached_results[url] = cached
+                    logger.debug(f"Cache hit for URL: {url}")
+                else:
+                    urls_to_fetch.append(url)
+        else:
+            urls_to_fetch = urls
+
+        if not urls_to_fetch:
+            # All URLs were cached
+            return cached_results
+
         # Configure batch rate limiter with higher burst capacity
         self.rate_limiter.configure_bucket(
             "batch_http",
             rate=self.config.requests_per_second * 5,  # 5x rate for batches
-            capacity=min(len(urls), 50),  # Allow burst up to 50 or number of URLs
+            capacity=min(len(urls_to_fetch), 50),  # Allow burst up to 50 or number of URLs
         )
 
         async def get_with_error_handling(url: str) -> tuple[str, Optional[str]]:
             try:
-                # Use batch bucket for concurrent operations
-                async with self.rate_limiter.limit("batch_http"):
-                    # Make request without internal rate limiting
-                    # (we're handling it at the batch level)
-                    client = await self._ensure_client()
-                    response = await client.get(url, **kwargs)
-                    response.raise_for_status()
-                    content = response.text
-
+                # Use the main get method to leverage cache stampede prevention
+                content = await self.get(url, use_cache=use_cache, **kwargs)
                 logger.debug(f"Successfully retrieved content from {url}")
                 return url, content
             except Exception as e:
@@ -195,13 +251,14 @@ class AsyncHttpClient:
                 return url, None
 
         # Create tasks for concurrent execution
-        tasks = [get_with_error_handling(url) for url in urls]
+        tasks = [get_with_error_handling(url) for url in urls_to_fetch]
 
         # Execute concurrently with gather
         results = await asyncio.gather(*tasks)
 
-        # Filter out failed requests
-        return {url: content for url, content in results if content is not None}
+        # Filter out failed requests and merge with cached results
+        fetched_results = {url: content for url, content in results if content is not None}
+        return cached_results | fetched_results
 
     async def _request_with_retries(
         self, method: str, url: str, return_response: bool = False, **kwargs
@@ -277,7 +334,10 @@ class AsyncHttpClient:
 
     def _create_cache_key(self, url: str, kwargs: Dict) -> str:
         """
-        Create a cache key from URL and request parameters.
+        Create a robust cache key from URL and request parameters.
+
+        Includes all relevant parameters that could affect the response:
+        headers, params, auth, cookies, proxy settings, etc.
 
         Args:
             url: The request URL
@@ -285,20 +345,47 @@ class AsyncHttpClient:
 
         Returns:
             A unique cache key string
+            
+        Note:
+            This implementation normalizes headers and includes comprehensive
+            request parameters to avoid cache misses/incorrect hits.
         """
         import hashlib
 
+        # Normalize headers (lowercase keys, sorted)
+        headers = kwargs.get("headers", {})
+        normalized_headers = {
+            str(k).lower(): str(v) for k, v in headers.items()
+        } if headers else {}
+
+        # Extract auth type and presence (not actual credentials)
+        auth = kwargs.get("auth")
+        auth_info = None
+        if auth is not None:
+            if hasattr(auth, '__class__'):
+                auth_info = f"{auth.__class__.__name__}"
+            else:
+                auth_info = "custom_auth"
+
         # Include relevant parameters that affect response
         cache_params = {
-            "url": url,
-            "headers": kwargs.get("headers", {}),
-            "params": kwargs.get("params", {}),
-            "auth": bool(kwargs.get("auth")),  # Don't include actual auth details
+            "url": url.strip(),
+            "headers": sorted(normalized_headers.items()),
+            "params": sorted((kwargs.get("params", {}) or {}).items()),
+            "auth": auth_info,
+            "cookies": sorted((kwargs.get("cookies", {}) or {}).items()),
+            "proxies": str(kwargs.get("proxies")) if kwargs.get("proxies") else None,
+            "verify": kwargs.get("verify", True),
+            "cert": bool(kwargs.get("cert")),
+            "timeout": kwargs.get("timeout"),
+            "allow_redirects": kwargs.get("follow_redirects", True),
         }
 
-        # Create hash of parameters
+        # Create stable string representation
         param_str = str(sorted(cache_params.items()))
-        cache_hash = hashlib.sha256(param_str.encode()).hexdigest()[:16]
+
+        # Use full hash to avoid collisions (32 chars for good distribution)
+        cache_hash = hashlib.sha256(param_str.encode()).hexdigest()[:32]
 
         return f"http_get_{cache_hash}"
 

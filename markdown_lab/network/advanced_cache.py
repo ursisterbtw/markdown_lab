@@ -138,9 +138,8 @@ class LRUMemoryCache:
         return results
     
     async def set_many(self, items: Dict[str, Any], ttl: Optional[float] = None) -> None:
-        """Set multiple items in cache."""
-        for key, value in items.items():
-            await self.set(key, value, ttl)
+        """Set multiple items in cache using concurrent operations."""
+        await asyncio.gather(*(self.set(key, value, ttl) for key, value in items.items()))
     
     async def delete(self, key: str) -> bool:
         """Delete item from cache."""

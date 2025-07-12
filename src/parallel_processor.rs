@@ -2,7 +2,8 @@ use crate::markdown_converter::convert_to_markdown;
 use crate::optimized_converter::convert_to_markdown_optimized;
 use pyo3::prelude::*;
 use rayon::prelude::*;
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
+use rayon::ThreadPool;
 
 /// Result type for batch processing
 #[derive(Debug)]
@@ -17,6 +18,22 @@ pub struct ParallelConfig {
     pub max_threads: Option<usize>,
     pub chunk_size: usize,
     pub use_optimized: bool,
+}
+
+/// Global thread pool for reuse across parallel operations
+static THREAD_POOL: OnceLock<ThreadPool> = OnceLock::new();
+
+/// Get or create the global thread pool
+fn get_thread_pool(max_threads: Option<usize>) -> &'static ThreadPool {
+    THREAD_POOL.get_or_init(|| {
+        match max_threads {
+            Some(threads) => rayon::ThreadPoolBuilder::new()
+                .num_threads(threads)
+                .build()
+                .unwrap_or_else(|_| rayon::ThreadPoolBuilder::new().build().unwrap()),
+            None => rayon::ThreadPoolBuilder::new().build().unwrap(),
+        }
+    })
 }
 
 impl Default for ParallelConfig {
@@ -34,60 +51,34 @@ pub fn convert_documents_parallel(
     documents: Vec<(String, String)>, // (html, base_url) pairs
     config: ParallelConfig,
 ) -> Vec<(String, Result<String, String>)> {
-    // Configure thread pool if specified
-    let pool = if let Some(threads) = config.max_threads {
-        rayon::ThreadPoolBuilder::new().num_threads(threads).build()
-    } else {
-        rayon::ThreadPoolBuilder::new().build()
-    };
+    // Use the shared thread pool for efficiency
+    let pool = get_thread_pool(config.max_threads);
+    
+    pool.install(|| {
+        documents
+            .into_par_iter()
+            .chunks(config.chunk_size)
+            .flat_map(|chunk| {
+                chunk
+                    .into_par_iter()
+                    .map(|(html, base_url)| {
+                        let result = if config.use_optimized {
+                            convert_to_markdown_optimized(&html, &base_url)
+                        } else {
+                            convert_to_markdown(&html, &base_url)
+                        };
 
-    match pool {
-        Ok(pool) => pool.install(|| {
-            documents
-                .into_par_iter()
-                .chunks(config.chunk_size)
-                .flat_map(|chunk| {
-                    chunk
-                        .into_par_iter()
-                        .map(|(html, base_url)| {
-                            let result = if config.use_optimized {
-                                convert_to_markdown_optimized(&html, &base_url)
-                            } else {
-                                convert_to_markdown(&html, &base_url)
-                            };
+                        let content = match result {
+                            Ok(md) => Ok(md),
+                            Err(e) => Err(e.to_string()),
+                        };
 
-                            let content = match result {
-                                Ok(md) => Ok(md),
-                                Err(e) => Err(e.to_string()),
-                            };
-
-                            (base_url, content)
-                        })
-                        .collect::<Vec<_>>()
-                })
-                .collect()
-        }),
-        Err(_) => {
-            // Fallback to default thread pool
-            documents
-                .into_par_iter()
-                .map(|(html, base_url)| {
-                    let result = if config.use_optimized {
-                        convert_to_markdown_optimized(&html, &base_url)
-                    } else {
-                        convert_to_markdown(&html, &base_url)
-                    };
-
-                    let content = match result {
-                        Ok(md) => Ok(md),
-                        Err(e) => Err(e.to_string()),
-                    };
-
-                    (base_url, content)
-                })
-                .collect()
-        }
-    }
+                        (base_url, content)
+                    })
+                    .collect::<Vec<_>>()
+            })
+            .collect()
+    })
 }
 
 /// Process multiple URLs with different base URLs in parallel
@@ -177,7 +168,15 @@ pub fn process_html_files_parallel(
 
     file_paths
         .into_par_iter()
-        .filter_map(|path| std::fs::read_to_string(&path).ok().map(|html| (path, html)))
+        .filter_map(|path| {
+            match std::fs::read_to_string(&path) {
+                Ok(html) => Some((path, html)),
+                Err(e) => {
+                    eprintln!("Warning: Failed to read file '{}': {}", path, e);
+                    None
+                }
+            }
+        })
         .map(|(path, html)| {
             let base = base_url.clone();
             let result = if config.use_optimized {

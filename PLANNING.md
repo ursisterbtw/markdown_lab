@@ -191,6 +191,7 @@ class BaseConverter(ABC):
 ### Phase 2: Advanced Async Architecture (Weeks 3-4)
 
 #### 2.1 Migrate to httpx for Async HTTP Operations
+
 - **Replace** `requests` with `httpx` for async/await support
 - **Implement** `AsyncClient` with connection pooling and HTTP/2
 - **Add** concurrent request handling with `asyncio.gather()`
@@ -212,6 +213,7 @@ class AsyncMarkdownScraper:
 ```
 
 #### 2.2 Token Bucket Rate Limiting
+
 - **Replace** simple sleep-based throttling with sophisticated token bucket
 - **Add** burst capacity and smooth request distribution
 - **Integrate** with async context managers
@@ -219,11 +221,13 @@ class AsyncMarkdownScraper:
 ### Phase 3: Rust Performance Optimizations (Weeks 5-6)
 
 #### 3.1 Zero-Copy HTML Processing
+
 - **Implement** `Cow<str>` for string handling to reduce allocations
 - **Use** `SmallVec` for small collections to avoid heap allocations
 - **Add** SIMD-optimized string operations where applicable
 
 #### 3.2 Enhanced PyO3 Bindings
+
 ```rust
 // Optimize type conversions with downcast
 #[pyfunction]
@@ -238,6 +242,7 @@ fn process_html<'py>(value: &Bound<'py, PyAny>) -> PyResult<Bound<'py, PyAny>> {
 ```
 
 #### 3.3 Parallel Rust Processing
+
 - **Add** `rayon` for parallel HTML processing
 - **Implement** work-stealing for dynamic load balancing
 - **Use** `py.allow_threads()` for true parallelism
@@ -245,11 +250,13 @@ fn process_html<'py>(value: &Bound<'py, PyAny>) -> PyResult<Bound<'py, PyAny>> {
 ### Phase 4: Memory & Caching Optimization (Weeks 7-8)
 
 #### 4.1 Streaming HTML Parser
+
 - **Replace** full document loading with streaming parser
 - **Implement** incremental processing for large documents
 - **Add** memory-mapped file support for huge inputs
 
 #### 4.2 Advanced Caching Strategy
+
 ```python
 class OptimizedCache:
     def __init__(self, config: CacheConfig):
@@ -277,11 +284,13 @@ class OptimizedCache:
 ### Phase 5: Modern CLI & Monitoring (Weeks 9-10)
 
 #### 5.1 Enhanced TUI with Real-time Metrics
+
 - **Add** live performance dashboard using `rich`
 - **Implement** progress bars with ETA calculations
 - **Show** memory usage, cache hit rates, and throughput
 
 #### 5.2 Structured Logging & Telemetry
+
 ```python
 import structlog
 from opentelemetry import trace, metrics
@@ -303,6 +312,7 @@ async def scrape_website(url: str) -> str:
 ```
 
 #### 5.3 Configuration Management with Pydantic
+
 - **Replace** dataclasses with Pydantic models for validation
 - **Add** environment variable support with `.env` files
 - **Implement** configuration profiles (dev, staging, prod)
@@ -495,18 +505,21 @@ Startup Time: <2 seconds
 ## Implementation Priorities
 
 ### High Priority (Immediate Impact)
+
 1. Async HTTP migration with httpx (3-5x throughput)
 2. Rust parallel processing with rayon (2x conversion speed)
 3. Memory-efficient streaming parser (30% memory reduction)
 4. Advanced caching with batch operations (90% hit rate)
 
 ### Medium Priority (Quality of Life)
+
 1. Enhanced TUI with real-time metrics
 2. Structured logging and monitoring
 3. Property-based testing
 4. Pydantic configuration
 
 ### Low Priority (Future Enhancements)
+
 1. SIMD optimizations in Rust
 2. WebAssembly support
 3. GPU-accelerated parsing

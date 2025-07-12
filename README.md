@@ -16,6 +16,7 @@ Check out [deepwiki](https://deepwiki.com/ursisterbtw/markdown_lab/) for a detai
 ## Features
 
 ### Core Features
+
 - 🎨 **Modern CLI Interface**: Beautiful terminal output with Typer and Rich, progress bars, and interactive features
 - 🖥️ **Terminal User Interface (TUI)**: Full-featured interactive interface with real-time metrics dashboard
 - 🌐 **Async Web Scraping**: High-performance async scraping with httpx and HTTP/2 support
@@ -24,6 +25,7 @@ Check out [deepwiki](https://deepwiki.com/ursisterbtw/markdown_lab/) for a detai
 - 🧩 **RAG Chunking**: Implements intelligent chunking for Retrieval-Augmented Generation systems
 
 ### Performance Features
+
 - ⚡ **Async/Await Architecture**: 3-5x throughput improvement with concurrent operations
 - 🚀 **Parallel Rust Processing**: 2x conversion speed with rayon work-stealing
 - 💾 **Zero-Copy Optimizations**: 30% memory reduction with Cow<str> and SmallVec
@@ -33,6 +35,7 @@ Check out [deepwiki](https://deepwiki.com/ursisterbtw/markdown_lab/) for a detai
 - 🔧 **Token Bucket Rate Limiting**: Sophisticated rate limiting with burst capacity
 
 ### Developer Experience
+
 - 🔄 **Comprehensive HTML Support**: Headers, paragraphs, links, images, lists, blockquotes, code blocks
 - 📈 **Real-time Metrics**: Live performance dashboard in TUI mode
 - 📋 **Structured Logging**: Context-rich logs with structlog and OpenTelemetry tracing
@@ -422,6 +425,7 @@ See `docs/JS_RENDERING.md` for more details.
 ## Performance Considerations
 
 ### Optimizations
+
 - **Async Architecture**: 3-5x throughput improvement for multi-URL operations
 - **Cached Selectors**: 40-50% faster HTML parsing with pre-compiled selectors
 - **Zero-Copy Strings**: 30% memory reduction using Rust's Cow<str>
@@ -431,6 +435,7 @@ See `docs/JS_RENDERING.md` for more details.
 - **Connection Pooling**: Reuse HTTP connections with httpx
 
 ### Performance Targets
+
 - **Throughput**: 1,500+ documents/second (2x improvement)
 - **Memory Usage**: <80MB typical, <200MB peak
 - **Async Operations**: 5,000+ URLs/minute

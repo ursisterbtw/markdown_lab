@@ -126,7 +126,6 @@ class TokenBucket:
             self._refill()
             return self.tokens
 
-    @property
     def time_until_tokens(self, tokens: int = 1) -> float:
         """Calculate time until specified tokens are available."""
         with self._lock:
@@ -198,7 +197,7 @@ class RateLimiter:
                 "available": bucket.available_tokens,
                 "capacity": bucket.capacity,
                 "rate": bucket.rate,
-                "utilization": 1 - (bucket.available_tokens / bucket.capacity),
+                "utilization": 1 - (bucket.available_tokens / bucket.capacity) if bucket.capacity > 0 else 0.0,
             }
             for name, bucket in self.buckets.items()
         }
@@ -225,6 +224,7 @@ async def rate_limit(bucket_name: str = "default", tokens: int = 1):
         yield
 
 
+@contextmanager
 def rate_limit_sync(bucket_name: str = "default", tokens: int = 1):
     """Convenience function for sync rate limiting."""
     limiter = get_rate_limiter()

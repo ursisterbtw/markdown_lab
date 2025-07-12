@@ -6,6 +6,7 @@ import asyncio
 import hashlib
 import logging
 import time
+from collections import OrderedDict
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
@@ -161,7 +162,7 @@ class AsyncRequestCache:
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         self.max_age = max_age
         self.max_size = max_size
-        self.memory_cache: Dict[str, Tuple[str, float]] = {}
+        self.memory_cache: OrderedDict[str, Tuple[str, float]] = OrderedDict()
         self._lock = asyncio.Lock()
 
     def _get_cache_key(self, url: str) -> str:
@@ -188,9 +189,8 @@ class AsyncRequestCache:
             if url in self.memory_cache:
                 content, timestamp = self.memory_cache[url]
                 if time.time() - timestamp <= self.max_age:
-                    # Move to end for LRU
-                    del self.memory_cache[url]
-                    self.memory_cache[url] = (content, timestamp)
+                    # Move to end for LRU (most recently used)
+                    self.memory_cache.move_to_end(url)
                     return content
                 # Remove expired
                 del self.memory_cache[url]
@@ -241,17 +241,18 @@ class AsyncRequestCache:
 
     def _add_to_memory_cache(self, url: str, content: str) -> None:
         """Add item to memory cache with LRU eviction."""
-        # Remove if exists to add at end
+        # If item exists, update and move to end
         if url in self.memory_cache:
-            del self.memory_cache[url]
+            self.memory_cache[url] = (content, time.time())
+            self.memory_cache.move_to_end(url)
+            return
 
-        # Evict oldest if at capacity
+        # Evict least recently used if at capacity
         if len(self.memory_cache) >= self.max_size:
-            # Remove first item (oldest)
-            oldest_key = next(iter(self.memory_cache))
-            del self.memory_cache[oldest_key]
+            # Remove least recently used item (first item)
+            self.memory_cache.popitem(last=False)
 
-        # Add to end
+        # Add new item to end (most recently used)
         self.memory_cache[url] = (content, time.time())
 
     async def get_batch(self, urls: List[str]) -> Dict[str, Optional[str]]:
@@ -291,9 +292,10 @@ class AsyncRequestCache:
         if max_age is None:
             max_age = self.max_age
 
+        current_time = time.time()
+
         # Clear memory cache
         async with self._lock:
-            current_time = time.time()
             expired_keys = [
                 k
                 for k, (_, timestamp) in self.memory_cache.items()
