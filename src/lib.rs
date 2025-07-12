@@ -7,6 +7,8 @@ pub mod chunker;
 pub mod html_parser;
 pub mod js_renderer;
 pub mod markdown_converter;
+pub mod optimized_converter;
+pub mod parallel_processor;
 
 /// Python-friendly enumeration of output formats
 #[pyclass]
@@ -54,6 +56,19 @@ fn markdown_lab_rs(py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(extract_main_content, py)?)?;
     m.add_function(wrap_pyfunction!(extract_links, py)?)?;
     m.add_function(wrap_pyfunction!(resolve_url, py)?)?;
+
+    // Optimized functions
+    m.add_function(wrap_pyfunction!(convert_html_to_markdown_optimized, py)?)?;
+
+    // Parallel processing functions
+    m.add_function(wrap_pyfunction!(
+        parallel_processor::convert_documents_parallel_py,
+        py
+    )?)?;
+    m.add_function(wrap_pyfunction!(
+        parallel_processor::analyze_documents_parallel_py,
+        py
+    )?)?;
 
     Ok(())
 }
@@ -138,5 +153,14 @@ fn extract_links(html: &str, base_url: &str) -> PyResult<Vec<String>> {
 #[pyfunction]
 fn resolve_url(base_url: &str, relative_url: &str) -> PyResult<String> {
     html_parser::resolve_url(base_url, relative_url)
+        .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))
+}
+
+/// Optimized HTML to Markdown conversion with reduced allocations
+#[pyfunction]
+fn convert_html_to_markdown_optimized(html: &str, base_url: &str) -> PyResult<String> {
+    use crate::optimized_converter::convert_to_markdown_optimized;
+
+    convert_to_markdown_optimized(html, base_url)
         .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))
 }
