@@ -202,14 +202,14 @@ class StreamingHTMLParser:
     def _extract_text(self, element: Element) -> str:
         """
         Extract all text from an element recursively.
-        
+
         This implementation properly handles nested text content by
         recursively traversing all child elements and collecting
         text content from all levels of the hierarchy.
-        
+
         Args:
             element: The HTML element to extract text from
-            
+
         Returns:
             All text content from the element and its children
         """
@@ -224,13 +224,13 @@ class StreamingHTMLParser:
     def _extract_text_recursive(self, element: Element) -> str:
         """
         Fallback recursive text extraction for comprehensive content capture.
-        
+
         Manually walks the element tree to collect all text content,
         ensuring no nested text is missed.
-        
+
         Args:
             element: The HTML element to extract text from
-            
+
         Returns:
             All text content from the element and its children
         """

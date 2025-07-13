@@ -1,0 +1,189 @@
+%%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#2563eb','primaryTextColor':'#fff','primaryBorderColor':'#1e40af','lineColor':'#6366f1','secondaryColor':'#10b981','tertiaryColor':'#f59e0b','background':'#f3f4f6','mainBkg':'#e5e7eb','secondBkg':'#d1d5db','tertiaryBkg':'#fef3c7','darkMode':false}}}%%
+
+%% System Architecture Diagram for markdown_lab
+%% Generated: 2025-01-12T00:00:00Z
+%% Scanned paths: /home/sistr/Projects/markdown_lab/
+%% Architecture Type: Hybrid Python-Rust Microkernel
+%% Primary Flow: URL → HTTP Client → HTML → Rust Parser → Format Converter → Output
+%% 
+%% This diagram visualizes the complete architecture of the markdown_lab project,
+%% showing the interaction between Python orchestration layers and Rust performance-critical components.
+
+graph TB
+    %% External inputs and outputs
+    User[/"👤 User"/]
+    WebSite[("🌐 Web Sites")]
+    Output[/"📄 Output Files"/]
+    
+    %% Presentation Layer
+    subgraph PresentationLayer["🎨 Presentation Layer"]
+        CLI["CLI<br/>(Typer + Rich)"]
+        TUI["TUI<br/>(Textual)"]
+        LegacyCLI["Legacy CLI<br/>(argparse)"]
+    end
+    
+    %% Business Layer - Python
+    subgraph BusinessLayer["🧮 Business Layer (Python)"]
+        subgraph ScrapingEngine["Scraping Engine"]
+            AsyncScraper["AsyncMarkdownScraper"]
+            Scraper["MarkdownScraper<br/>(sync)"]
+            Converter["Converter"]
+        end
+        
+        subgraph RustInterface["Rust Interface"]
+            RustBackend["RustBackend"]
+            PyO3Bindings["markdown_lab_rs<br/>(PyO3)"]
+        end
+    end
+    
+    %% Network Layer
+    subgraph NetworkLayer["🌐 Network Layer"]
+        AsyncClient["AsyncHttpClient<br/>(httpx)"]
+        HttpClient["HttpClient<br/>(requests)"]
+        RateLimiter["RateLimiter"]
+        AdvCache["AdvancedCache"]
+        Cache["Cache"]
+        Throttle["Throttle"]
+    end
+    
+    %% Rust Processing Layer
+    subgraph RustLayer["⚡ Rust Processing Layer"]
+        HtmlParser["html_parser.rs<br/>(scraper)"]
+        MdConverter["markdown_converter.rs"]
+        OptConverter["optimized_converter.rs"]
+        Chunker["chunker.rs"]
+        ParallelProc["parallel_processor.rs<br/>(rayon)"]
+        JsRenderer["js_renderer.rs<br/>(headless_chrome)"]
+        RustLib["lib.rs<br/>(PyO3 exports)"]
+    end
+    
+    %% Format Layer
+    subgraph FormatLayer["📋 Format Layer"]
+        BaseFormatter["BaseFormatter<br/>(abstract)"]
+        MdFormatter["MarkdownFormatter"]
+        JsonFormatter["JsonFormatter"]
+        XmlFormatter["XmlFormatter"]
+    end
+    
+    %% Utility Layer
+    subgraph UtilityLayer["🔧 Utility Layer"]
+        ChunkUtils["ChunkUtils"]
+        SitemapUtils["SitemapUtils<br/>AsyncSitemapUtils"]
+        StreamParser["StreamingParser"]
+        Version["Version"]
+    end
+    
+    %% Configuration Layer
+    subgraph ConfigLayer["⚙️ Configuration Layer"]
+        Config["Config<br/>(Pydantic)"]
+        ConfigV2["ConfigV2<br/>(Pydantic Settings)"]
+    end
+    
+    %% Infrastructure Layer
+    subgraph InfraLayer["🏗️ Infrastructure Layer"]
+        Errors["Error Hierarchy"]
+        Logging["Logging<br/>(structlog)"]
+        Telemetry["Telemetry<br/>(OpenTelemetry)"]
+    end
+    
+    %% External Services
+    subgraph ExternalServices["☁️ External Services"]
+        Chrome[("Chrome<br/>(DevTools Protocol)")]
+        OTLPExporter[("OTLP<br/>Exporters")]
+    end
+    
+    %% Primary Data Flow
+    User -->|"commands"| CLI
+    User -->|"interactive"| TUI
+    User -->|"legacy"| LegacyCLI
+    
+    CLI --> AsyncScraper
+    TUI --> AsyncScraper
+    LegacyCLI --> Scraper
+    
+    AsyncScraper -->|"async calls"| AsyncClient
+    Scraper -->|"sync calls"| HttpClient
+    
+    AsyncClient -->|"rate limited"| RateLimiter
+    HttpClient -->|"throttled"| Throttle
+    
+    RateLimiter -->|"cached"| AdvCache
+    Throttle -->|"cached"| Cache
+    
+    AdvCache -->|"HTTP/2"| WebSite
+    Cache -->|"HTTP/1.1"| WebSite
+    
+    AsyncClient -->|"HTML response"| RustBackend
+    HttpClient -->|"HTML response"| RustBackend
+    
+    RustBackend -->|"FFI call"| PyO3Bindings
+    PyO3Bindings -->|"invoke"| RustLib
+    
+    RustLib --> HtmlParser
+    HtmlParser -->|"Document"| MdConverter
+    HtmlParser -->|"Document"| OptConverter
+    
+    MdConverter -->|"chunks"| Chunker
+    OptConverter -->|"parallel"| ParallelProc
+    
+    JsRenderer -->|"JS sites"| Chrome
+    JsRenderer -->|"rendered HTML"| HtmlParser
+    
+    MdConverter -->|"format string"| Converter
+    OptConverter -->|"format string"| Converter
+    
+    Converter --> BaseFormatter
+    BaseFormatter -->|"inheritance"| MdFormatter
+    BaseFormatter -->|"inheritance"| JsonFormatter
+    BaseFormatter -->|"inheritance"| XmlFormatter
+    
+    MdFormatter -->|"markdown"| Output
+    JsonFormatter -->|"json"| Output
+    XmlFormatter -->|"xml"| Output
+    
+    %% Supporting flows
+    CLI -->|"sitemap cmd"| SitemapUtils
+    SitemapUtils -->|"URLs"| AsyncScraper
+    
+    AsyncScraper -->|"chunking"| ChunkUtils
+    ChunkUtils -->|"uses"| Chunker
+    
+    %% Configuration flows
+    ConfigLayer -->|"settings"| BusinessLayer
+    ConfigLayer -->|"settings"| NetworkLayer
+    ConfigLayer -->|"settings"| FormatLayer
+    
+    %% Infrastructure flows
+    InfraLayer -->|"logging"| BusinessLayer
+    InfraLayer -->|"logging"| NetworkLayer
+    InfraLayer -->|"errors"| RustLayer
+    
+    Telemetry -->|"traces"| OTLPExporter
+    
+    %% Styling for different component types
+    classDef pythonStyle fill:#3b82f6,stroke:#1e40af,stroke-width:2px,color:#fff
+    classDef rustStyle fill:#ef4444,stroke:#991b1b,stroke-width:2px,color:#fff
+    classDef interfaceStyle fill:#10b981,stroke:#047857,stroke-width:2px,color:#fff
+    classDef externalStyle fill:#f59e0b,stroke:#d97706,stroke-width:2px,color:#fff
+    classDef infraStyle fill:#8b5cf6,stroke:#6d28d9,stroke-width:2px,color:#fff
+    
+    %% Apply styles
+    class CLI,TUI,LegacyCLI,AsyncScraper,Scraper,Converter,AsyncClient,HttpClient,RateLimiter,AdvCache,Cache,Throttle pythonStyle
+    class HtmlParser,MdConverter,OptConverter,Chunker,ParallelProc,JsRenderer,RustLib rustStyle
+    class RustBackend,PyO3Bindings,BaseFormatter interfaceStyle
+    class WebSite,Chrome,OTLPExporter,User,Output externalStyle
+    class Errors,Logging,Telemetry,Config,ConfigV2 infraStyle
+    
+    %% Architecture Notes
+    %% ==================
+    %% Python-Rust Boundary: PyO3Bindings ←→ RustLib
+    %% Critical Path: User → CLI → AsyncScraper → AsyncClient → RustBackend → PyO3 → Rust Processing → Formatters → Output
+    %% Performance Optimizations: Rust layer handles HTML parsing, parallel processing, and chunking
+    %% Architecture Pattern: Microkernel with Rust core and Python orchestration
+    %% 
+    %% Key Design Decisions:
+    %% - Hybrid approach leverages Python for orchestration and Rust for performance-critical tasks
+    %% - Async/sync dual support maintains backward compatibility while enabling modern async workflows
+    %% - Modular format system allows easy extension with new output formats
+    %% - Caching and rate limiting prevent server overload and improve performance
+    %% - Rust parallel processing with rayon enables efficient multi-core utilization

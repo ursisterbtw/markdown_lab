@@ -197,7 +197,11 @@ class RateLimiter:
                 "available": bucket.available_tokens,
                 "capacity": bucket.capacity,
                 "rate": bucket.rate,
-                "utilization": 1 - (bucket.available_tokens / bucket.capacity) if bucket.capacity > 0 else 0.0,
+                "utilization": (
+                    1 - (bucket.available_tokens / bucket.capacity)
+                    if bucket.capacity > 0
+                    else 0.0
+                ),
             }
             for name, bucket in self.buckets.items()
         }

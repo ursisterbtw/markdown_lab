@@ -51,7 +51,7 @@ class TestTokenBucket:
             pass
         except Exception:
             # Any other exception is not expected
-            assert False, "Unexpected exception type for negative token request"
+            raise AssertionError("Unexpected exception type for negative token request")
 
     def test_refill_over_time(self):
         """Test tokens refill at the specified rate."""

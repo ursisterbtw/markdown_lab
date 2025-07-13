@@ -146,7 +146,9 @@ class AsyncHttpClient:
                 pass
 
         # Create task for this request
-        task = asyncio.create_task(self._get_and_cache(url, cache_key, cache_ttl, **kwargs))
+        task = asyncio.create_task(
+            self._get_and_cache(url, cache_key, cache_ttl, **kwargs)
+        )
         self._inflight_requests[cache_key] = task
 
         try:
@@ -155,16 +157,18 @@ class AsyncHttpClient:
             # Clean up the registry
             self._inflight_requests.pop(cache_key, None)
 
-    async def _get_and_cache(self, url: str, cache_key: str, cache_ttl: float, **kwargs) -> str:
+    async def _get_and_cache(
+        self, url: str, cache_key: str, cache_ttl: float, **kwargs
+    ) -> str:
         """
         Helper method to perform GET request and cache the result.
-        
+
         Args:
             url: The URL to request
             cache_key: Cache key for storing the result
             cache_ttl: Cache time-to-live in seconds
             **kwargs: Additional arguments passed to httpx
-            
+
         Returns:
             The response body as a string
         """
@@ -196,7 +200,9 @@ class AsyncHttpClient:
             "HEAD", url, return_response=True, **kwargs
         )
 
-    async def get_many(self, urls: List[str], use_cache: bool = True, **kwargs) -> Dict[str, str]:
+    async def get_many(
+        self, urls: List[str], use_cache: bool = True, **kwargs
+    ) -> Dict[str, str]:
         """
         Perform concurrent GET requests on a list of URLs with rate limiting.
 
@@ -237,7 +243,9 @@ class AsyncHttpClient:
         self.rate_limiter.configure_bucket(
             "batch_http",
             rate=self.config.requests_per_second * 5,  # 5x rate for batches
-            capacity=min(len(urls_to_fetch), 50),  # Allow burst up to 50 or number of URLs
+            capacity=min(
+                len(urls_to_fetch), 50
+            ),  # Allow burst up to 50 or number of URLs
         )
 
         async def get_with_error_handling(url: str) -> tuple[str, Optional[str]]:
@@ -257,7 +265,9 @@ class AsyncHttpClient:
         results = await asyncio.gather(*tasks)
 
         # Filter out failed requests and merge with cached results
-        fetched_results = {url: content for url, content in results if content is not None}
+        fetched_results = {
+            url: content for url, content in results if content is not None
+        }
         return cached_results | fetched_results
 
     async def _request_with_retries(
@@ -345,7 +355,7 @@ class AsyncHttpClient:
 
         Returns:
             A unique cache key string
-            
+
         Note:
             This implementation normalizes headers and includes comprehensive
             request parameters to avoid cache misses/incorrect hits.
@@ -354,15 +364,15 @@ class AsyncHttpClient:
 
         # Normalize headers (lowercase keys, sorted)
         headers = kwargs.get("headers", {})
-        normalized_headers = {
-            str(k).lower(): str(v) for k, v in headers.items()
-        } if headers else {}
+        normalized_headers = (
+            {str(k).lower(): str(v) for k, v in headers.items()} if headers else {}
+        )
 
         # Extract auth type and presence (not actual credentials)
         auth = kwargs.get("auth")
         auth_info = None
         if auth is not None:
-            if hasattr(auth, '__class__'):
+            if hasattr(auth, "__class__"):
                 auth_info = f"{auth.__class__.__name__}"
             else:
                 auth_info = "custom_auth"
