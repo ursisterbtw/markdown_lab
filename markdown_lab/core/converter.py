@@ -8,15 +8,15 @@ over-engineered MarkdownScraper with a focused, single-responsibility approach.
 import logging
 from pathlib import Path
 from typing import List, Optional, Tuple
-from urllib.parse import urlparse
 
-from markdown_lab.core.client import HttpClient
+from markdown_lab.core.client import CachedHttpClient
 from markdown_lab.core.config import MarkdownLabConfig, get_config
 from markdown_lab.core.errors import ConversionError
 from markdown_lab.core.rust_backend import get_rust_backend
 from markdown_lab.formats import JsonFormatter, MarkdownFormatter, XmlFormatter
 from markdown_lab.utils.chunk_utils import create_semantic_chunks
 from markdown_lab.utils.sitemap_utils import SitemapParser
+from markdown_lab.utils.url_utils import get_filename_from_url
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +37,7 @@ class Converter:
             config: Optional configuration. Uses default if not provided.
         """
         self.config = config or get_config()
-        self.client = HttpClient(self.config)
+        self.client = CachedHttpClient(self.config)
 
         # Initialize format-specific handlers
         format_config = {
@@ -157,8 +157,7 @@ class Converter:
             return create_semantic_chunks(
                 content=markdown_content,
                 source_url=source_url,
-                chunk_size=self.config.chunk_size,
-                chunk_overlap=self.config.chunk_overlap,
+                config=self.config,
             )
         except Exception as e:
             logger.error(f"Failed to create chunks: {e}")
@@ -188,40 +187,6 @@ class Converter:
             logger.error(f"Failed to save content to {output_file}: {e}")
             raise
 
-    def get_filename_from_url(self, url: str, output_format: str) -> str:
-        """
-        Generate a safe filename from a URL.
-
-        Args:
-            url: The source URL
-            output_format: The output format for extension
-
-        Returns:
-            A safe filename with appropriate extension
-        """
-        import re
-
-        parsed_url = urlparse(url)
-        path_parts = parsed_url.path.strip("/").split("/")
-
-        # Handle empty paths
-        if not path_parts or path_parts[0] == "":
-            filename = "index"
-        else:
-            filename = "_".join(path_parts)
-
-        # Remove invalid characters
-        filename = re.sub(r'[\\/*?:"<>|]', "_", filename)
-
-        # Add correct extension
-        output_ext = ".md" if output_format == "markdown" else f".{output_format}"
-        if not filename.endswith(output_ext):
-            if "." in filename:
-                filename = filename.rsplit(".", 1)[0] + output_ext
-            else:
-                filename += output_ext
-
-        return filename
 
     def convert_sitemap(
         self,
@@ -254,12 +219,8 @@ class Converter:
         Returns:
             List of successfully processed URLs
         """
-        # Discover URLs from sitemap
-        sitemap_parser = SitemapParser(
-            requests_per_second=self.config.requests_per_second,
-            max_retries=self.config.max_retries,
-            timeout=self.config.timeout,
-        )
+        # Discover URLs from sitemap using config
+        sitemap_parser = SitemapParser(config=self.config)
 
         logger.info(f"Discovering URLs from sitemap for {base_url}")
         sitemap_parser.parse_sitemap(base_url)
@@ -393,7 +354,7 @@ class Converter:
         self, url: str, output_format: str, output_path: Path
     ) -> str:
         """Generate the full output file path for a URL."""
-        filename = self.get_filename_from_url(url, output_format)
+        filename = get_filename_from_url(url, output_format)
         return str(output_path / filename)
 
     def _save_content_chunks(
@@ -409,7 +370,7 @@ class Converter:
             from markdown_lab.utils.chunk_utils import ContentChunker
 
             url_chunk_dir = f"{chunk_dir}/{Path(output_filename).stem}"
-            chunker = ContentChunker(self.config.chunk_size, self.config.chunk_overlap)
+            chunker = ContentChunker(config=self.config)
             chunker.save_chunks(chunks, url_chunk_dir, chunk_format)
 
     def _get_timestamp(self) -> str:

@@ -4,9 +4,12 @@ Cache module for HTTP requests to avoid repeated network calls.
 
 import hashlib
 import logging
+import sys
 import time
 from pathlib import Path
 from typing import Dict, Optional, Tuple
+
+from markdown_lab.core.config import MarkdownLabConfig, get_config
 
 logger = logging.getLogger("request_cache")
 
@@ -14,18 +17,27 @@ logger = logging.getLogger("request_cache")
 class RequestCache:
     """Simple cache for HTTP requests to avoid repeated network calls."""
 
-    def __init__(self, cache_dir: str = ".request_cache", max_age: int = 3600):
+    def __init__(self, config: Optional[MarkdownLabConfig] = None, cache_dir: Optional[str] = None, max_age: Optional[int] = None):
         """
-        Initializes a RequestCache instance with a specified cache directory and maximum cache age.
+        Initializes a RequestCache instance with centralized configuration.
 
-        Creates the cache directory if it does not exist and sets up an in-memory cache for HTTP responses.
+        Args:
+            config: Optional MarkdownLabConfig instance. Uses default if not provided.
+            cache_dir: Override cache directory (deprecated, use config)
+            max_age: Override max age (deprecated, use config)
         """
-        self.cache_dir = Path(cache_dir)
+        # Use provided config or get default, with optional parameter overrides for backward compatibility
+        self.config = config or get_config()
+        
+        self.cache_dir = Path(cache_dir if cache_dir is not None else self.config.cache_dir)
         self.cache_dir.mkdir(parents=True, exist_ok=True)
-        self.max_age = max_age
+        self.max_age = max_age if max_age is not None else self.config.cache_ttl
+        self.max_memory_size = self.config.cache_max_memory
+        self.max_disk_size = self.config.cache_max_disk
         self.memory_cache: Dict[str, Tuple[str, float]] = (
             {}
         )  # url -> (content, timestamp)
+        self.current_memory_size = 0
 
     def _get_cache_key(self, url: str) -> str:
         """
@@ -84,22 +96,34 @@ class RequestCache:
 
     def set(self, url: str, content: str) -> None:
         """
-        Cache a response for a URL.
+        Cache a response for a URL with size limits.
 
         Args:
             url: The URL to cache
             content: The content to cache
         """
+        content_size = sys.getsizeof(content)
+        
+        # Check if adding this would exceed memory limits
+        if self.current_memory_size + content_size > self.max_memory_size:
+            # Remove oldest items until we have space
+            self._evict_memory_items(content_size)
+        
         # Update memory cache
         self.memory_cache[url] = (content, time.time())
+        self.current_memory_size += content_size
 
-        # Update disk cache
+        # Update disk cache with size check
         cache_path = self._get_cache_path(url)
         try:
-            with open(cache_path, "w", encoding="utf-8") as f:
-                f.write(content)
+            # Check disk space before writing
+            if self._get_disk_cache_size() + len(content.encode('utf-8')) <= self.max_disk_size:
+                with open(cache_path, "w", encoding="utf-8") as f:
+                    f.write(content)
+            else:
+                logger.warning(f"Disk cache size limit exceeded, skipping disk cache for {url}")
         except IOError as e:
-            logging.warning(f"Failed to save response to cache: {e}")
+            logger.warning(f"Failed to save response to cache: {e}")
 
     def clear(self, max_age: Optional[int] = None) -> int:
         """
@@ -135,3 +159,28 @@ class RequestCache:
                     logger.warning(f"Failed to clear cache file {cache_file}: {e}")
 
         return count + len(expired_keys)
+
+    def _evict_memory_items(self, space_needed: int) -> None:
+        """Evict items from memory cache to make space."""
+        # Sort by timestamp (oldest first)
+        sorted_items = sorted(self.memory_cache.items(), key=lambda x: x[1][1])
+        
+        space_freed = 0
+        for url, (content, timestamp) in sorted_items:
+            content_size = sys.getsizeof(content)
+            del self.memory_cache[url]
+            self.current_memory_size -= content_size
+            space_freed += content_size
+            
+            if space_freed >= space_needed:
+                break
+
+    def _get_disk_cache_size(self) -> int:
+        """Get current disk cache size in bytes."""
+        total_size = 0
+        for cache_file in self.cache_dir.glob("*"):
+            try:
+                total_size += cache_file.stat().st_size
+            except OSError:
+                continue
+        return total_size

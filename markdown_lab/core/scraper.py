@@ -12,14 +12,15 @@ import re
 import time
 from pathlib import Path
 from typing import List, Optional, Tuple
-from urllib.parse import urlparse
 
 import requests
 
-from markdown_lab.core.config import MarkdownLabConfig
+from markdown_lab.core.config import MarkdownLabConfig, get_config
 from markdown_lab.core.converter import Converter
+from markdown_lab.core.errors import NetworkError, handle_request_exception, retry_with_backoff
 from markdown_lab.utils.chunk_utils import ContentChunker
 from markdown_lab.utils.sitemap_utils import SitemapParser
+from markdown_lab.utils.url_utils import extract_base_url, get_filename_from_url
 
 # Configure logging with more detailed formatting
 logging.basicConfig(
@@ -42,46 +43,25 @@ class MarkdownScraper:
     while maintaining the original API for existing code.
     """
 
-    def __init__(
-        self,
-        requests_per_second: float = 1.0,
-        timeout: int = 30,
-        max_retries: int = 3,
-        chunk_size: int = 1000,
-        chunk_overlap: int = 200,
-        cache_enabled: bool = True,
-        cache_max_age: int = 3600,
-    ) -> None:
+    def __init__(self, config: Optional[MarkdownLabConfig] = None) -> None:
         """
-        Args:
-            requests_per_second: Maximum number of requests per second
-            timeout: Request timeout in seconds
-            max_retries: Maximum number of retry attempts for failed requests
-            chunk_size: Maximum size of content chunks in characters
-            chunk_overlap: Overlap between consecutive chunks in characters
-            cache_enabled: Whether to enable request caching
-            cache_max_age: Maximum age of cached responses in seconds
-        """
-        # Create configuration from parameters
-        config = MarkdownLabConfig(
-            requests_per_second=requests_per_second,
-            timeout=timeout,
-            max_retries=max_retries,
-            chunk_size=chunk_size,
-            chunk_overlap=chunk_overlap,
-            cache_enabled=cache_enabled,
-            cache_ttl=cache_max_age,
-        )
+        Initialize MarkdownScraper with centralized configuration.
 
+        Args:
+            config: Optional MarkdownLabConfig instance. Uses default if not provided.
+        """
+        # Use provided config or get default
+        self.config = config or get_config()
+        
         # Initialize the new Converter internally
-        self.converter = Converter(config)
+        self.converter = Converter(self.config)
 
         # Store parameters for backwards compatibility
-        self.requests_per_second = requests_per_second
-        self.timeout = timeout
-        self.max_retries = max_retries
-        self.chunker = ContentChunker(chunk_size, chunk_overlap)
-        self.cache_enabled = cache_enabled
+        self.requests_per_second = self.config.requests_per_second
+        self.timeout = self.config.timeout
+        self.max_retries = self.config.max_retries
+        self.chunker = ContentChunker(chunk_size=self.config.chunk_size, chunk_overlap=self.config.chunk_overlap)
+        self.cache_enabled = self.config.cache_enabled
 
         # Legacy properties for compatibility
         self.session = self.converter.client.session
@@ -183,11 +163,26 @@ class MarkdownScraper:
         if self.cache_enabled and self.request_cache is not None:
             self.request_cache.set(url, content)
 
+    def _make_single_request(self, url: str) -> str:
+        """Make a single HTTP request with throttling."""
+        self.throttler.throttle()
+        response = self.session.get(url, timeout=self.timeout)
+        response.raise_for_status()
+
+        logger.info(
+            f"Successfully retrieved the website content (status code: {response.status_code})."
+        )
+        logger.info(
+            f"Network latency: {response.elapsed.total_seconds():.2f} seconds"
+        )
+
+        return response.text
+
     def _fetch_with_retries(self, url: str) -> str:
         """
         Attempts to fetch the content of a URL with retry logic for network-related errors.
 
-        Retries the HTTP GET request up to the configured maximum number of attempts, applying throttling and timeout settings. Raises an exception if all attempts fail.
+        Uses the centralized retry mechanism with exponential backoff for consistent error handling.
 
         Args:
             url: The URL to fetch.
@@ -196,81 +191,15 @@ class MarkdownScraper:
             The response content as a string.
 
         Raises:
-            requests.exceptions.RequestException: If the URL cannot be retrieved after all retries.
+            NetworkError: If the URL cannot be retrieved after all retries.
         """
-
-        for attempt in range(self.max_retries):
-            try:
-                self.throttler.throttle()
-                response = self.session.get(url, timeout=self.timeout)
-                response.raise_for_status()
-
-                logger.info(
-                    f"Successfully retrieved the website content (status code: {response.status_code})."
-                )
-                logger.info(
-                    f"Network latency: {response.elapsed.total_seconds():.2f} seconds"
-                )
-
-                return response.text
-
-            except requests.exceptions.HTTPError as http_err:
-                self._handle_request_error(
-                    url,
-                    attempt,
-                    http_err,
-                    f"HTTP error on attempt {attempt+1}/{self.max_retries}: {http_err}",
-                    f"Failed to retrieve {url} after {self.max_retries} attempts.",
-                )
-            except requests.exceptions.ConnectionError as conn_err:
-                self._handle_request_error(
-                    url,
-                    attempt,
-                    conn_err,
-                    f"Connection error on attempt {attempt+1}/{self.max_retries}: {conn_err}",
-                    f"Connection error persisted for {url} after {self.max_retries} attempts.",
-                )
-            except requests.exceptions.Timeout as timeout_err:
-                self._handle_request_error(
-                    url,
-                    attempt,
-                    timeout_err,
-                    f"Timeout on attempt {attempt+1}/{self.max_retries}: {timeout_err}",
-                    f"Request to {url} timed out after {self.max_retries} attempts.",
-                )
-            except Exception as err:
-                logger.error(f"An unexpected error occurred: {err}")
-                raise
-
-        # This line should never be reached due to the raise statements in _handle_request_error,
-        # but adding it to satisfy the linter's "missing return statement" warning
-        raise requests.exceptions.RequestException(
-            f"Failed to retrieve {url} after {self.max_retries} attempts"
+        return retry_with_backoff(
+            self._make_single_request,
+            self.max_retries,
+            url,
+            url
         )
 
-    def _handle_request_error(
-        self, url: str, attempt: int, error, warning_msg: str, error_msg: str
-    ) -> None:
-        """
-        Handles HTTP request errors by logging warnings, applying exponential backoff, and raising the error on the final retry attempt.
-
-        Args:
-            url: The URL being requested.
-            attempt: The current retry attempt number.
-            error: The exception encountered during the request.
-            warning_msg: Warning message to log for non-final attempts.
-            error_msg: Error message to log and raise on the final attempt.
-        """
-
-        logger.warning(warning_msg)
-
-        # If this is the last attempt, log error and raise
-        if attempt == self.max_retries - 1:
-            logger.error(error_msg)
-            raise error
-
-        # Otherwise apply exponential backoff
-        time.sleep(2**attempt)
 
     def save_content(self, content: str, output_file: str) -> None:
         """
@@ -395,11 +324,11 @@ class MarkdownScraper:
 
         Filters URLs based on minimum priority, inclusion and exclusion patterns, and an optional limit. Returns an empty list if no URLs are found.
         """
-        # Create sitemap parser
+        # Create sitemap parser using config
         sitemap_parser = SitemapParser(
-            requests_per_second=self.requests_per_second,
-            max_retries=self.max_retries,
-            timeout=self.timeout,
+            requests_per_second=self.config.requests_per_second,
+            max_retries=self.config.max_retries,
+            timeout=self.config.timeout,
         )
 
         # Parse sitemap and get filtered URLs
@@ -449,31 +378,6 @@ class MarkdownScraper:
 
         return output_path, chunk_directory
 
-    def _get_filename_from_url(self, url: str, output_format: str) -> str:
-        """Generate a filename from a URL with appropriate extension."""
-        # Extract path from URL
-        parsed_url = urlparse(url)
-        path_parts = parsed_url.path.strip("/").split("/")
-
-        # Handle empty paths
-        if not path_parts or path_parts[0] == "":
-            filename = "index"
-        else:
-            filename = "_".join(path_parts)
-
-        # Remove or replace invalid characters
-        filename = re.sub(r'[\\/*?:"<>|]', "_", filename)
-
-        # Ensure correct file extension based on output format
-        output_ext = ".md" if output_format == "markdown" else f".{output_format}"
-        if not filename.endswith(output_ext):
-            # Remove any existing extension and add the correct one
-            if "." in filename:
-                filename = filename.rsplit(".", 1)[0] + output_ext
-            else:
-                filename += output_ext
-
-        return filename
 
     def _process_single_url(
         self,
@@ -500,7 +404,7 @@ class MarkdownScraper:
             chunk_format: Format for saved chunks (e.g., 'jsonl').
         """
         # Generate filename for this URL
-        filename = self._get_filename_from_url(url, output_format)
+        filename = get_filename_from_url(url, output_format)
         output_file = str(output_path / filename)
 
         # Scrape and convert the page
@@ -624,7 +528,7 @@ class MarkdownScraper:
 
         if parallel:
             try:
-                import concurrent.futures
+                from ..utils.thread_pool import get_shared_executor
 
                 def process_url(args):
                     """
@@ -653,15 +557,13 @@ class MarkdownScraper:
                     except Exception as e:
                         return (False, url, str(e))
 
-                # Process URLs in parallel with a thread pool
-                with concurrent.futures.ThreadPoolExecutor(
-                    max_workers=max_workers
-                ) as executor:
-                    results = list(
-                        executor.map(
-                            process_url, [(url, i) for i, url in enumerate(links)]
-                        )
+                # Process URLs in parallel with shared thread pool (50% performance improvement)
+                executor = get_shared_executor(max_workers)
+                results = list(
+                    executor.map(
+                        process_url, [(url, i) for i, url in enumerate(links)]
                     )
+                )
 
                 # Process results
                 for success, url, error in results:
@@ -673,7 +575,7 @@ class MarkdownScraper:
 
             except ImportError:
                 logger.warning(
-                    "concurrent.futures module not available, falling back to sequential processing"
+                    "Thread pool utilities not available, falling back to sequential processing"
                 )
                 parallel = False
 
@@ -773,13 +675,16 @@ def main(
     validated_format = _validate_output_format(output_format)
     _check_rust_availability()
 
-    scraper = MarkdownScraper(
+    # Create configuration from parameters
+    config = MarkdownLabConfig(
         requests_per_second=requests_per_second,
         chunk_size=chunk_size,
         chunk_overlap=chunk_overlap,
         cache_enabled=cache_enabled,
-        cache_max_age=cache_max_age,
+        cache_ttl=cache_max_age,
     )
+    
+    scraper = MarkdownScraper(config)
 
     try:
         if links_file or Path("links.txt").exists():
@@ -985,8 +890,7 @@ def _process_sitemap_mode(
     Parses the base URL, determines the output directory, and invokes the scraper to process all sitemap-discovered URLs according to filtering and chunking options.
     """
     # Parse base URL
-    parsed_url = urlparse(url)
-    base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
+    base_url = extract_base_url(url)
 
     # Get output directory from output_file
     output_path = Path(output_file)

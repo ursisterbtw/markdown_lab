@@ -4,7 +4,6 @@ Utility module for parsing XML sitemaps to map website structure before scraping
 
 import logging
 import re
-import time
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from pathlib import Path
@@ -12,9 +11,9 @@ from typing import Dict, List, Optional, Set, Tuple
 from urllib.parse import urlparse
 from xml.etree.ElementTree import ParseError
 
-import requests
-
-from markdown_lab.core.throttle import RequestThrottler
+from markdown_lab.core.client import HttpClient
+from markdown_lab.core.config import MarkdownLabConfig, get_config
+from markdown_lab.core.errors import NetworkError, retry_with_backoff
 
 logger = logging.getLogger("sitemap_parser")
 
@@ -34,36 +33,49 @@ class SitemapParser:
 
     def __init__(
         self,
-        requests_per_second: float = 1.0,
-        max_retries: int = 3,
-        timeout: int = 30,
+        config: Optional[MarkdownLabConfig] = None,
+        requests_per_second: Optional[float] = None,
+        max_retries: Optional[int] = None,
+        timeout: Optional[int] = None,
         respect_robots_txt: bool = True,
     ):
         """
-        Initialize the sitemap parser.
+        Initialize the sitemap parser with centralized configuration.
 
         Args:
-            requests_per_second: Maximum number of requests per second
-            max_retries: Maximum number of retry attempts for failed requests
-            timeout: Request timeout in seconds
+            config: Optional MarkdownLabConfig instance. Uses default if not provided.
+            requests_per_second: Override requests per second (deprecated, use config)
+            max_retries: Override max retries (deprecated, use config)
+            timeout: Override timeout (deprecated, use config)
             respect_robots_txt: Whether to check robots.txt for sitemap location
         """
-        self.session = requests.Session()
-        self.session.headers.update(
-            {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
-            }
-        )
-        self.throttler = RequestThrottler(requests_per_second)
-        self.max_retries = max_retries
-        self.timeout = timeout
+        # Use provided config or get default, with optional parameter overrides for backward compatibility
+        self.config = config or get_config()
+        
+        # Apply parameter overrides to config if provided (for backward compatibility)
+        if requests_per_second is not None:
+            self.config.requests_per_second = requests_per_second
+        if max_retries is not None:
+            self.config.max_retries = max_retries
+        if timeout is not None:
+            self.config.timeout = timeout
+            
+        # Use unified HTTP client instead of creating separate session and throttler
+        self.client = HttpClient(self.config)
         self.respect_robots_txt = respect_robots_txt
         self.discovered_urls: List[SitemapURL] = []
         self.processed_sitemaps: Set[str] = set()
 
+    def _make_single_request(self, url: str) -> str:
+        """Make a single HTTP request using the unified client."""
+        return self.client.get(url)
+
     def _make_request(self, url: str) -> Optional[str]:
         """
         Make an HTTP request with retry logic.
+
+        Uses the centralized retry mechanism but returns None instead of raising
+        exceptions to maintain compatibility with sitemap discovery logic.
 
         Args:
             url: The URL to request
@@ -71,26 +83,16 @@ class SitemapParser:
         Returns:
             The response text or None if failed
         """
-        for attempt in range(self.max_retries):
-            try:
-                self.throttler.throttle()
-                response = self.session.get(url, timeout=self.timeout)
-                response.raise_for_status()
-                return response.text
-            except (
-                requests.exceptions.RequestException,
-                requests.exceptions.HTTPError,
-            ) as e:
-                logger.warning(
-                    f"Request error on attempt {attempt + 1}/{self.max_retries}: {e}"
-                )
-                if attempt == self.max_retries - 1:
-                    logger.error(
-                        f"Failed to retrieve {url} after {self.max_retries} attempts"
-                    )
-                    return None
-                time.sleep(2**attempt)  # Exponential backoff
-        return None
+        try:
+            return retry_with_backoff(
+                self._make_single_request,
+                self.config.max_retries,
+                url,
+                url
+            )
+        except NetworkError:
+            # Sitemap parsing should continue even if individual requests fail
+            return None
 
     def _find_sitemaps_in_robots(self, base_url: str) -> List[str]:
         """

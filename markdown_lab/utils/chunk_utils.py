@@ -8,8 +8,10 @@ import re
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List
-from urllib.parse import urlparse
+from typing import Any, Dict, List, Optional
+
+from markdown_lab.core.config import MarkdownLabConfig, get_config
+from markdown_lab.utils.url_utils import get_domain_from_url
 
 
 @dataclass
@@ -27,16 +29,23 @@ class Chunk:
 class ContentChunker:
     """Handles chunking of content for RAG systems."""
 
-    def __init__(self, chunk_size: int = 1000, chunk_overlap: int = 200):
+    def __init__(self, config: Optional[MarkdownLabConfig] = None, chunk_size: Optional[int] = None, chunk_overlap: Optional[int] = None):
         """
-        Initialize the chunker.
+        Initialize the chunker with centralized configuration.
 
         Args:
-            chunk_size: Maximum size of content chunks in characters
-            chunk_overlap: Overlap between consecutive chunks in characters
+            config: Optional MarkdownLabConfig instance. Uses default if not provided.
+            chunk_size: Override chunk size (deprecated, use config)
+            chunk_overlap: Override chunk overlap (deprecated, use config)
         """
-        self.chunk_size = chunk_size
-        self.chunk_overlap = chunk_overlap
+        # Use provided config or get default, with optional parameter overrides for backward compatibility
+        self.config = config or get_config()
+        
+        self.chunk_size = chunk_size if chunk_size is not None else self.config.chunk_size
+        self.chunk_overlap = chunk_overlap if chunk_overlap is not None else self.config.chunk_overlap
+        
+        # Configuration for words per character approximation
+        self.words_per_char_ratio = 5
 
     def create_chunks_from_markdown(
         self, markdown_content: str, source_url: str
@@ -76,7 +85,7 @@ class ContentChunker:
         chunks = []
 
         # Parse domain for metadata
-        domain = urlparse(source_url).netloc
+        domain = get_domain_from_url(source_url)
 
         for section_heading, section_content in sections:
             # If the section is smaller than chunk_size, keep it as one chunk
@@ -102,9 +111,9 @@ class ContentChunker:
                 # Split into overlapping chunks
                 words = section_content.split()
                 words_per_chunk = (
-                    self.chunk_size // 5
-                )  # Approximate words per character
-                overlap_words = self.chunk_overlap // 5
+                    self.chunk_size // self.words_per_char_ratio
+                )  # Approximate words per character using config ratio
+                overlap_words = self.chunk_overlap // self.words_per_char_ratio
 
                 for i in range(0, len(words), words_per_chunk - overlap_words):
                     chunk_words = words[i : i + words_per_chunk]
@@ -164,7 +173,11 @@ class ContentChunker:
 
 
 def create_semantic_chunks(
-    content: str, source_url: str, chunk_size: int = 1000, chunk_overlap: int = 200
+    content: str, 
+    source_url: str, 
+    config: Optional[MarkdownLabConfig] = None,
+    chunk_size: Optional[int] = None, 
+    chunk_overlap: Optional[int] = None
 ) -> List[Chunk]:
     """
     Creates semantic chunks from content, handling both markdown and plain text.
@@ -174,11 +187,15 @@ def create_semantic_chunks(
     Args:
         content: The text to be chunked.
         source_url: The URL associated with the content.
+        config: Optional MarkdownLabConfig instance. Uses default if not provided.
+        chunk_size: Override chunk size (deprecated, use config)
+        chunk_overlap: Override chunk overlap (deprecated, use config)
 
     Returns:
         A list of Chunk objects representing the segmented content.
     """
-    chunker = ContentChunker(chunk_size, chunk_overlap)
+    # Use centralized configuration
+    chunker = ContentChunker(config, chunk_size, chunk_overlap)
 
     # Check if content is likely markdown
     if re.search(r"^#+ ", content, re.MULTILINE):
@@ -186,10 +203,10 @@ def create_semantic_chunks(
 
     # For non-markdown text, create simple overlapping chunks
     chunks = []
-    domain = urlparse(source_url).netloc
+    domain = get_domain_from_url(source_url)
     words = content.split()
-    words_per_chunk = chunk_size // 5  # Approximate words per character
-    overlap_words = chunk_overlap // 5
+    words_per_chunk = chunker.chunk_size // chunker.words_per_char_ratio  # Approximate words per character
+    overlap_words = chunker.chunk_overlap // chunker.words_per_char_ratio
 
     for i in range(0, len(words), words_per_chunk - overlap_words):
         chunk_words = words[i : i + words_per_chunk]
