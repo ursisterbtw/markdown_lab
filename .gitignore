@@ -3,10 +3,6 @@
 tmp/
 markdown_scraper.log
 
-# Cached Files
-*cache*
-!cache.py
-
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
