@@ -281,6 +281,45 @@ def load_config_from_env() -> MarkdownLabConfig:
     return MarkdownLabConfig()
 
 
+# CLI argument configuration helpers
+def create_config_from_cli_args(**kwargs) -> MarkdownLabConfig:
+    """
+    Create configuration from CLI arguments, filtering out None values.
+    
+    Args:
+        **kwargs: CLI arguments that map to configuration parameters
+        
+    Returns:
+        MarkdownLabConfig instance with CLI overrides applied
+    """
+    # Filter out None values to use defaults
+    config_dict = {k: v for k, v in kwargs.items() if v is not None}
+    
+    # Start with default config and override with provided values
+    base_config = get_config()
+    return base_config.update(**config_dict)
+
+
+def get_cli_defaults() -> dict:
+    """
+    Get default values for CLI arguments from configuration.
+    
+    Returns:
+        Dictionary of default values for common CLI parameters
+    """
+    config = get_config()
+    return {
+        'requests_per_second': config.requests_per_second,
+        'timeout': config.timeout,
+        'max_retries': config.max_retries,
+        'chunk_size': config.chunk_size,
+        'chunk_overlap': config.chunk_overlap,
+        'cache_enabled': config.cache_enabled,
+        'cache_ttl': config.cache_ttl,
+        'parallel_workers': config.parallel_workers,
+    }
+
+
 # Backward compatibility constants - to be deprecated
 DEFAULT_REQUESTS_PER_SECOND = DEFAULT_CONFIG.requests_per_second
 DEFAULT_TIMEOUT = DEFAULT_CONFIG.timeout

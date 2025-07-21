@@ -5,7 +5,11 @@ This module provides a consistent error handling system across all components,
 replacing scattered exception handling patterns throughout the codebase.
 """
 
-from typing import Any, Dict, Optional
+import logging
+import time
+from typing import Any, Callable, Dict, Optional
+
+logger = logging.getLogger(__name__)
 
 
 class MarkdownLabError(Exception):
@@ -475,4 +479,60 @@ def handle_parsing_exception(
         parser_type=parser_type,
         error_code="PARSING_FAILED",
         cause=exception,
+    )
+
+
+def retry_with_backoff(
+    func: Callable,
+    max_retries: int,
+    url: str,
+    backoff_base: int = 2,
+    *args,
+    **kwargs
+):
+    """
+    Executes a function with exponential backoff retry logic.
+    
+    This unified retry mechanism eliminates duplicate retry patterns across the codebase.
+    
+    Args:
+        func: The function to execute
+        max_retries: Maximum number of retry attempts
+        url: URL for error context (used in logging)
+        backoff_base: Base for exponential backoff calculation
+        *args: Arguments to pass to the function
+        **kwargs: Keyword arguments to pass to the function
+        
+    Returns:
+        The result of the successful function call
+        
+    Raises:
+        NetworkError: If all retry attempts fail
+    """
+    for attempt in range(max_retries):
+        try:
+            return func(*args, **kwargs)
+        except Exception as e:
+            network_error = handle_request_exception(e, url, attempt)
+            
+            # Log the attempt
+            if attempt < max_retries - 1:
+                wait_time = backoff_base ** attempt  # Exponential backoff
+                logger.warning(
+                    f"Request failed for {url} on attempt {attempt + 1}/{max_retries}: "
+                    f"{network_error.message}. Retrying in {wait_time}s..."
+                )
+                time.sleep(wait_time)
+            else:
+                logger.error(
+                    f"Request failed for {url} after {max_retries} attempts: "
+                    f"{network_error.message}"
+                )
+                raise network_error from e
+    
+    # This should never be reached, but included for completeness
+    raise NetworkError(
+        f"Failed to retrieve {url} after {max_retries} attempts",
+        url=url,
+        error_code="MAX_RETRIES_EXCEEDED"
     )
