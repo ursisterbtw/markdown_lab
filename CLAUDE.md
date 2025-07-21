@@ -137,23 +137,23 @@ If you prefer direct commands without justfile or the modern CLI:
 ## Repository Structure
 
 - **src/**: Rust code with PyO3 bindings
-    - **html_parser.rs**: Optimized HTML parsing with cached selectors
-    - **markdown_converter.rs**: HTML to Markdown/JSON/XML conversion
-    - **chunker.rs**: Semantic content chunking for RAG
-    - **lib.rs**: PyO3 bindings and Python module exports
+  - **html_parser.rs**: Optimized HTML parsing with cached selectors
+  - **markdown_converter.rs**: HTML to Markdown/JSON/XML conversion
+  - **chunker.rs**: Semantic content chunking for RAG
+  - **lib.rs**: PyO3 bindings and Python module exports
 - **markdown_lab/**: Main Python package
-    - **core/**: Core functionality
-        - **config.py**: Centralized configuration management
-        - **errors.py**: Unified error hierarchy with structured exceptions
-        - **scraper.py**: Main scraper implementation
-        - **cache.py**: Request caching
-        - **throttle.py**: Rate limiting for web requests
-    - **network/**: HTTP client and networking utilities
-        - **client.py**: Unified HTTP client with connection pooling
-    - **utils/**: Utility modules
-        - **chunk_utils.py**: Utilities for chunking text for RAG
-        - **sitemap_utils.py**: Sitemap parsing and URL discovery
-    - **markdown_lab_rs.py**: Python interface to Rust implementations
+  - **core/**: Core functionality
+    - **config.py**: Centralized configuration management
+    - **errors.py**: Unified error hierarchy with structured exceptions
+    - **scraper.py**: Main scraper implementation
+    - **cache.py**: Request caching
+    - **throttle.py**: Rate limiting for web requests
+  - **network/**: HTTP client and networking utilities
+    - **client.py**: Unified HTTP client with connection pooling
+  - **utils/**: Utility modules
+    - **chunk_utils.py**: Utilities for chunking text for RAG
+    - **sitemap_utils.py**: Sitemap parsing and URL discovery
+  - **markdown_lab_rs.py**: Python interface to Rust implementations
 - **tests/**: Test files for both Python and Rust components
 - **benches/**: Performance benchmarks
 
@@ -161,11 +161,10 @@ If you prefer direct commands without justfile or the modern CLI:
 
 - **Markdown**: Human-readable plain text format (default)
 - **JSON**: Structured data format for programmatic usage
-    - Document structure with title, headers, paragraphs, links, images, etc.
-    - Serialized with proper indentation for readability
+  - Document structure with title, headers, paragraphs, links, images, etc.
+  - Serialized with proper indentation for readability
 - **XML**: Markup format for document interchange
-    - Document structure with proper XML tags and hierarchy
-    - Includes XML declaration and proper escaping
+  - Document structure with proper XML tags and hierarchy
+  - Includes XML declaration and proper escaping
 - Use `-f/--format` CLI argument to specify output format
 - All formats support the same HTML elements and content structure
-
