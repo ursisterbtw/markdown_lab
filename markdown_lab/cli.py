@@ -32,9 +32,10 @@ from rich.progress import (
 from rich.prompt import Confirm
 from rich.table import Table
 
-from markdown_lab.core.config import MarkdownLabConfig, get_config
+from markdown_lab.core.config import MarkdownLabConfig, get_config, create_config_from_cli_args, get_cli_defaults
 from markdown_lab.core.converter import Converter
 from markdown_lab.core.scraper import MarkdownScraper  # Legacy support
+from markdown_lab.utils.url_utils import get_domain_from_url
 
 app = typer.Typer(
     name="markdown-lab",
@@ -76,25 +77,9 @@ current_config = None
 interactive_mode = False
 
 
-def setup_config(
-    requests_per_second: float = 1.0,
-    timeout: int = 30,
-    max_retries: int = 3,
-    cache_enabled: bool = True,
-    cache_ttl: int = 3600,
-    chunk_size: int = 1000,
-    chunk_overlap: int = 200,
-) -> MarkdownLabConfig:
-    """Setup configuration with provided parameters."""
-    return MarkdownLabConfig(
-        requests_per_second=requests_per_second,
-        timeout=timeout,
-        max_retries=max_retries,
-        cache_enabled=cache_enabled,
-        cache_ttl=cache_ttl,
-        chunk_size=chunk_size,
-        chunk_overlap=chunk_overlap,
-    )
+def setup_config(**kwargs) -> MarkdownLabConfig:
+    """Setup configuration with provided CLI parameters."""
+    return create_config_from_cli_args(**kwargs)
 
 
 def print_banner():
@@ -181,7 +166,7 @@ def convert_url(
     if not interactive:
         print_banner()
 
-    # Setup configuration
+    # Setup configuration from CLI args
     config = setup_config(
         requests_per_second=requests_per_second,
         timeout=timeout,
@@ -197,10 +182,7 @@ def convert_url(
 
     # Determine output file
     if not output:
-        from urllib.parse import urlparse
-
-        parsed = urlparse(url)
-        domain = parsed.netloc.replace(".", "_")
+        domain = get_domain_from_url(url).replace(".", "_")
         ext = ".md" if format == OutputFormat.markdown else f".{format.value}"
         output = f"{domain}_content{ext}"
 
@@ -314,9 +296,7 @@ def _convert_interactive(
                 # Save chunks
                 from markdown_lab.utils.chunk_utils import ContentChunker
 
-                chunker = ContentChunker(
-                    converter.config.chunk_size, converter.config.chunk_overlap
-                )
+                chunker = ContentChunker(config=converter.config)
                 chunker.save_chunks(chunks, chunk_dir, chunk_format)
 
                 stats["Chunks Created"] = len(chunks)
@@ -412,9 +392,7 @@ def _convert_standard(
                 # Save chunks
                 from markdown_lab.utils.chunk_utils import ContentChunker
 
-                chunker = ContentChunker(
-                    converter.config.chunk_size, converter.config.chunk_overlap
-                )
+                chunker = ContentChunker(config=converter.config)
                 chunker.save_chunks(chunks, chunk_dir, chunk_format)
 
                 if verbose:
@@ -495,7 +473,7 @@ def convert_sitemap(
     if not interactive:
         print_banner()
 
-    # Setup configuration
+    # Setup configuration from CLI args
     config = setup_config(requests_per_second=requests_per_second)
     converter = Converter(config)
 
@@ -599,15 +577,11 @@ def convert_batch(
         console.print(f"❌ Links file not found: {links_file}", style="bold red")
         raise typer.Exit(1)
 
-    # Setup configuration
-    setup_config(requests_per_second=requests_per_second)
+    # Setup configuration from CLI args
+    config = setup_config(requests_per_second=requests_per_second)
 
     # Use legacy scraper for batch processing (it has the implementation)
-    scraper = MarkdownScraper(
-        requests_per_second=requests_per_second,
-        cache_enabled=True,
-        cache_max_age=3600,
-    )
+    scraper = MarkdownScraper(config)
 
     stats = {
         "Links File": links_file,

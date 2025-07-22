@@ -1,4 +1,5 @@
 use pyo3::prelude::*;
+use once_cell::sync::Lazy;
 
 #[cfg(test)]
 mod tests;
@@ -7,6 +8,13 @@ pub mod chunker;
 pub mod html_parser;
 pub mod js_renderer;
 pub mod markdown_converter;
+
+/// Shared Tokio runtime for JavaScript rendering operations
+/// This eliminates the expensive runtime creation overhead for each request
+static SHARED_RUNTIME: Lazy<tokio::runtime::Runtime> = Lazy::new(|| {
+    tokio::runtime::Runtime::new()
+        .expect("Failed to create shared Tokio runtime for JavaScript rendering")
+});
 
 /// Python-friendly enumeration of output formats
 #[pyclass]
@@ -93,12 +101,10 @@ fn chunk_markdown(
 }
 
 /// Renders a JavaScript-enabled page and returns the HTML content
+/// Uses shared Tokio runtime for optimal performance
 #[pyfunction]
 fn render_js_page(url: &str, wait_time: Option<u64>) -> PyResult<String> {
-    let runtime = tokio::runtime::Runtime::new()
-        .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))?;
-
-    let html = runtime
+    let html = SHARED_RUNTIME
         .block_on(async { js_renderer::render_page(url, wait_time.unwrap_or(2000)).await })
         .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))?;
 

@@ -12,7 +12,7 @@ This module provides a full-screen terminal interface with:
 
 import threading
 import time
-from urllib.parse import urlparse
+from markdown_lab.utils.url_utils import validate_url
 
 from textual.app import App, ComposeResult
 from textual.binding import Binding
@@ -50,20 +50,8 @@ class URLValidator(Validator):
     """Validates URL input."""
 
     def validate(self, value: str) -> ValidationResult:
-        if not value:
-            return self.failure("URL cannot be empty")
-
-        if not value.startswith(("http://", "https://")):
-            return self.failure("URL must start with http:// or https://")
-
-        try:
-            parsed = urlparse(value)
-            if not parsed.netloc:
-                return self.failure("Invalid URL format")
-        except Exception:
-            return self.failure("Invalid URL format")
-
-        return self.success()
+        is_valid, error_msg = validate_url(value)
+        return self.success() if is_valid else self.failure(error_msg)
 
 
 class ConversionStatus(Static):
@@ -632,9 +620,9 @@ class MarkdownLabTUI(App):
             return
 
         # Validate URL
-        validator = URLValidator()
-        if not validator.validate(url).is_valid:
-            self.notify("❌ Please enter a valid URL", severity="error")
+        is_valid, error_msg = validate_url(url)
+        if not is_valid:
+            self.notify(f"❌ {error_msg}", severity="error")
             return
 
         # Get form values

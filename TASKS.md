@@ -466,3 +466,243 @@ graph TD
 **🛠️ Workflow:** Fixed justfile recipes enable consistent development experience
 
 This foundation enables the remaining 11 tasks to achieve the full **25-35% LOC reduction** target while delivering significant performance improvements and enhanced maintainability.
+
+## Phase 2: Performance & Consolidation (Priority Implementation)
+
+### HIGH-IMPACT PERFORMANCE TASKS
+
+#### TASK-018: Fix Tokio Runtime Recreation ⚡ **CRITICAL**
+
+- [ ] T18:tokio-runtime :: Performance :: Eliminate runtime recreation in JS rendering :: Depends=[none] :: Est=M :: Impact=60%
+- **File:** `src/lib.rs:97-105`
+- **Issue:** Creates new Tokio runtime for each JavaScript rendering request
+- **Solution:** Use shared async runtime or dedicated thread pool
+- **Implementation:**
+
+  ```rust
+  static RUNTIME: Lazy<Runtime> = Lazy::new(|| {
+      Runtime::new().expect("Failed to create Tokio runtime")
+  });
+  
+  // Replace Runtime::new() with RUNTIME.handle()
+  ```
+
+- **Expected Gain:** 60% improvement in JS rendering operations
+
+#### TASK-019: Optimize Thread Pool Usage ⚡ **CRITICAL**  
+
+- [ ] T19:thread-pool :: Performance :: Reuse ThreadPoolExecutor across batches :: Depends=[none] :: Est=M :: Impact=50%
+- **File:** `markdown_lab/core/scraper.py:625-679`
+- **Issue:** Recreates ThreadPoolExecutor for each batch operation
+- **Solution:** Create singleton executor with configurable worker count
+- **Implementation:**
+
+  ```python
+  class SharedThreadPool:
+      _instance = None
+      _executor = None
+      
+      @classmethod
+      def get_executor(cls, max_workers=None):
+          if cls._executor is None:
+              cls._executor = ThreadPoolExecutor(max_workers=max_workers)
+          return cls._executor
+  ```
+
+- **Expected Gain:** 50% improvement in parallel processing
+
+#### TASK-020: Async Cache I/O Implementation ⚡ **CRITICAL**
+
+- [ ] T20:async-cache :: Performance :: Convert cache operations to async I/O with compression :: Depends=[T19] :: Est=L :: Impact=45%
+- **File:** `markdown_lab/core/cache.py:41-83`
+- **Issue:** Synchronous file operations without compression
+- **Solution:** Implement async I/O with content compression
+- **Implementation:**
+
+  ```python
+  import aiofiles
+  import gzip
+  import asyncio
+  
+  async def async_cache_write(self, key: str, content: str):
+      compressed = gzip.compress(content.encode())
+      async with aiofiles.open(self._get_cache_path(key), 'wb') as f:
+          await f.write(compressed)
+  ```
+
+- **Expected Gain:** 45% improvement in cache performance
+
+#### TASK-021: Optimize Text Chunking Algorithm ⚡ **HIGH**
+
+- [ ] T21:chunking-algo :: Performance :: Replace char iteration with regex-based sentence splitting :: Depends=[none] :: Est=M :: Impact=40%
+- **File:** `src/chunker.rs:156-194`
+- **Issue:** Inefficient char_indices iteration for sentence boundaries
+- **Solution:** Use compiled regex patterns for sentence detection
+- **Implementation:**
+
+  ```rust
+  use regex::Regex;
+  use once_cell::sync::Lazy;
+  
+  static SENTENCE_REGEX: Lazy<Regex> = Lazy::new(|| {
+      Regex::new(r"(?<=[.!?])\s+(?=[A-Z])").unwrap()
+  });
+  
+  pub fn split_sentences(text: &str) -> Vec<&str> {
+      SENTENCE_REGEX.split(text).collect()
+  }
+  ```
+
+- **Expected Gain:** 40% improvement in chunking performance
+
+### CODE CONSOLIDATION TASKS
+
+#### TASK-022: Eliminate HTTP Client Duplication 🔄 **CRITICAL**
+
+- [ ] T22:http-consolidation :: Consolidation :: Remove network/client.py and standardize on core/client.py :: Depends=[T18,T19] :: Est=L :: LOC=-234
+- **Files:** `markdown_lab/network/client.py` (remove), update imports in all modules
+- **Issue:** Two HTTP clients with identical functionality
+- **Solution:**
+  1. Remove `markdown_lab/network/client.py` entirely
+  2. Update all imports to use `markdown_lab/core/client.py`
+  3. Consolidate any unique features from network client
+- **Expected LOC Reduction:** 234 lines
+
+#### TASK-023: Centralize Configuration Management 🔄 **HIGH**
+
+- [ ] T23:config-consolidation :: Consolidation :: Eliminate scattered parameters using MarkdownLabConfig :: Depends=[T22] :: Est=L :: LOC=-234  
+- **Files:** `markdown_lab/core/scraper.py`, `markdown_lab/core/converter.py`, `markdown_lab/cli.py`
+- **Issue:** Configuration parameters repeated across multiple modules
+- **Solution:** Replace all scattered config with centralized `MarkdownLabConfig` usage
+- **Expected LOC Reduction:** 234 lines
+
+#### TASK-024: Create Shared URL Utilities 🔄 **MEDIUM**
+
+- [ ] T24:url-utils :: Consolidation :: Extract URL processing to shared utility module :: Depends=[T23] :: Est=M :: LOC=-144
+- **Files:** Create `markdown_lab/utils/url_utils.py`, update imports
+- **Issue:** Filename generation and URL handling duplicated
+- **Solution:** Create comprehensive URL utility module
+- **Expected LOC Reduction:** 144 lines
+
+#### TASK-025: Unify Error Handling Patterns 🔄 **MEDIUM**  
+
+- [ ] T25:error-consolidation :: Consolidation :: Standardize HTTP exception handling :: Depends=[T22] :: Est=M :: LOC=-140
+- **Files:** `markdown_lab/core/scraper.py`, `markdown_lab/utils/sitemap_utils.py`, `markdown_lab/core/client.py`
+- **Issue:** HTTP exception handling patterns repeated
+- **Solution:** Use unified `handle_request_exception` from `core/errors.py`
+- **Expected LOC Reduction:** 140 lines
+
+### UX IMPROVEMENT TASKS
+
+#### TASK-026: CLI Interface Simplification 👤 **HIGH**
+
+- [ ] T26:cli-simplify :: UX :: Consolidate to single entry point with subcommands :: Depends=[T25] :: Est=L :: Impact=High
+- **Files:** `markdown_lab/cli.py`, `markdown_lab/__main__.py`
+- **Issue:** 4 different CLI entry points confuse users
+- **Solution:**
+  1. Single `mlab` command with subcommands
+  2. Migration guide for existing interfaces  
+  3. Backward compatibility layer
+- **User Impact:** Reduces cognitive load and setup friction
+
+#### TASK-027: Configuration Profile System 👤 **HIGH**
+
+- [ ] T27:config-profiles :: UX :: Implement development/production configuration profiles :: Depends=[T23] :: Est=M :: Impact=High
+- **Files:** `markdown_lab/core/config.py`, add profile management
+- **Issue:** 15+ CLI parameters make commands overwhelming
+- **Solution:** Pre-configured profiles with `--profile dev/prod/fast` options
+- **User Impact:** Simplifies command usage for all users
+
+#### TASK-028: Enhanced Error Messages 👤 **HIGH**
+
+- [ ] T28:error-messages :: UX :: Add structured error codes with troubleshooting guidance :: Depends=[T25] :: Est=M :: Impact=High
+- **Files:** `markdown_lab/core/errors.py`, add error catalog
+- **Issue:** Generic error messages lack actionable guidance  
+- **Solution:** Structured error codes with troubleshooting links and suggested fixes
+- **User Impact:** Reduces support burden and debugging time
+
+#### TASK-029: Simplified Installation Process 👤 **MEDIUM**
+
+- [ ] T29:install-simplify :: UX :: Create one-command installer with pre-built wheels :: Depends=[none] :: Est=L :: Impact=Medium
+- **Files:** Create `scripts/install.sh`, update documentation
+- **Issue:** Complex installation requiring multiple tools
+- **Solution:** Single installer script + pre-built wheels for common platforms
+- **User Impact:** Reduces barrier to entry for new users
+
+### VALIDATION & TESTING TASKS
+
+#### TASK-030: Performance Benchmarking Suite 📊 **CRITICAL**
+
+- [ ] T30:benchmarks :: Validation :: Create comprehensive before/after performance benchmarks :: Depends=[T21] :: Est=M :: Validation
+- **Files:** `scripts/performance_validation.py`, extend existing benchmarks
+- **Purpose:** Validate all performance improvements
+- **Benchmarks:**
+  - HTML conversion speed (before/after)
+  - Memory usage profiling  
+  - Multi-URL throughput comparison
+  - Cache hit rate effectiveness
+
+#### TASK-031: Integration Test Coverage 📊 **HIGH**
+
+- [ ] T31:integration-tests :: Validation :: Comprehensive end-to-end test validation :: Depends=[T28] :: Est=L :: Validation
+- **Files:** `tests/integration/test_comprehensive.py`
+- **Purpose:** Ensure all refactoring maintains functionality
+- **Coverage:**
+  - Full pipeline validation (URL → HTML → Markdown/JSON/XML)
+  - Error handling and recovery scenarios
+  - Performance under load testing
+  - Memory usage pattern validation
+
+### EXECUTION ORDER & DEPENDENCIES
+
+#### Wave 1: Critical Performance (Week 1)
+
+1. **T18**: Fix Tokio runtime → 60% improvement
+2. **T19**: Thread pool optimization → 50% improvement  
+3. **T20**: Async cache I/O → 45% improvement
+4. **T21**: Chunking algorithm → 40% improvement
+
+#### Wave 2: Code Consolidation (Week 2-3)  
+
+5. **T22**: HTTP client consolidation → -234 LOC
+6. **T23**: Configuration centralization → -234 LOC
+7. **T24**: URL utilities → -144 LOC
+8. **T25**: Error handling → -140 LOC
+
+#### Wave 3: UX Improvements (Week 4)
+
+9. **T26**: CLI simplification
+10. **T27**: Configuration profiles
+11. **T28**: Enhanced error messages  
+12. **T29**: Installation simplification
+
+#### Wave 4: Validation (Week 5)
+
+13. **T30**: Performance benchmarking
+14. **T31**: Integration testing
+
+### Success Criteria Summary
+
+**Performance Targets:**
+
+- [x] HTML parsing: 40-50% improvement (Phase 1 complete)
+- [ ] JS rendering: 60% improvement (T18)
+- [ ] Parallel processing: 50% improvement (T19)
+- [ ] Cache operations: 45% improvement (T20)  
+- [ ] Text chunking: 40% improvement (T21)
+
+**Code Quality Targets:**
+
+- [x] Phase 1: ~350 lines eliminated  
+- [ ] HTTP consolidation: 234 lines (T22)
+- [ ] Config consolidation: 234 lines (T23)
+- [ ] URL utilities: 144 lines (T24)
+- [ ] Error handling: 140 lines (T25)
+- [ ] **Total Target**: 987 lines eliminated (28% reduction)
+
+**UX Improvement Targets:**
+
+- [ ] Single CLI entry point (T26)
+- [ ] Configuration profiles (T27)
+- [ ] Structured error messages (T28)
+- [ ] One-command installation (T29)
