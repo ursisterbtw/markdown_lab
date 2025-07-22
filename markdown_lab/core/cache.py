@@ -28,7 +28,7 @@ class RequestCache:
         """
         # Use provided config or get default, with optional parameter overrides for backward compatibility
         self.config = config or get_config()
-        
+
         self.cache_dir = Path(cache_dir if cache_dir is not None else self.config.cache_dir)
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         self.max_age = max_age if max_age is not None else self.config.cache_ttl
@@ -66,7 +66,9 @@ class RequestCache:
             if time.time() - timestamp <= self.max_age:
                 return content
             # Remove expired item from memory cache
+            content_size = sys.getsizeof(content)
             del self.memory_cache[url]
+            self.current_memory_size -= content_size
 
         # Check disk cache
         cache_path = self._get_cache_path(url)
@@ -78,6 +80,7 @@ class RequestCache:
                         content = f.read()
                     # Add to memory cache
                     self.memory_cache[url] = (content, time.time())
+                    self.current_memory_size += sys.getsizeof(content)
                     return content
                 except IOError as e:
                     logger.error(f"Failed to read cache file {cache_path}: {e}")
@@ -103,12 +106,12 @@ class RequestCache:
             content: The content to cache
         """
         content_size = sys.getsizeof(content)
-        
+
         # Check if adding this would exceed memory limits
         if self.current_memory_size + content_size > self.max_memory_size:
             # Remove oldest items until we have space
             self._evict_memory_items(content_size)
-        
+
         # Update memory cache
         self.memory_cache[url] = (content, time.time())
         self.current_memory_size += content_size
@@ -146,7 +149,10 @@ class RequestCache:
             if current_time - timestamp > max_age
         ]
         for k in expired_keys:
+            content, _ = self.memory_cache[k]
+            content_size = sys.getsizeof(content)
             del self.memory_cache[k]
+            self.current_memory_size -= content_size
 
         # Clear disk cache
         count = 0
@@ -164,14 +170,14 @@ class RequestCache:
         """Evict items from memory cache to make space."""
         # Sort by timestamp (oldest first)
         sorted_items = sorted(self.memory_cache.items(), key=lambda x: x[1][1])
-        
+
         space_freed = 0
-        for url, (content, timestamp) in sorted_items:
+        for url, (content, _) in sorted_items:
             content_size = sys.getsizeof(content)
             del self.memory_cache[url]
             self.current_memory_size -= content_size
             space_freed += content_size
-            
+
             if space_freed >= space_needed:
                 break
 

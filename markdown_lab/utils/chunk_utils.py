@@ -40,12 +40,15 @@ class ContentChunker:
         """
         # Use provided config or get default, with optional parameter overrides for backward compatibility
         self.config = config or get_config()
-        
+
         self.chunk_size = chunk_size if chunk_size is not None else self.config.chunk_size
         self.chunk_overlap = chunk_overlap if chunk_overlap is not None else self.config.chunk_overlap
-        
-        # Configuration for words per character approximation
-        self.words_per_char_ratio = 5
+
+        # Configuration for words per character approximation.
+        # Note: The default value of 5 is based on English prose and may not be accurate for other languages or technical content.
+        self.words_per_char_ratio = (
+            getattr(self.config, "words_per_char_ratio", None) or 5
+        )
 
     def create_chunks_from_markdown(
         self, markdown_content: str, source_url: str
@@ -173,10 +176,10 @@ class ContentChunker:
 
 
 def create_semantic_chunks(
-    content: str, 
-    source_url: str, 
+    content: str,
+    source_url: str,
     config: Optional[MarkdownLabConfig] = None,
-    chunk_size: Optional[int] = None, 
+    chunk_size: Optional[int] = None,
     chunk_overlap: Optional[int] = None
 ) -> List[Chunk]:
     """

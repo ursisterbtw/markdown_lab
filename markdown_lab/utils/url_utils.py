@@ -5,9 +5,10 @@ Provides centralized URL processing functionality including validation,
 filename generation, resolution, and normalization.
 """
 
+import hashlib
 import re
 from typing import Optional, Tuple
-from urllib.parse import urlparse, ParseResult
+from urllib.parse import ParseResult, urlparse
 
 
 def validate_url(url: str) -> Tuple[bool, Optional[str]]:
@@ -45,6 +46,7 @@ def validate_url(url: str) -> Tuple[bool, Optional[str]]:
 def get_filename_from_url(url: str, output_format: str) -> str:
     """
     Generate a safe filename from a URL with appropriate extension.
+    Truncates or hashes long filenames to prevent issues with filesystem limits.
     
     Args:
         url: The source URL
@@ -59,29 +61,41 @@ def get_filename_from_url(url: str, output_format: str) -> str:
         >>> get_filename_from_url("https://example.com/", "json")
         'index.json'
     """
-    # Extract path from URL
-    parsed_url = urlparse(url)
-    path_parts = parsed_url.path.strip("/").split("/")
+    # Map output_format to file extension
+    ext_map = {
+        "markdown": ".md",
+        "json": ".json",
+        "xml": ".xml"
+    }
+    ext = ext_map.get(output_format.lower(), f".{output_format}")
 
-    # Handle empty paths
-    if not path_parts or path_parts[0] == "":
-        filename = "index"
-    else:
-        filename = "_".join(path_parts)
+    # Parse the URL and build a filename
+    parsed = urlparse(url)
+    # Use netloc and path, replace unsafe chars
+    safe_path = (parsed.netloc + parsed.path).replace("/", "_").replace("\\", "_")
+    if not safe_path:
+        safe_path = "file"
+
+    # Remove query and fragment
+    safe_path = safe_path.split("?", 1)[0].split("#", 1)[0]
 
     # Remove or replace invalid characters for filesystem safety
-    filename = re.sub(r'[\\/*?:"<>|]', "_", filename)
+    safe_path = re.sub(r'[\\/*?:"<>|]', "_", safe_path)
 
-    # Ensure correct file extension based on output format
-    output_ext = ".md" if output_format == "markdown" else f".{output_format}"
-    if not filename.endswith(output_ext):
-        # Remove any existing extension and add the correct one
-        if "." in filename:
-            filename = filename.rsplit(".", 1)[0] + output_ext
-        else:
-            filename += output_ext
+    # Limit filename length (255 is a common max, but leave room for extension and hash)
+    max_filename_length = 200
+    filename = safe_path
+    if len(filename) > max_filename_length:
+        # Hash the full path for uniqueness
+        hash_suffix = hashlib.sha1(safe_path.encode("utf-8")).hexdigest()[:10]
+        filename = f"{safe_path[:max_filename_length]}_{hash_suffix}"
 
-    return filename
+    # Ensure total length with extension does not exceed 255
+    max_total_length = 255 - len(ext)
+    if len(filename) > max_total_length:
+        filename = filename[:max_total_length]
+
+    return f"{filename}{ext}"
 
 
 def extract_base_url(url: str) -> str:
@@ -121,12 +135,12 @@ def normalize_url(url: str) -> str:
     parsed = urlparse(url)
     # Remove fragment and normalize path
     normalized_path = parsed.path.rstrip("/") if parsed.path != "/" else parsed.path
-    
+
     # Reconstruct URL without fragment
     result = f"{parsed.scheme}://{parsed.netloc}{normalized_path}"
     if parsed.query:
         result += f"?{parsed.query}"
-    
+
     return result
 
 
@@ -215,3 +229,4 @@ def sanitize_filename_part(part: str) -> str:
         'hello_world_test'
     """
     return re.sub(r'[\\/*?:"<>|]', "_", part)
+

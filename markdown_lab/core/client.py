@@ -15,7 +15,10 @@ from requests.adapters import HTTPAdapter
 
 from markdown_lab.core.cache import RequestCache
 from markdown_lab.core.config import MarkdownLabConfig, get_config
-from markdown_lab.core.errors import NetworkError, handle_request_exception, retry_with_backoff
+from markdown_lab.core.errors import (
+    NetworkError,
+    handle_request_exception,
+)
 from markdown_lab.core.throttle import RequestThrottler
 
 logger = logging.getLogger(__name__)
@@ -257,14 +260,23 @@ class CachedHttpClient(HttpClient):
         Parameters:
             url (str): The URL to fetch.
             use_cache (bool): Whether to use and update the cache for this request.
-            skip_cache (bool): Backward compatibility alias for use_cache=False.
+            skip_cache (bool, deprecated): Deprecated. Use 'use_cache' instead. If both 'use_cache' and 'skip_cache' are provided, 'use_cache' takes precedence. Using 'skip_cache' will emit a DeprecationWarning.
 
         Returns:
             str: The response body as text.
         """
-        # Handle backward compatibility
+        import warnings
+
+        # Handle deprecated skip_cache parameter
         if skip_cache:
-            use_cache = False
+            warnings.warn(
+                "'skip_cache' is deprecated and will be removed in a future version. Please use 'use_cache=False' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            # Only override use_cache if it's still at its default value
+            if use_cache is True:
+                use_cache = False
 
         if use_cache and self.cache and (cached_content := self.cache.get(url)):
             logger.debug(f"Cache hit for {url}")
@@ -317,3 +329,4 @@ def create_cached_http_client(
         config = get_config()
 
     return CachedHttpClient(config, cache)
+
