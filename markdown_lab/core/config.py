@@ -282,42 +282,151 @@ def load_config_from_env() -> MarkdownLabConfig:
 
 
 # CLI argument configuration helpers
-def create_config_from_cli_args(**kwargs) -> MarkdownLabConfig:
+def create_config_from_cli_args(profile: str = None, **kwargs) -> MarkdownLabConfig:
     """
-    Create configuration from CLI arguments, filtering out None values.
-    
+    Create configuration from CLI arguments, with optional profile support.
+
     Args:
+        profile: Optional profile name to use as base configuration
         **kwargs: CLI arguments that map to configuration parameters
-        
+
     Returns:
-        MarkdownLabConfig instance with CLI overrides applied
+        MarkdownLabConfig instance with profile and CLI overrides applied
     """
-    # Filter out None values to use defaults
+    # Start with profile or default config
+    base_config = get_profile(profile) if profile else get_config()
+    # Filter out None values to use profile/defaults
     config_dict = {k: v for k, v in kwargs.items() if v is not None}
-    
-    # Start with default config and override with provided values
-    base_config = get_config()
+
+    # Override with provided CLI values
     return base_config.update(**config_dict)
 
 
 def get_cli_defaults() -> dict:
     """
     Get default values for CLI arguments from configuration.
-    
+
     Returns:
         Dictionary of default values for common CLI parameters
     """
     config = get_config()
     return {
-        'requests_per_second': config.requests_per_second,
-        'timeout': config.timeout,
-        'max_retries': config.max_retries,
-        'chunk_size': config.chunk_size,
-        'chunk_overlap': config.chunk_overlap,
-        'cache_enabled': config.cache_enabled,
-        'cache_ttl': config.cache_ttl,
-        'parallel_workers': config.parallel_workers,
+        "requests_per_second": config.requests_per_second,
+        "timeout": config.timeout,
+        "max_retries": config.max_retries,
+        "chunk_size": config.chunk_size,
+        "chunk_overlap": config.chunk_overlap,
+        "cache_enabled": config.cache_enabled,
+        "cache_ttl": config.cache_ttl,
+        "parallel_workers": config.parallel_workers,
     }
+
+
+# Configuration Profiles for simplified CLI usage
+CONFIGURATION_PROFILES = {
+    "dev": {
+        "requests_per_second": 0.5,  # Slower for development to avoid rate limits
+        "timeout": 60,  # Longer timeout for debugging
+        "max_retries": 1,  # Fewer retries for faster feedback
+        "cache_enabled": True,
+        "cache_ttl": 300,  # 5 minutes cache for development
+        "parallel_workers": 2,  # Fewer workers to reduce resource usage
+        "chunk_size": 500,  # Smaller chunks for testing
+        "chunk_overlap": 50,
+        "enable_performance_monitoring": True,
+        "rust_backend_enabled": True,
+        "fallback_to_python": True,
+    },
+    "prod": {
+        "requests_per_second": 2.0,  # Faster for production
+        "timeout": 30,  # Standard timeout
+        "max_retries": 3,  # Standard retries
+        "cache_enabled": True,
+        "cache_ttl": 3600,  # 1 hour cache
+        "parallel_workers": 8,  # More workers for production
+        "chunk_size": 1500,  # Larger chunks for efficiency
+        "chunk_overlap": 200,
+        "enable_performance_monitoring": False,  # Reduce overhead
+        "rust_backend_enabled": True,
+        "fallback_to_python": False,  # Fail fast in production
+    },
+    "fast": {
+        "requests_per_second": 5.0,  # Maximum speed
+        "timeout": 15,  # Short timeout
+        "max_retries": 1,  # Minimal retries
+        "cache_enabled": True,
+        "cache_ttl": 7200,  # 2 hours cache
+        "parallel_workers": 16,  # Maximum workers
+        "chunk_size": 2000,  # Large chunks
+        "chunk_overlap": 100,  # Minimal overlap
+        "enable_performance_monitoring": False,
+        "rust_backend_enabled": True,
+        "fallback_to_python": False,
+    },
+    "conservative": {
+        "requests_per_second": 0.2,  # Very slow to be respectful
+        "timeout": 120,  # Long timeout for slow sites
+        "max_retries": 5,  # Many retries for reliability
+        "cache_enabled": True,
+        "cache_ttl": 86400,  # 24 hours cache
+        "parallel_workers": 1,  # Sequential processing
+        "chunk_size": 800,  # Medium chunks
+        "chunk_overlap": 300,  # High overlap
+        "enable_performance_monitoring": True,
+        "rust_backend_enabled": True,
+        "fallback_to_python": True,
+    },
+}
+
+
+def get_profile(profile_name: str) -> MarkdownLabConfig:
+    """
+    Get a configuration profile by name.
+
+    Args:
+        profile_name: Name of the profile ('dev', 'prod', 'fast', 'conservative')
+
+    Returns:
+        MarkdownLabConfig instance configured for the specified profile
+
+    Raises:
+        ValueError: If the profile name is not recognized
+    """
+    if profile_name not in CONFIGURATION_PROFILES:
+        available = ", ".join(CONFIGURATION_PROFILES.keys())
+        raise ValueError(f"Unknown profile '{profile_name}'. Available: {available}")
+
+    profile_config = CONFIGURATION_PROFILES[profile_name]
+    return MarkdownLabConfig.from_dict(profile_config)
+
+
+def list_profiles() -> list[str]:
+    """
+    List all available configuration profiles.
+
+    Returns:
+        List of profile names
+    """
+    return list(CONFIGURATION_PROFILES.keys())
+
+
+def get_profile_description(profile_name: str) -> str:
+    """
+    Get a human-readable description of a configuration profile.
+
+    Args:
+        profile_name: Name of the profile
+
+    Returns:
+        Description string for the profile
+    """
+    descriptions = {
+        "dev": "🔧 Development profile - slower, more debugging, shorter cache",
+        "prod": "🚀 Production profile - balanced performance and reliability",
+        "fast": "⚡ Fast profile - maximum speed, minimal safety margins",
+        "conservative": "🛡️ Conservative profile - respectful, reliable, patient",
+    }
+    return descriptions.get(profile_name, f"Profile: {profile_name}")
 
 
 # Backward compatibility constants - to be deprecated

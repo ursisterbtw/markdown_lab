@@ -1,6 +1,6 @@
 """
-Markdown Lab - A powerful and modular web scraper that converts web content into
-well-structured Markdown files with RAG-ready chunking capabilities.
+Markdown Lab - Web scraper that converts web content into
+Markdown files with chunking capabilities.
 """
 
 __version__ = "0.1.0"

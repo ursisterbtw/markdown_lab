@@ -29,7 +29,12 @@ class Chunk:
 class ContentChunker:
     """Handles chunking of content for RAG systems."""
 
-    def __init__(self, config: Optional[MarkdownLabConfig] = None, chunk_size: Optional[int] = None, chunk_overlap: Optional[int] = None):
+    def __init__(
+        self,
+        config: Optional[MarkdownLabConfig] = None,
+        chunk_size: Optional[int] = None,
+        chunk_overlap: Optional[int] = None,
+    ):
         """
         Initialize the chunker with centralized configuration.
 
@@ -41,8 +46,12 @@ class ContentChunker:
         # Use provided config or get default, with optional parameter overrides for backward compatibility
         self.config = config or get_config()
 
-        self.chunk_size = chunk_size if chunk_size is not None else self.config.chunk_size
-        self.chunk_overlap = chunk_overlap if chunk_overlap is not None else self.config.chunk_overlap
+        self.chunk_size = (
+            chunk_size if chunk_size is not None else self.config.chunk_size
+        )
+        self.chunk_overlap = (
+            chunk_overlap if chunk_overlap is not None else self.config.chunk_overlap
+        )
 
         # Configuration for words per character approximation.
         # Note: The default value of 5 is based on English prose and may not be accurate for other languages or technical content.
@@ -180,7 +189,7 @@ def create_semantic_chunks(
     source_url: str,
     config: Optional[MarkdownLabConfig] = None,
     chunk_size: Optional[int] = None,
-    chunk_overlap: Optional[int] = None
+    chunk_overlap: Optional[int] = None,
 ) -> List[Chunk]:
     """
     Creates semantic chunks from content, handling both markdown and plain text.
@@ -208,7 +217,9 @@ def create_semantic_chunks(
     chunks = []
     domain = get_domain_from_url(source_url)
     words = content.split()
-    words_per_chunk = chunker.chunk_size // chunker.words_per_char_ratio  # Approximate words per character
+    words_per_chunk = (
+        chunker.chunk_size // chunker.words_per_char_ratio
+    )  # Approximate words per character
     overlap_words = chunker.chunk_overlap // chunker.words_per_char_ratio
 
     for i in range(0, len(words), words_per_chunk - overlap_words):

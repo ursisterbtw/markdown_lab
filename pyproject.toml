@@ -38,10 +38,13 @@ test = ["pytest>=7.4.0", "pytest-benchmark>=4.0.0"]
 js = ["playwright>=1.37.0"]
 
 [project.scripts]
-markdown-lab = "markdown_lab.__main__:main"
+# Primary unified CLI - includes all functionality as subcommands
 mlab = "markdown_lab.cli:cli_main"
-mlab-tui = "markdown_lab.tui:main"
-mlab-legacy = "markdown_lab.core.scraper:main"
+
+# Backward compatibility entries (deprecated - use 'mlab <subcommand>' instead)
+markdown-lab = "markdown_lab.__main__:main"  # Routes to unified CLI
+mlab-tui = "markdown_lab.tui:main"           # Direct TUI access (use 'mlab tui')
+mlab-legacy = "markdown_lab.core.scraper:main"  # Direct legacy access (use 'mlab legacy')
 
 [project.urls]
 Homepage = "https://github.com/ursisterbtw/markdown-lab"

@@ -1,4 +1,4 @@
-"""Comprehensive unit tests for rust_backend module."""
+"""Unit tests for rust_backend module."""
 
 import os
 import subprocess

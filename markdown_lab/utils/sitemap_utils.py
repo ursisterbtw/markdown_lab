@@ -51,7 +51,7 @@ class SitemapParser:
         """
         # Use provided config or get default, with optional parameter overrides for backward compatibility
         self.config = config or get_config()
-        
+
         # Apply parameter overrides to config if provided (for backward compatibility)
         if requests_per_second is not None:
             self.config.requests_per_second = requests_per_second
@@ -59,7 +59,7 @@ class SitemapParser:
             self.config.max_retries = max_retries
         if timeout is not None:
             self.config.timeout = timeout
-            
+
         # Use unified HTTP client instead of creating separate session and throttler
         self.client = HttpClient(self.config)
         self.respect_robots_txt = respect_robots_txt
@@ -85,10 +85,7 @@ class SitemapParser:
         """
         try:
             return retry_with_backoff(
-                self._make_single_request,
-                self.config.max_retries,
-                url,
-                url
+                self._make_single_request, self.config.max_retries, url, url
             )
         except NetworkError:
             # Sitemap parsing should continue even if individual requests fail

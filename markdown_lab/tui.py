@@ -1,18 +1,8 @@
 #!/usr/bin/env python3
-"""
-Terminal User Interface for markdown_lab using Textual.
-
-This module provides a full-screen terminal interface with:
-- Real-time progress tracking
-- Interactive forms and configuration
-- Live log display
-- Tabbed interface for different operations
-- Keyboard shortcuts and mouse support
-"""
+"""Terminal User Interface for markdown_lab using Textual."""
 
 import threading
 import time
-from markdown_lab.utils.url_utils import validate_url
 
 from textual.app import App, ComposeResult
 from textual.binding import Binding
@@ -44,6 +34,7 @@ from textual.widgets import (
 
 from markdown_lab.core.config import MarkdownLabConfig
 from markdown_lab.core.converter import Converter
+from markdown_lab.utils.url_utils import validate_url
 
 
 class URLValidator(Validator):
@@ -149,7 +140,7 @@ class SingleURLTab(Container):
 
     def compose(self) -> ComposeResult:
         with Vertical():
-            yield Label("🌐 Single URL Conversion", classes="tab-title")
+            yield Label("Single URL Conversion", classes="tab-title")
             yield Rule()
 
             with Horizontal(classes="form-row"):
@@ -171,7 +162,7 @@ class SingleURLTab(Container):
                     yield RadioButton("JSON", id="format_json")
                     yield RadioButton("XML", id="format_xml")
 
-            with Collapsible(title="⚙️ Advanced Options"):
+            with Collapsible(title="Advanced Options"):
                 with Horizontal(classes="form-row"):
                     yield Label("Save Chunks:", classes="form-label")
                     yield Switch(id="save_chunks_switch")
@@ -213,16 +204,16 @@ class SingleURLTab(Container):
 
             with Horizontal(classes="button-row"):
                 yield Button(
-                    "🚀 Start Conversion", variant="primary", id="start_conversion"
+                    "Start Conversion", variant="primary", id="start_conversion"
                 )
                 yield Button(
-                    "🛑 Cancel", variant="error", id="cancel_conversion", disabled=True
+                    "Cancel", variant="error", id="cancel_conversion", disabled=True
                 )
 
             yield Rule()
 
             with Vertical(classes="status-area"):
-                yield Label("📊 Status", classes="section-title")
+                yield Label("Status", classes="section-title")
                 yield ConversionStatus(id="conversion_status")
                 yield ProgressBar(id="conversion_progress")
 
@@ -232,18 +223,18 @@ class BatchURLTab(Container):
 
     def compose(self) -> ComposeResult:
         with Vertical():
-            yield Label("📋 Batch URL Conversion", classes="tab-title")
+            yield Label("Batch URL Conversion", classes="tab-title")
             yield Rule()
 
             with Horizontal(classes="form-row"):
                 yield Label("Links File:", classes="form-label")
                 yield Input(placeholder="links.txt", id="links_file_input")
-                yield Button("📁 Browse", id="browse_links_file")
+                yield Button("Browse", id="browse_links_file")
 
             with Horizontal(classes="form-row"):
                 yield Label("Output Directory:", classes="form-label")
                 yield Input(placeholder="output/", id="output_dir_input")
-                yield Button("📁 Browse", id="browse_output_dir")
+                yield Button("Browse", id="browse_output_dir")
 
             with Horizontal(classes="form-row"):
                 yield Label("Parallel Processing:", classes="form-label")
@@ -254,15 +245,15 @@ class BatchURLTab(Container):
             yield Rule()
 
             with Horizontal(classes="button-row"):
-                yield Button("🚀 Start Batch", variant="primary", id="start_batch")
+                yield Button("Start Batch", variant="primary", id="start_batch")
                 yield Button(
-                    "🛑 Cancel", variant="error", id="cancel_batch", disabled=True
+                    "Cancel", variant="error", id="cancel_batch", disabled=True
                 )
 
             yield Rule()
 
             with Vertical(classes="batch-status"):
-                yield Label("📊 Batch Status", classes="section-title")
+                yield Label("Batch Status", classes="section-title")
                 yield DataTable(id="batch_progress_table")
 
 
@@ -271,7 +262,7 @@ class SitemapTab(Container):
 
     def compose(self) -> ComposeResult:
         with Vertical():
-            yield Label("🗺️ Sitemap Conversion", classes="tab-title")
+            yield Label("Sitemap Conversion", classes="tab-title")
             yield Rule()
 
             with Horizontal(classes="form-row"):
@@ -297,7 +288,7 @@ class SitemapTab(Container):
                 yield Label("Max URLs:", classes="form-label")
                 yield Input(placeholder="100", id="max_urls_input")
 
-            with Collapsible(title="🔍 URL Filters"), Vertical():
+            with Collapsible(title="URL Filters"), Vertical():
                 yield Label("Include Patterns (regex):")
                 yield TextArea(
                     placeholder=".*\\.html\n.*\\.php", id="include_patterns_area"
@@ -311,16 +302,16 @@ class SitemapTab(Container):
             yield Rule()
 
             with Horizontal(classes="button-row"):
-                yield Button("🔍 Discover URLs", id="discover_urls")
-                yield Button("🚀 Start Sitemap", variant="primary", id="start_sitemap")
+                yield Button("Discover URLs", id="discover_urls")
+                yield Button("Start Sitemap", variant="primary", id="start_sitemap")
                 yield Button(
-                    "🛑 Cancel", variant="error", id="cancel_sitemap", disabled=True
+                    "Cancel", variant="error", id="cancel_sitemap", disabled=True
                 )
 
             yield Rule()
 
             with Vertical(classes="sitemap-status"):
-                yield Label("🔍 Discovered URLs", classes="section-title")
+                yield Label("Discovered URLs", classes="section-title")
                 yield SelectionList(id="discovered_urls_list")
 
 
@@ -329,12 +320,12 @@ class LogTab(Container):
 
     def compose(self) -> ComposeResult:
         with Vertical():
-            yield Label("📝 Application Logs", classes="tab-title")
+            yield Label("Application Logs", classes="tab-title")
             yield Rule()
 
             with Horizontal(classes="button-row"):
-                yield Button("🗑️ Clear Logs", id="clear_logs")
-                yield Button("💾 Save Logs", id="save_logs")
+                yield Button("Clear Logs", id="clear_logs")
+                yield Button("Save Logs", id="save_logs")
 
             yield Log(id="app_log", auto_scroll=True)
 
@@ -344,11 +335,11 @@ class ConfigTab(Container):
 
     def compose(self) -> ComposeResult:
         with Vertical():
-            yield Label("⚙️ Configuration", classes="tab-title")
+            yield Label("Configuration", classes="tab-title")
             yield Rule()
 
             with ScrollableContainer():
-                with Collapsible(title="🌐 Network Settings", collapsed=False):
+                with Collapsible(title="Network Settings", collapsed=False):
                     with Horizontal(classes="form-row"):
                         yield Label("Requests per Second:", classes="form-label")
                         yield Slider(
@@ -385,7 +376,7 @@ class ConfigTab(Container):
                             id="config_cache_ttl",
                         )
 
-                with Collapsible(title="📦 Chunking Settings"):
+                with Collapsible(title="Chunking Settings"):
                     with Horizontal(classes="form-row"):
                         yield Label("Default Chunk Size:", classes="form-label")
                         yield Slider(
@@ -406,7 +397,7 @@ class ConfigTab(Container):
                             id="config_chunk_overlap",
                         )
 
-                with Collapsible(title="📁 Output Settings"):
+                with Collapsible(title="Output Settings"):
                     with Horizontal(classes="form-row"):
                         yield Label("Default Format:", classes="form-label")
                         with RadioSet(id="config_default_format"):
@@ -421,15 +412,15 @@ class ConfigTab(Container):
             yield Rule()
 
             with Horizontal(classes="button-row"):
-                yield Button("💾 Save Config", variant="primary", id="save_config")
-                yield Button("🔄 Reset to Defaults", id="reset_config")
-                yield Button("📋 Show Current", id="show_config")
+                yield Button("Save Config", variant="primary", id="save_config")
+                yield Button("Reset to Defaults", id="reset_config")
+                yield Button("Show Current", id="show_config")
 
 
 class MarkdownLabTUI(App):
     """Main TUI application for Markdown Lab."""
 
-    TITLE = "🔬 Markdown Lab TUI"
+    TITLE = "Markdown Lab TUI"
     DESCRIPTION = "Terminal User Interface for HTML to Markdown conversion"
 
     CSS = """
@@ -531,26 +522,26 @@ class MarkdownLabTUI(App):
         yield Header()
 
         with Tabs(id="main_tabs"):
-            with TabPane("🌐 Single URL", id="single_url_tab"):
+            with TabPane("Single URL", id="single_url_tab"):
                 yield SingleURLTab()
 
-            with TabPane("📋 Batch", id="batch_tab"):
+            with TabPane("Batch", id="batch_tab"):
                 yield BatchURLTab()
 
-            with TabPane("🗺️ Sitemap", id="sitemap_tab"):
+            with TabPane("Sitemap", id="sitemap_tab"):
                 yield SitemapTab()
 
-            with TabPane("📝 Logs", id="logs_tab"):
+            with TabPane("Logs", id="logs_tab"):
                 yield LogTab()
 
-            with TabPane("⚙️ Config", id="config_tab"):
+            with TabPane("Config", id="config_tab"):
                 yield ConfigTab()
 
         yield Footer()
 
     def on_mount(self) -> None:
         """Initialize the application."""
-        self.log_to_app("🚀 Markdown Lab TUI started")
+        self.log_to_app("Markdown Lab TUI started")
 
         # Initialize batch progress table
         table = self.query_one("#batch_progress_table", DataTable)
@@ -575,11 +566,11 @@ class MarkdownLabTUI(App):
     def conversion_complete(self, success: bool, message: str) -> None:
         """Handle conversion completion."""
         if success:
-            self.log_to_app(f"✅ {message}")
-            self.notify("✅ Conversion completed successfully!", severity="information")
+            self.log_to_app(f"Success: {message}")
+            self.notify("Conversion completed successfully!", severity="information")
         else:
-            self.log_to_app(f"❌ {message}")
-            self.notify(f"❌ Conversion failed: {message}", severity="error")
+            self.log_to_app(f"Error: {message}")
+            self.notify(f"Conversion failed: {message}", severity="error")
 
         # Re-enable start button, disable cancel button
         self.query_one("#start_conversion", Button).disabled = False
@@ -616,13 +607,13 @@ class MarkdownLabTUI(App):
         url = url_input.value.strip()
 
         if not url:
-            self.notify("❌ Please enter a URL", severity="error")
+            self.notify("Please enter a URL", severity="error")
             return
 
         # Validate URL
         is_valid, error_msg = validate_url(url)
         if not is_valid:
-            self.notify(f"❌ {error_msg}", severity="error")
+            self.notify(f"Error: {error_msg}", severity="error")
             return
 
         # Get form values
@@ -666,15 +657,15 @@ class MarkdownLabTUI(App):
 
         # Start conversion
         if self.conversion_worker.start_conversion(url, config):
-            self.log_to_app(f"🚀 Starting conversion of {url}")
+            self.log_to_app(f"Starting conversion of {url}")
             self.query_one("#start_conversion", Button).disabled = True
             self.query_one("#cancel_conversion", Button).disabled = False
         else:
-            self.notify("❌ Conversion already in progress", severity="warning")
+            self.notify("Conversion already in progress", severity="warning")
 
     def handle_cancel_conversion(self) -> None:
         """Cancel ongoing conversion."""
-        self.log_to_app("🛑 Conversion cancelled by user")
+        self.log_to_app("Conversion cancelled by user")
         self.query_one("#start_conversion", Button).disabled = False
         self.query_one("#cancel_conversion", Button).disabled = True
 
@@ -682,27 +673,27 @@ class MarkdownLabTUI(App):
         """Clear application logs."""
         log_widget = self.query_one("#app_log", Log)
         log_widget.clear()
-        self.log_to_app("🗑️ Logs cleared")
+        self.log_to_app("Logs cleared")
 
     def handle_save_logs(self) -> None:
         """Save application logs to file."""
         # This would save logs to a file
-        self.log_to_app("💾 Logs saved to markdown_lab_tui.log")
-        self.notify("💾 Logs saved successfully!", severity="information")
+        self.log_to_app("Logs saved to markdown_lab_tui.log")
+        self.notify("Logs saved successfully!", severity="information")
 
     def handle_save_config(self) -> None:
         """Save current configuration."""
-        self.log_to_app("💾 Configuration saved")
-        self.notify("💾 Configuration saved!", severity="information")
+        self.log_to_app("Configuration saved")
+        self.notify("Configuration saved!", severity="information")
 
     def handle_reset_config(self) -> None:
         """Reset configuration to defaults."""
-        self.log_to_app("🔄 Configuration reset to defaults")
-        self.notify("🔄 Configuration reset!", severity="information")
+        self.log_to_app("Configuration reset to defaults")
+        self.notify("Configuration reset!", severity="information")
 
     def handle_show_config(self) -> None:
         """Show current configuration."""
-        self.log_to_app("📋 Current configuration displayed")
+        self.log_to_app("Current configuration displayed")
 
     def handle_discover_urls(self) -> None:
         """Discover URLs from sitemap."""
@@ -710,11 +701,11 @@ class MarkdownLabTUI(App):
         url = url_input.value.strip()
 
         if not url:
-            self.notify("❌ Please enter a base URL", severity="error")
+            self.notify("Please enter a base URL", severity="error")
             return
 
-        self.log_to_app(f"🔍 Discovering URLs from {url}")
-        self.notify("🔍 Discovering URLs...", severity="information")
+        self.log_to_app(f"Discovering URLs from {url}")
+        self.notify("Discovering URLs...", severity="information")
 
         # This would actually discover URLs from sitemap
         # For now, just add some dummy URLs
@@ -731,23 +722,23 @@ class MarkdownLabTUI(App):
         for dummy_url in dummy_urls:
             discovered_list.add_option((dummy_url, dummy_url))
 
-        self.log_to_app(f"🔍 Found {len(dummy_urls)} URLs")
-        self.notify(f"🔍 Found {len(dummy_urls)} URLs!", severity="information")
+        self.log_to_app(f"Found {len(dummy_urls)} URLs")
+        self.notify(f"Found {len(dummy_urls)} URLs!", severity="information")
 
     def handle_start_sitemap(self) -> None:
         """Start sitemap conversion."""
-        self.log_to_app("🗺️ Starting sitemap conversion")
-        self.notify("🗺️ Sitemap conversion started!", severity="information")
+        self.log_to_app("Starting sitemap conversion")
+        self.notify("Sitemap conversion started!", severity="information")
 
     def handle_start_batch(self) -> None:
         """Start batch conversion."""
-        self.log_to_app("📋 Starting batch conversion")
-        self.notify("📋 Batch conversion started!", severity="information")
+        self.log_to_app("Starting batch conversion")
+        self.notify("Batch conversion started!", severity="information")
 
     def action_show_help(self) -> None:
         """Show help information."""
         help_text = """
-🔬 Markdown Lab TUI Help
+Markdown Lab TUI Help
 
 Keyboard Shortcuts:
 - Q or Ctrl+C: Quit application
@@ -756,11 +747,11 @@ Keyboard Shortcuts:
 - Ctrl+S: Save configuration
 
 Tabs:
-- 🌐 Single URL: Convert individual web pages
-- 📋 Batch: Convert multiple URLs from a file
-- 🗺️ Sitemap: Convert URLs discovered from sitemap
-- 📝 Logs: View application logs
-- ⚙️ Config: Manage settings
+- Single URL: Convert individual web pages
+- Batch: Convert multiple URLs from a file
+- Sitemap: Convert URLs discovered from sitemap
+- Logs: View application logs
+- Config: Manage settings
 
 Features:
 - Real-time progress tracking

@@ -13,11 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 class MarkdownLabError(Exception):
-    """Base exception for all markdown_lab operations.
-
-    This exception provides structured error information including error codes
-    and context data for better debugging and error handling.
-    """
+    """Base exception for all markdown_lab operations."""
 
     def __init__(
         self,
@@ -26,15 +22,6 @@ class MarkdownLabError(Exception):
         context: Optional[Dict[str, Any]] = None,
         cause: Optional[Exception] = None,
     ):
-        """
-        Initializes a MarkdownLabError with a message, error code, context, and optional cause.
-
-        Args:
-            message: Description of the error.
-            error_code: Optional error code; defaults to the uppercase class name if not provided.
-            context: Optional dictionary with additional contextual information about the error.
-            cause: Optional underlying exception that caused this error.
-        """
         super().__init__(message)
         self.message = message
         self.error_code = error_code or self.__class__.__name__.upper()
@@ -42,9 +29,6 @@ class MarkdownLabError(Exception):
         self.cause = cause
 
     def __str__(self) -> str:
-        """
-        Returns a string representation of the error, including the error code and context if available.
-        """
         base_msg = self.message
         if self.error_code:
             base_msg = f"[{self.error_code}] {base_msg}"
@@ -54,12 +38,7 @@ class MarkdownLabError(Exception):
         return base_msg
 
     def to_dict(self) -> Dict[str, Any]:
-        """
-        Converts the error instance into a dictionary suitable for structured logging.
-
-        Returns:
-            A dictionary containing the error type, code, message, context, and cause.
-        """
+        """Convert error to dictionary for structured logging."""
         return {
             "error_type": self.__class__.__name__,
             "error_code": self.error_code,
@@ -97,7 +76,9 @@ class NetworkError(MarkdownLabError):
         if retry_count is not None:
             context["retry_count"] = retry_count
 
-        super().__init__(message, context=context, **kwargs)
+        # Remove context from kwargs to avoid duplicate parameter
+        filtered_kwargs = {k: v for k, v in kwargs.items() if k != "context"}
+        super().__init__(message, context=context, **filtered_kwargs)
 
 
 class ParsingError(MarkdownLabError):
@@ -130,7 +111,9 @@ class ParsingError(MarkdownLabError):
         if element_selector:
             context["element_selector"] = element_selector
 
-        super().__init__(message, context=context, **kwargs)
+        # Remove context from kwargs to avoid duplicate parameter
+        filtered_kwargs = {k: v for k, v in kwargs.items() if k != "context"}
+        super().__init__(message, context=context, **filtered_kwargs)
 
 
 class ConversionError(MarkdownLabError):
@@ -157,7 +140,9 @@ class ConversionError(MarkdownLabError):
         if conversion_stage:
             context["conversion_stage"] = conversion_stage
 
-        super().__init__(message, context=context, **kwargs)
+        # Remove context from kwargs to avoid duplicate parameter
+        filtered_kwargs = {k: v for k, v in kwargs.items() if k != "context"}
+        super().__init__(message, context=context, **filtered_kwargs)
 
 
 class ConfigurationError(MarkdownLabError):
@@ -184,7 +169,9 @@ class ConfigurationError(MarkdownLabError):
         if config_value is not None:
             context["config_value"] = config_value
 
-        super().__init__(message, context=context, **kwargs)
+        # Remove context from kwargs to avoid duplicate parameter
+        filtered_kwargs = {k: v for k, v in kwargs.items() if k != "context"}
+        super().__init__(message, context=context, **filtered_kwargs)
 
 
 class ResourceError(MarkdownLabError):
@@ -211,7 +198,9 @@ class ResourceError(MarkdownLabError):
         if limit is not None:
             context["limit"] = limit
 
-        super().__init__(message, context=context, **kwargs)
+        # Remove context from kwargs to avoid duplicate parameter
+        filtered_kwargs = {k: v for k, v in kwargs.items() if k != "context"}
+        super().__init__(message, context=context, **filtered_kwargs)
 
 
 class CacheError(MarkdownLabError):
@@ -235,7 +224,9 @@ class CacheError(MarkdownLabError):
         if cache_operation:
             context["cache_operation"] = cache_operation
 
-        super().__init__(message, context=context, **kwargs)
+        # Remove context from kwargs to avoid duplicate parameter
+        filtered_kwargs = {k: v for k, v in kwargs.items() if k != "context"}
+        super().__init__(message, context=context, **filtered_kwargs)
 
 
 class ChunkingError(MarkdownLabError):
@@ -268,7 +259,9 @@ class ChunkingError(MarkdownLabError):
         if chunk_overlap is not None:
             context["chunk_overlap"] = chunk_overlap
 
-        super().__init__(message, context=context, **kwargs)
+        # Remove context from kwargs to avoid duplicate parameter
+        filtered_kwargs = {k: v for k, v in kwargs.items() if k != "context"}
+        super().__init__(message, context=context, **filtered_kwargs)
 
 
 class RustIntegrationError(MarkdownLabError):
@@ -294,7 +287,9 @@ class RustIntegrationError(MarkdownLabError):
             context["rust_function"] = rust_function
         context["fallback_available"] = fallback_available
 
-        super().__init__(message, context=context, **kwargs)
+        # Remove context from kwargs to avoid duplicate parameter
+        filtered_kwargs = {k: v for k, v in kwargs.items() if k != "context"}
+        super().__init__(message, context=context, **filtered_kwargs)
 
 
 # Convenience functions for common error scenarios
@@ -313,8 +308,9 @@ def network_timeout_error(url: str, timeout: int, retry_count: int = 0) -> Netwo
     return NetworkError(
         f"Request to {url} timed out after {timeout} seconds",
         url=url,
+        retry_count=retry_count,
         error_code="NETWORK_TIMEOUT",
-        context={"timeout": timeout, "retry_count": retry_count},
+        context={"timeout": timeout},
     )
 
 
@@ -483,18 +479,13 @@ def handle_parsing_exception(
 
 
 def retry_with_backoff(
-    func: Callable,
-    max_retries: int,
-    url: str,
-    backoff_base: int = 2,
-    *args,
-    **kwargs
+    func: Callable, max_retries: int, url: str, backoff_base: int = 2, *args, **kwargs
 ):
     """
     Executes a function with exponential backoff retry logic.
-    
+
     This unified retry mechanism eliminates duplicate retry patterns across the codebase.
-    
+
     Args:
         func: The function to execute
         max_retries: Maximum number of retry attempts
@@ -502,10 +493,10 @@ def retry_with_backoff(
         backoff_base: Base for exponential backoff calculation
         *args: Arguments to pass to the function
         **kwargs: Keyword arguments to pass to the function
-        
+
     Returns:
         The result of the successful function call
-        
+
     Raises:
         NetworkError: If all retry attempts fail
     """
@@ -514,10 +505,10 @@ def retry_with_backoff(
             return func(*args, **kwargs)
         except Exception as e:
             network_error = handle_request_exception(e, url, attempt)
-            
+
             # Log the attempt
             if attempt < max_retries - 1:
-                wait_time = backoff_base ** attempt  # Exponential backoff
+                wait_time = backoff_base**attempt  # Exponential backoff
                 logger.warning(
                     f"Request failed for {url} on attempt {attempt + 1}/{max_retries}: "
                     f"{network_error.message}. Retrying in {wait_time}s..."
@@ -529,10 +520,281 @@ def retry_with_backoff(
                     f"{network_error.message}"
                 )
                 raise network_error from e
-    
+
     # This should never be reached, but included for completeness
     raise NetworkError(
         f"Failed to retrieve {url} after {max_retries} attempts",
         url=url,
-        error_code="MAX_RETRIES_EXCEEDED"
+        error_code="MAX_RETRIES_EXCEEDED",
     )
+
+
+# Enhanced Error Catalog with Troubleshooting Guidance
+ERROR_CATALOG = {
+    # Network Errors
+    "NETWORK_TIMEOUT": {
+        "title": "Request Timeout",
+        "description": "The request timed out waiting for a response from the server",
+        "troubleshooting": [
+            "• Increase timeout with --timeout parameter (current: {timeout}s)",
+            "• Check your internet connection",
+            "• Try using --profile conservative for slower, more reliable requests",
+            "• The server might be overloaded - try again later",
+        ],
+        "examples": [
+            "mlab convert url --timeout 60",
+            "mlab convert url --profile conservative",
+        ],
+        "severity": "medium",
+        "docs_url": "https://github.com/ursisterbtw/markdown_lab#troubleshooting-network-timeouts",
+    },
+    "CONNECTION_FAILED": {
+        "title": "Connection Failed",
+        "description": "Failed to establish a connection to the target server",
+        "troubleshooting": [
+            "• Check the URL is correct and accessible: {url}",
+            "• Verify your internet connection",
+            "• Check if the website is down using a service like downforeveryoneorjustme.com",
+            "• Try using --profile conservative for better reliability",
+            "• Check if you need to be behind a VPN or proxy",
+        ],
+        "examples": [
+            "mlab convert https://example.com --profile conservative",
+            "curl -I {url}  # Test URL accessibility",
+        ],
+        "severity": "high",
+        "docs_url": "https://github.com/ursisterbtw/markdown_lab#troubleshooting-connection-issues",
+    },
+    "HTTP_ERROR": {
+        "title": "HTTP Error Response",
+        "description": "The server returned an HTTP error status code",
+        "troubleshooting": [
+            "• Status {status_code}: {status_message}",
+            "• Check if the URL requires authentication",
+            "• Verify the URL is correct: {url}",
+            "• Try accessing the URL in a browser first",
+            "• For 429 errors, use --profile conservative to reduce request rate",
+            "• For 403/401 errors, the content might be protected",
+        ],
+        "examples": [
+            "mlab convert url --profile conservative  # For rate limiting",
+            "curl -I {url}  # Check status in terminal",
+        ],
+        "severity": "medium",
+        "docs_url": "https://github.com/ursisterbtw/markdown_lab#http-status-codes",
+    },
+    "ELEMENT_NOT_FOUND": {
+        "title": "HTML Element Not Found",
+        "description": "Could not find the expected HTML element using the provided selector",
+        "troubleshooting": [
+            "• The website structure might have changed",
+            "• Element '{element_selector}' not found in the HTML",
+            "• Try converting anyway - other content might still be extracted",
+            "• Check if the site requires JavaScript (try --js-rendering if available)",
+            "• Inspect the page source to verify the element exists",
+        ],
+        "examples": [
+            "mlab convert url --format json  # See full document structure",
+            "curl {url} | grep '{element_selector}'  # Check if element exists",
+        ],
+        "severity": "low",
+        "docs_url": "https://github.com/ursisterbtw/markdown_lab#html-parsing-issues",
+    },
+    "CONVERSION_FAILED": {
+        "title": "Format Conversion Failed",
+        "description": "Failed to convert content from one format to another",
+        "troubleshooting": [
+            "• Conversion from {source_format} to {target_format} failed at: {conversion_stage}",
+            "• Try using a different output format (markdown/json/xml)",
+            "• The content might contain unsupported elements",
+            "• Use --verbose for more detailed error information",
+            "• Try the legacy converter: mlab legacy",
+        ],
+        "examples": [
+            "mlab convert url --format json  # Try JSON output",
+            "mlab convert url --verbose      # Get more details",
+        ],
+        "severity": "medium",
+        "docs_url": "https://github.com/ursisterbtw/markdown_lab#conversion-troubleshooting",
+    },
+    "CONFIG_INVALID": {
+        "title": "Invalid Configuration",
+        "description": "A configuration parameter has an invalid value",
+        "troubleshooting": [
+            "• Parameter '{config_key}' has invalid value: {config_value}",
+            "• Check the allowed values in the help: mlab convert --help",
+            "• Use a configuration profile: mlab profiles",
+            "• Reset to defaults: mlab config --reset",
+            "• Check environment variables (MARKDOWN_LAB_*)",
+        ],
+        "examples": [
+            "mlab profiles                    # See available profiles",
+            "mlab convert url --profile dev   # Use development profile",
+        ],
+        "severity": "high",
+        "docs_url": "https://github.com/ursisterbtw/markdown_lab#configuration-guide",
+    },
+    "MEMORY_LIMIT_EXCEEDED": {
+        "title": "Memory Limit Exceeded",
+        "description": "The operation exceeded the configured memory limit",
+        "troubleshooting": [
+            "• Current usage: {current_usage:,} bytes, Limit: {limit:,} bytes",
+            "• Try processing smaller content or increase memory limit",
+            "• Use --profile fast for more aggressive memory settings",
+            "• Split large batch operations into smaller chunks",
+            "• Close other applications to free memory",
+        ],
+        "examples": [
+            "mlab convert url --profile fast  # Higher memory limits",
+            "mlab batch links.txt --max-workers 2  # Reduce parallel processing",
+        ],
+        "severity": "high",
+        "docs_url": "https://github.com/ursisterbtw/markdown_lab#memory-management",
+    },
+    "CACHE_ERROR": {
+        "title": "Cache Operation Failed",
+        "description": "An error occurred during cache read/write operations",
+        "troubleshooting": [
+            "• Cache operation '{cache_operation}' failed for key: {cache_key}",
+            "• Clear cache directory: rm -rf .request_cache",
+            "• Disable cache temporarily: --no-cache",
+            "• Check disk space and permissions",
+            "• Use --skip-cache to bypass cache for this request",
+        ],
+        "examples": [
+            "mlab convert url --no-cache      # Disable cache",
+            "mlab convert url --skip-cache    # Skip cache once",
+            "rm -rf .request_cache            # Clear cache",
+        ],
+        "severity": "low",
+        "docs_url": "https://github.com/ursisterbtw/markdown_lab#cache-management",
+    },
+    "PARSING_FAILED": {
+        "title": "Content Parsing Failed",
+        "description": "Failed to parse the content using the specified parser",
+        "troubleshooting": [
+            "• Parser '{parser_type}' failed for URL: {url}",
+            "• The content might be malformed or use unsupported encoding",
+            "• Try a different output format",
+            "• Check if the content requires JavaScript rendering",
+            "• Verify the URL returns valid HTML",
+        ],
+        "examples": [
+            "mlab convert url --format json   # Try structured output",
+            "curl {url} | head -50           # Inspect raw content",
+        ],
+        "severity": "medium",
+        "docs_url": "https://github.com/ursisterbtw/markdown_lab#parsing-errors",
+    },
+}
+
+
+def get_status_message(status_code: int) -> str:
+    """Get human-readable HTTP status message."""
+    status_messages = {
+        400: "Bad Request",
+        401: "Unauthorized",
+        403: "Forbidden",
+        404: "Not Found",
+        429: "Too Many Requests",
+        500: "Internal Server Error",
+        502: "Bad Gateway",
+        503: "Service Unavailable",
+        504: "Gateway Timeout",
+    }
+    return status_messages.get(status_code, f"HTTP {status_code}")
+
+
+def get_troubleshooting_guide(error: MarkdownLabError) -> Dict[str, Any]:
+    """
+    Get comprehensive troubleshooting guide for an error.
+
+    Args:
+        error: The MarkdownLabError instance
+
+    Returns:
+        Dictionary with troubleshooting information
+    """
+    error_code = error.error_code
+    if error_code not in ERROR_CATALOG:
+        return {
+            "title": "Unknown Error",
+            "description": f"Error code {error_code} not found in catalog",
+            "troubleshooting": [
+                "• This is an unexpected error",
+                "• Please report this issue on GitHub",
+                "• Include the full error message and context",
+            ],
+            "examples": ["mlab legacy  # Try legacy interface"],
+            "severity": "unknown",
+        }
+
+    guide = ERROR_CATALOG[error_code].copy()
+    context = error.context or {}
+
+    # Format troubleshooting messages with context
+    if "troubleshooting" in guide:
+        guide["troubleshooting"] = [
+            msg.format(**context, **_get_format_extras(error))
+            for msg in guide["troubleshooting"]
+        ]
+
+    # Format examples with context
+    if "examples" in guide:
+        guide["examples"] = [
+            example.format(**context, **_get_format_extras(error))
+            for example in guide["examples"]
+        ]
+
+    return guide
+
+
+def _get_format_extras(error: MarkdownLabError) -> Dict[str, str]:
+    """Get additional format values for error messages."""
+    extras = {}
+
+    # Add HTTP status message for HTTP errors
+    if isinstance(error, NetworkError) and "status_code" in error.context:
+        status_code = error.context["status_code"]
+        extras["status_message"] = get_status_message(status_code)
+
+    return extras
+
+
+def format_error_for_cli(
+    error: MarkdownLabError, show_troubleshooting: bool = True
+) -> str:
+    """
+    Format an error for CLI display with rich troubleshooting information.
+
+    Args:
+        error: The MarkdownLabError instance
+        show_troubleshooting: Whether to include troubleshooting guide
+
+    Returns:
+        Formatted error message for CLI display
+    """
+    guide = get_troubleshooting_guide(error)
+
+    # Basic error info
+    output = [
+        f"❌ {guide['title']}",
+        f"   {error.message}",
+    ]
+
+    # Add context if available
+    if error.context:
+        context_items = [f"{k}={v}" for k, v in error.context.items()]
+        output.append(f"   Context: {', '.join(context_items)}")
+
+    if show_troubleshooting:
+        output.extend(("", "🔧 Troubleshooting:"))
+        output.extend(f"   {step}" for step in guide["troubleshooting"])
+
+        if guide.get("examples"):
+            output.extend(("", "💡 Examples:"))
+            output.extend(f"   {example}" for example in guide["examples"])
+
+        if guide.get("docs_url"):
+            output.extend(("", f"📖 Documentation: {guide['docs_url']}"))
+    return "\n".join(output)

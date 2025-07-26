@@ -17,12 +17,12 @@ Check out [deepwiki](https://deepwiki.com/ursisterbtw/markdown_lab/) for a detai
 
 - 🎨 **Modern CLI Interface**: Beautiful terminal output with Typer and Rich, progress bars, and interactive features
 - 🖥️ **Terminal User Interface (TUI)**: Full-featured interactive interface for complex operations
-- 🌐 **Web Scraping**: Scrapes any accessible website with robust error handling and rate limiting
+- 🌐 **Web Scraping**: Scrapes any accessible website with error handling and rate limiting
 - 🗺️ **Sitemap Integration**: Parses sitemap.xml to discover and scrape the most relevant content
 - 📝 **Multiple Output Formats**: Converts HTML to clean Markdown, JSON, or XML formats
 - 🧩 **RAG Chunking**: Implements intelligent chunking for Retrieval-Augmented Generation systems
 - ⚡ **Parallel Processing**: Batch URL processing with configurable worker threads
-- 🔄 **Comprehensive HTML Support**:
+- 🔄 **HTML Support**:
   - Headers (h1-h6)
   - Paragraphs
   - Links with resolved relative URLs
@@ -32,13 +32,31 @@ Check out [deepwiki](https://deepwiki.com/ursisterbtw/markdown_lab/) for a detai
   - Code blocks
 - 📊 **Real-time Progress**: Live progress tracking with rich terminal output
 - 📋 **Document Structure Preservation**: Maintains semantic structure during conversion
-- 🪵 **Comprehensive Logging**: Detailed logging with configurable levels
-- ✅ **Robust Error Handling**: Exponential backoff and graceful failure recovery
+- 🪵 **Logging**: Detailed logging with configurable levels
+- ✅ **Error Handling**: Exponential backoff and graceful failure recovery
 - 🏎️ **Performance Optimized**: Rust-powered HTML parsing with cached selectors
 - 🔧 **Centralized Configuration**: Unified configuration management system
 - 🌐 **Connection Pooling**: Efficient HTTP client with connection reuse
 
 ## Installation
+
+### 🚀 One-Command Installation (Recommended)
+
+**Linux/macOS:**
+```bash
+curl -fsSL https://raw.githubusercontent.com/ursisterbtw/markdown_lab/main/scripts/install.sh | bash
+```
+
+**Windows:**
+```powershell
+irm https://raw.githubusercontent.com/ursisterbtw/markdown_lab/main/scripts/install.ps1 | iex
+```
+
+This installs everything automatically: dependencies, Rust compilation, and CLI commands.
+
+### 📋 Manual Installation
+
+Requirements: Python 3.12+, Rust, UV package manager
 
 ```bash
 git clone https://github.com/ursisterbtw/markdown_lab.git
@@ -47,11 +65,13 @@ cd markdown_lab
 # Quick setup with justfile (recommended)
 just setup
 
-# Or manual setup using UV (Python 3.12+ required)
+# Or manual setup using UV
 uv sync
 source .venv/bin/activate
 maturin develop
 ```
+
+See [INSTALL.md](INSTALL.md) for detailed installation instructions and troubleshooting.
 
 ## Usage
 
@@ -111,7 +131,7 @@ mlab-legacy "https://example.com" --output output.xml --format xml
 ### Advanced Usage Examples
 
 ```bash
-# Comprehensive sitemap scraping with modern CLI
+# Sitemap scraping with modern CLI
 mlab sitemap "https://example.com" \
     --min-priority 0.5 \
     --include "blog/*" "products/*" \
@@ -453,9 +473,9 @@ See `docs/JS_RENDERING.md` for more details.
 ## Contributing
 
 1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
+2. Create your feature branch (`git checkout -b feature/your-feature`)
+3. Commit your changes (`git commit -m 'Add your feature'`)
+4. Push to the branch (`git push origin feature/your-feature`)
 5. Open a Pull Request
 
 ## License
