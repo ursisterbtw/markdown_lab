@@ -30,6 +30,10 @@ def _python_html_to_markdown(html: str, base_url: str = "") -> str:
         r"<(script|style)[^>]*>.*?</\1>", "", html, flags=re.DOTALL | re.IGNORECASE
     )
 
+    # Extract <title> and promote to top-level heading
+    title_match = re.search(r"<title[^>]*>(.*?)</title>", html, flags=re.IGNORECASE | re.DOTALL)
+    page_title = title_match.group(1).strip() if title_match else None
+
     # Convert headers
     html = re.sub(r"<h1[^>]*>(.*?)</h1>", r"# \1\n", html, flags=re.IGNORECASE)
     html = re.sub(r"<h2[^>]*>(.*?)</h2>", r"## \1\n", html, flags=re.IGNORECASE)
@@ -48,11 +52,32 @@ def _python_html_to_markdown(html: str, base_url: str = "") -> str:
         flags=re.IGNORECASE,
     )
 
+    # Convert images to markdown
+    html = re.sub(
+        r"<img[^>]*alt=[\"']([^\"']*)[\"'][^>]*src=[\"']([^\"']*)[\"'][^>]*>",
+        r"![\1](\2)",
+        html,
+        flags=re.IGNORECASE,
+    )
+    html = re.sub(
+        r"<img[^>]*src=[\"']([^\"']*)[\"'][^>]*alt=[\"']([^\"']*)[\"'][^>]*>",
+        r"![\2](\1)",
+        html,
+        flags=re.IGNORECASE,
+    )
+
     # Remove remaining HTML tags
     html = re.sub(r"<[^>]+>", "", html)
 
     # Clean up whitespace
     html = re.sub(r"\n\s*\n", "\n\n", html)
+
+    # Prepend title as H1 if available and not already present
+    if page_title:
+        title_heading = f"# {page_title}"
+        if not html.lstrip().startswith("# ") or not html.splitlines()[0].strip() == title_heading:
+            html = f"{title_heading}\n\n" + html
+
     return html.strip()
 
 
@@ -151,6 +176,12 @@ def _extract_title_from_lines(lines: List[str]) -> str:
 def _parse_heading(line: str) -> Optional[dict[str, Any]]:
     """Parse a heading line and return heading info if valid."""
     if not line.startswith("#"):
+        # Treat simple underlined headings (Setext): text followed by ===== or -----
+        # This improves fallback detection for titles/headings
+        if line.strip() and all(ch == "=" for ch in line.strip()):
+            return {"level": 1, "text": ""}
+        if line.strip() and all(ch == "-" for ch in line.strip()):
+            return {"level": 2, "text": ""}
         return None
 
     level = 0
@@ -177,6 +208,7 @@ def _process_markdown_lines(lines: List[str], title: str) -> Dict[str, List]:
     code_lang = ""
     title_line = f"# {title}"
 
+    previous_line = ""
     for line in lines:
         # Skip title line which we already processed
         if line.strip() == title_line:
@@ -201,11 +233,17 @@ def _process_markdown_lines(lines: List[str], title: str) -> Dict[str, List]:
             continue
 
         if heading := _parse_heading(line):
-            content_sections["headings"].append(heading)
+            if heading["text"] == "" and previous_line.strip():
+                # Setext style heading: use previous line as text
+                level = 1 if set(line.strip()) == {"="} else 2
+                content_sections["headings"].append({"level": level, "text": previous_line.strip()})
+            else:
+                content_sections["headings"].append(heading)
         elif line.startswith(">"):
             content_sections["blockquotes"].append(line[1:].strip())
         elif line.strip():
             content_sections["paragraphs"].append(line.strip())
+        previous_line = line
 
     return content_sections
 
@@ -311,12 +349,15 @@ def chunk_markdown(
     return [chunk.content for chunk in chunks]
 
 
-def render_js_page(url: str, wait_time_ms: Optional[int] = None) -> str:
+def render_js_page(url: Optional[str], wait_time_ms: Optional[int] = None) -> str:
     """
     Renders a JavaScript-enabled web page and returns the resulting HTML content.
 
     If the Rust extension is available, uses it to render the page. Otherwise, logs a warning and returns None, as Python fallback is not implemented.
     """
+    if url is None:
+        raise TypeError("url must be a string")
+
     if RUST_AVAILABLE:
         try:
             return _rs_render_js_page(url, wait_time_ms)

@@ -71,22 +71,53 @@ class Converter:
     ) -> Tuple[str, str]:
         """Convert HTML content to specified format."""
         try:
-            raw_content = self.rust_backend.convert_html_to_format(
-                html_content, base_url, output_format
-            )
-            markdown_content = (
-                self.rust_backend.convert_html_to_format(
-                    html_content, base_url, "markdown"
+            normalized = output_format.lower()
+            if normalized not in {"markdown", "json", "xml"}:
+                raise ConversionError(
+                    "Unsupported output format",
+                    source_format="html",
+                    target_format=output_format,
+                    conversion_stage="validation",
                 )
-                if output_format != "markdown"
-                else raw_content
-            )
 
-            if formatter := self.formatters.get(output_format):
+            if normalized == "markdown":
+                # Attempt markdown via Rust
+                raw_content = self.rust_backend.convert_html_to_markdown(
+                    html_content, base_url
+                )
+                markdown_content = raw_content
+            else:
+                # Convert requested format with Rust; on failure, use Python fallback
+                try:
+                    raw_content = self.rust_backend.convert_html_to_format(
+                        html_content, base_url, normalized
+                    )
+                except Exception:
+                    from markdown_lab import markdown_lab_rs as py_fallback
+
+                    raw_content = py_fallback.convert_html(
+                        html_content, base_url, py_fallback.OutputFormat(normalized)
+                    )
+                # Always produce markdown for chunking/metadata; if Rust fails, fall back
+                try:
+                    markdown_content = self.rust_backend.convert_html_to_markdown(
+                        html_content, base_url
+                    )
+                except Exception:
+                    from markdown_lab import markdown_lab_rs as py_fallback
+
+                    markdown_content = py_fallback.convert_html_to_markdown(
+                        html_content, base_url
+                    )
+
+            if formatter := self.formatters.get(normalized):
                 metadata = {
                     "source_url": base_url,
                     "generated_at": self._get_timestamp(),
                     "title": self._extract_title(html_content),
+                    # Provide raw markdown to formatters for robust fallback handling
+                    "markdown_raw": markdown_content,
+                    "format": normalized,
                 }
                 converted_content = formatter.format(raw_content, metadata)
             else:
@@ -234,12 +265,12 @@ class Converter:
     def convert_url_list(
         self,
         urls: List[str],
-        output_dir: str,
+        output_dir: Optional[str] = None,
         output_format: str = "markdown",
         save_chunks: bool = True,
         chunk_dir: Optional[str] = None,
         chunk_format: str = "jsonl",
-    ) -> List[str]:
+    ) -> List[tuple[str, str, str]]:
         """
         Convert multiple URLs from a list.
 
@@ -252,10 +283,10 @@ class Converter:
             chunk_format: Format for chunks ("json" or "jsonl")
 
         Returns:
-            List of successfully processed URLs
+            List of tuples: (url, artifact_or_error, status) where status is "ok" or "error"
         """
         # Prepare directories
-        output_path = Path(output_dir)
+        output_path = Path(output_dir or "output")
         output_path.mkdir(parents=True, exist_ok=True)
 
         chunk_directory = None
@@ -264,7 +295,7 @@ class Converter:
             Path(chunk_directory).mkdir(parents=True, exist_ok=True)
 
         # Process URLs
-        successfully_processed = []
+        results: list[tuple[str, str, str]] = []
         for i, url in enumerate(urls):
             try:
                 self._process_single_url(
@@ -277,15 +308,16 @@ class Converter:
                     chunk_directory,
                     chunk_format,
                 )
-                successfully_processed.append(url)
+                # Return generated filename for success
+                filename = self._generate_output_filename(url, output_format, output_path)
+                results.append((url, filename, "ok"))
             except Exception as e:
                 logger.error(f"Error processing URL {url}: {e}")
-                continue
+                results.append((url, str(e), "error"))
 
-        logger.info(
-            f"Successfully processed {len(successfully_processed)}/{len(urls)} URLs"
-        )
-        return successfully_processed
+        ok_count = sum(1 for _u, _a, status in results if status == "ok")
+        logger.info(f"Successfully processed {ok_count}/{len(urls)} URLs")
+        return results
 
     def _process_single_url(
         self,

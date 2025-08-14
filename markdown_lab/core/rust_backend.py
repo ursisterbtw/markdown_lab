@@ -69,9 +69,24 @@ class RustBackend:
             )
 
         try:
-            # Unified conversion using convert_html_to_format for all formats
-            return self._rust_module.convert_html_to_format(
-                html, base_url, output_format
+            # Prefer native function if available on the bound module
+            if hasattr(self._rust_module, "convert_html_to_format"):
+                return self._rust_module.convert_html_to_format(
+                    html, base_url, output_format
+                )
+
+            # Fallback module (pure Python) exposes `convert_html`
+            if hasattr(self._rust_module, "convert_html"):
+                return self._rust_module.convert_html(
+                    html,
+                    base_url,
+                    self._rust_module.OutputFormat(output_format),
+                )
+
+            raise RustIntegrationError(
+                "No suitable conversion function found",
+                rust_function="convert_html_to_format",
+                fallback_available=self.fallback_enabled,
             )
         except Exception as e:
             raise RustIntegrationError(
@@ -92,7 +107,31 @@ class RustBackend:
         Returns:
             Markdown content
         """
-        return self.convert_html_to_format(html, base_url, "markdown")
+        # Prefer generic convert_html_to_format if available
+        if self._rust_module:
+            if hasattr(self._rust_module, "convert_html_to_format"):
+                try:
+                    return self._rust_module.convert_html_to_format(html, base_url, "markdown")
+                except Exception:
+                    pass
+            if hasattr(self._rust_module, "convert_html"):
+                try:
+                    return self._rust_module.convert_html(
+                        html, base_url, self._rust_module.OutputFormat("markdown")
+                    )
+                except Exception:
+                    pass
+            if hasattr(self._rust_module, "convert_html_to_markdown"):
+                try:
+                    return self._rust_module.convert_html_to_markdown(html, base_url)
+                except Exception:
+                    pass
+        # If we reach here, raise a consistent error
+        raise RustIntegrationError(
+            "No suitable conversion function found",
+            rust_function="convert_html_to_markdown",
+            fallback_available=self.fallback_enabled,
+        )
 
     def chunk_markdown(
         self, markdown: str, chunk_size: int = 1000, chunk_overlap: int = 200

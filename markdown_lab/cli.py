@@ -316,13 +316,13 @@ def _convert_interactive(
             time.sleep(2)  # Show final result
 
     except KeyboardInterrupt as e:
-        console.print("\nNo Operation cancelled by user", style="bold red")
+        console.print("\nOperation cancelled by user", style="bold red")
         raise typer.Exit(1) from e
     except Exception as e:
         console.print(f"\nError: {e}", style="bold red")
         raise typer.Exit(1) from e
 
-    console.print(f"\nYes Successfully converted URL to {output}", style="bold green")
+    console.print(f"\nSuccessfully converted URL to {output}", style="bold green")
 
 
 def _convert_standard(
@@ -394,16 +394,16 @@ def _convert_standard(
                 if verbose:
                     console.print(f"Created {len(chunks)} chunks in {chunk_dir}")
 
-            progress.update(main_task, description="Yes Complete!", completed=100)
+            progress.update(main_task, description="Complete", completed=100)
 
         except Exception as e:
-            progress.update(main_task, description="No Failed!", completed=100)
-            console.print(f"\nNo Error: {e}", style="bold red")
+            progress.update(main_task, description="Failed", completed=100)
+            console.print(f"\nError: {e}", style="bold red")
             raise typer.Exit(1) from e
 
     # Success summary
     success_panel = Panel(
-        f"Yes Successfully converted [bold cyan]{url}[/bold cyan]\n"
+        f"Successfully converted [bold cyan]{url}[/bold cyan]\n"
         f"Output: [bold green]{output}[/bold green]\n"
         f"Format: [bold yellow]{format_str.upper()}[/bold yellow]"
         + (
@@ -712,12 +712,12 @@ def launch_tui() -> None:
         app.run()
     except ImportError as e:
         console.print(
-            "No TUI dependencies not available. Install with: pip install textual",
+            "TUI dependencies not available. Install with: pip install textual",
             style="bold red",
         )
         raise typer.Exit(1) from e
     except Exception as e:
-        console.print(f"No Error launching TUI: {e}", style="bold red")
+        console.print(f"Error launching TUI: {e}", style="bold red")
         raise typer.Exit(1) from e
 
 
@@ -867,7 +867,7 @@ def cli_main() -> None:
         console.print(f"\n{error_message}", style="bold red")
         sys.exit(1)
     except Exception as e:
-        console.print(f"\nNo Unexpected error: {e}", style="bold red")
+        console.print(f"\nUnexpected error: {e}", style="bold red")
         console.print("\nTry: mlab legacy  # Use legacy interface", style="dim")
         console.print(
             "Report issues: https://github.com/ursisterbtw/markdown_lab/issues",

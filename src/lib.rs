@@ -11,9 +11,11 @@ pub mod markdown_converter;
 
 /// Shared Tokio runtime for JavaScript rendering operations
 /// This eliminates the expensive runtime creation overhead for each request
-static SHARED_RUNTIME: Lazy<tokio::runtime::Runtime> = Lazy::new(|| {
-    tokio::runtime::Runtime::new()
-        .expect("Failed to create shared Tokio runtime for JavaScript rendering")
+static SHARED_RUNTIME: Lazy<Result<tokio::runtime::Runtime, String>> = Lazy::new(|| {
+    tokio::runtime::Runtime::new().map_err(|e| format!(
+        "Failed to create shared Tokio runtime for JavaScript rendering: {}",
+        e
+    ))
 });
 
 /// Python-friendly enumeration of output formats
@@ -104,7 +106,11 @@ fn chunk_markdown(
 /// Uses shared Tokio runtime for optimal performance
 #[pyfunction]
 fn render_js_page(url: &str, wait_time: Option<u64>) -> PyResult<String> {
-    let html = SHARED_RUNTIME
+    let runtime = SHARED_RUNTIME
+        .as_ref()
+        .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.clone()))?;
+
+    let html = runtime
         .block_on(async { js_renderer::render_page(url, wait_time.unwrap_or(2000)).await })
         .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))?;
 

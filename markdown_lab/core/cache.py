@@ -13,8 +13,6 @@ import time
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Union
 
-import aiofiles
-
 from markdown_lab.core.config import MarkdownLabConfig, get_config
 from markdown_lab.utils.cache_utils import get_cache_key, get_cache_path
 

@@ -30,6 +30,19 @@ class XmlFormatter(BaseFormatter):
             # Parse the XML content from Rust backend
             root = ET.fromstring(content)
 
+            # If the parsed XML seems too minimal (e.g., generic <xml> wrapper),
+            # rebuild from markdown-derived structure when available
+            root_tag = root.tag.lower() if hasattr(root, 'tag') else ''
+            has_semantics = any(child.tag in {"headings", "paragraphs"} for child in list(root))
+            if (root_tag not in {"document"} or not has_semantics) and metadata and metadata.get("markdown_raw"):
+                from markdown_lab.markdown_lab_rs import (
+                    parse_markdown_to_document,
+                    document_to_xml,
+                )
+                doc = parse_markdown_to_document(metadata["markdown_raw"], metadata.get("source_url", ""))
+                xml_content = document_to_xml(doc)
+                root = ET.fromstring(xml_content)
+
             # Add metadata if requested and provided
             if self.config.get("include_metadata", True) and metadata:
                 metadata_elem = ET.SubElement(root, "metadata")
@@ -54,24 +67,36 @@ class XmlFormatter(BaseFormatter):
                 return self._pretty_print_xml(root)
             return ET.tostring(root, encoding="unicode", xml_declaration=True)
 
-        except ET.ParseError as e:
-            # If content is not valid XML, wrap it in a basic structure
-            root = ET.Element("document")
+        except ET.ParseError:
+            # If content is not valid XML, build semantic XML from markdown-derived structure
+            from markdown_lab.markdown_lab_rs import (
+                _python_html_to_markdown,
+                parse_markdown_to_document,
+                document_to_xml,
+            )
 
-            error_elem = ET.SubElement(root, "error")
-            error_elem.text = f"Invalid XML from converter: {str(e)}"
+            markdown_guess = content
+            # If content looks like HTML, convert to markdown
+            if content.strip().startswith("<"):
+                markdown_guess = _python_html_to_markdown(content)
+            base_url = metadata.get("source_url", "") if metadata else ""
+            doc = parse_markdown_to_document(markdown_guess, base_url)
+            xml_content = document_to_xml(doc)
 
-            content_elem = ET.SubElement(root, "raw_content")
-            content_elem.text = content
-
-            if metadata:
+            # Inject metadata if enabled
+            if self.config.get("include_metadata", True) and metadata:
+                root = ET.fromstring(xml_content)
                 metadata_elem = ET.SubElement(root, "metadata")
-                for key, value in metadata.items():
-                    if value:
-                        elem = ET.SubElement(metadata_elem, key)
-                        elem.text = str(value)
+                if metadata.get("title"):
+                    ET.SubElement(metadata_elem, "title").text = metadata["title"]
+                if metadata.get("source_url"):
+                    ET.SubElement(metadata_elem, "source_url").text = metadata["source_url"]
+                if metadata.get("generated_at"):
+                    ET.SubElement(metadata_elem, "generated_at").text = metadata["generated_at"]
+                ET.SubElement(metadata_elem, "format").text = "xml"
+                return self._pretty_print_xml(root)
 
-            return self._pretty_print_xml(root)
+            return xml_content
 
     def _pretty_print_xml(self, root: ET.Element) -> str:
         """
