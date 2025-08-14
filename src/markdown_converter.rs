@@ -70,7 +70,7 @@ pub struct CodeBlock {
     pub code: String,
 }
 
-/// Parse HTML into our document structure
+/// Parse HTML to document structure
 pub fn parse_html_to_document(html: &str, base_url_str: &str) -> Result<Document, MarkdownError> {
     let document_html = Html::parse_document(html);
     let base_url = Url::parse(base_url_str)?;
@@ -83,7 +83,7 @@ pub fn parse_html_to_document(html: &str, base_url_str: &str) -> Result<Document
     Ok(document)
 }
 
-/// Extract the document title from HTML
+/// Extract document title
 fn extract_document_title(document_html: &Html) -> Result<String, MarkdownError> {
     let title_selector =
         Selector::parse("title").map_err(|e| MarkdownError::SelectorError(e.to_string()))?;
@@ -95,7 +95,7 @@ fn extract_document_title(document_html: &Html) -> Result<String, MarkdownError>
     Ok(title.trim().to_string())
 }
 
-/// Create the initial document structure
+/// Create document structure
 fn create_document_structure(title: &str, base_url: &str) -> Document {
     Document {
         title: title.to_string(),
@@ -110,11 +110,11 @@ fn create_document_structure(title: &str, base_url: &str) -> Document {
     }
 }
 
-/// Populate document with content from HTML
+/// Populate document with HTML content
 fn populate_document_content(
-    document: &mut Document, 
-    document_html: &Html, 
-    base_url: &Url
+    document: &mut Document,
+    document_html: &Html,
+    base_url: &Url,
 ) -> Result<(), MarkdownError> {
     process_headings(document, document_html)?;
     process_paragraphs(document, document_html)?;
@@ -126,7 +126,7 @@ fn populate_document_content(
     Ok(())
 }
 
-/// Process heading elements (h1-h6)
+/// Process headings (h1-h6)
 fn process_headings(document: &mut Document, document_html: &Html) -> Result<(), MarkdownError> {
     for i in 1..=6 {
         let heading_selector = Selector::parse(&format!("h{}", i))
@@ -145,7 +145,7 @@ fn process_headings(document: &mut Document, document_html: &Html) -> Result<(),
     Ok(())
 }
 
-/// Process paragraph elements
+/// Process paragraphs
 fn process_paragraphs(document: &mut Document, document_html: &Html) -> Result<(), MarkdownError> {
     let p_selector =
         Selector::parse("p").map_err(|e| MarkdownError::SelectorError(e.to_string()))?;
@@ -158,11 +158,11 @@ fn process_paragraphs(document: &mut Document, document_html: &Html) -> Result<(
     Ok(())
 }
 
-/// Process link elements
+/// Process links
 fn process_links(
-    document: &mut Document, 
-    document_html: &Html, 
-    base_url: &Url
+    document: &mut Document,
+    document_html: &Html,
+    base_url: &Url,
 ) -> Result<(), MarkdownError> {
     let a_selector =
         Selector::parse("a[href]").map_err(|e| MarkdownError::SelectorError(e.to_string()))?;
@@ -171,18 +171,21 @@ fn process_links(
             let text = element.text().collect::<String>().trim().to_string();
             if !text.is_empty() {
                 let absolute_url = resolve_url_against_base(base_url, href);
-                document.links.push(Link { text, url: absolute_url });
+                document.links.push(Link {
+                    text,
+                    url: absolute_url,
+                });
             }
         }
     }
     Ok(())
 }
 
-/// Process image elements
+/// Process images
 fn process_images(
-    document: &mut Document, 
-    document_html: &Html, 
-    base_url: &Url
+    document: &mut Document,
+    document_html: &Html,
+    base_url: &Url,
 ) -> Result<(), MarkdownError> {
     let img_selector =
         Selector::parse("img[src]").map_err(|e| MarkdownError::SelectorError(e.to_string()))?;
@@ -190,17 +193,20 @@ fn process_images(
         if let Some(src) = element.value().attr("src") {
             let alt = element.value().attr("alt").unwrap_or("image").to_string();
             let absolute_url = resolve_url_against_base(base_url, src);
-            document.images.push(Image { alt, src: absolute_url });
+            document.images.push(Image {
+                alt,
+                src: absolute_url,
+            });
         }
     }
     Ok(())
 }
 
-/// Process list elements (both ordered and unordered)
+/// Process lists
 fn process_lists(document: &mut Document, document_html: &Html) -> Result<(), MarkdownError> {
     let li_selector =
         Selector::parse("li").map_err(|e| MarkdownError::SelectorError(e.to_string()))?;
-    
+
     // Process unordered lists
     let ul_selector =
         Selector::parse("ul").map_err(|e| MarkdownError::SelectorError(e.to_string()))?;
@@ -218,11 +224,11 @@ fn process_lists(document: &mut Document, document_html: &Html) -> Result<(), Ma
             document.lists.push(list);
         }
     }
-    
+
     Ok(())
 }
 
-/// Process code block elements
+/// Process code blocks
 fn process_code_blocks(document: &mut Document, document_html: &Html) -> Result<(), MarkdownError> {
     let pre_selector =
         Selector::parse("pre, code").map_err(|e| MarkdownError::SelectorError(e.to_string()))?;
@@ -246,7 +252,7 @@ fn process_code_blocks(document: &mut Document, document_html: &Html) -> Result<
     Ok(())
 }
 
-/// Process blockquote elements
+/// Process blockquotes
 fn process_blockquotes(document: &mut Document, document_html: &Html) -> Result<(), MarkdownError> {
     let blockquote_selector =
         Selector::parse("blockquote").map_err(|e| MarkdownError::SelectorError(e.to_string()))?;
@@ -259,7 +265,7 @@ fn process_blockquotes(document: &mut Document, document_html: &Html) -> Result<
     Ok(())
 }
 
-/// Helper function to resolve URLs against a base URL
+/// Resolve URLs against base URL
 fn resolve_url_against_base(base_url: &Url, href: &str) -> String {
     base_url
         .join(href)
@@ -267,11 +273,11 @@ fn resolve_url_against_base(base_url: &Url, href: &str) -> String {
         .to_string()
 }
 
-/// Helper function to extract list items
+/// Extract list items
 fn extract_list_items(
-    list_element: &scraper::ElementRef, 
-    li_selector: &Selector, 
-    ordered: bool
+    list_element: &scraper::ElementRef,
+    li_selector: &Selector,
+    ordered: bool,
 ) -> Option<List> {
     let mut items = Vec::new();
     for li in list_element.select(li_selector) {
@@ -288,7 +294,7 @@ fn extract_list_items(
     }
 }
 
-/// Convert document to markdown format
+/// Convert document to markdown
 pub fn document_to_markdown(document: &Document) -> String {
     let mut markdown_content = format!("# {}\n\n", document.title);
 
@@ -353,14 +359,14 @@ pub fn document_to_markdown(document: &Document) -> String {
         .to_string()
 }
 
-/// Convert document to JSON format
+/// Convert document to JSON
 pub fn document_to_json(document: &Document) -> Result<String, MarkdownError> {
     serde_json::to_string_pretty(document).map_err(|e| {
         MarkdownError::SerializationError(format!("Failed to serialize to JSON: {}", e))
     })
 }
 
-/// Convert document to XML format
+/// Convert document to XML
 pub fn document_to_xml(document: &Document) -> Result<String, MarkdownError> {
     use quick_xml::se::to_string;
 
@@ -376,7 +382,7 @@ pub fn document_to_xml(document: &Document) -> Result<String, MarkdownError> {
     }
 }
 
-/// Convert HTML to the specified output format
+/// Convert HTML to specified format
 pub fn convert_html(
     html: &str,
     base_url: &str,
@@ -391,7 +397,7 @@ pub fn convert_html(
     }
 }
 
-/// Backward compatibility function for convert_to_markdown
+/// Legacy convert_to_markdown function
 pub fn convert_to_markdown(html: &str, base_url: &str) -> Result<String, MarkdownError> {
     convert_html(html, base_url, OutputFormat::Markdown)
 }

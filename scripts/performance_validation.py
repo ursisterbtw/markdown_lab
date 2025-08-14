@@ -431,13 +431,7 @@ def main():
 
         if actual_value >= target_value:
             targets_met += 1
-        else:
-            pass
-
-
-    if targets_met == targets_total:
-        return 0
-    return 1
+    return 0 if targets_met == targets_total else 1
 
 
 if __name__ == "__main__":

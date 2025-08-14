@@ -39,12 +39,7 @@ class MarkdownScraper:
     """
 
     def __init__(self, config: Optional[MarkdownLabConfig] = None) -> None:
-        """
-        Initialize MarkdownScraper with centralized configuration.
-
-        Args:
-            config: Optional MarkdownLabConfig instance. Uses default if not provided.
-        """
+        """Initialize MarkdownScraper with configuration."""
         self.config = config or get_config()
 
         self.converter = Converter(self.config)
@@ -85,7 +80,7 @@ class MarkdownScraper:
         return self.converter.client.get(url, skip_cache=skip_cache)
 
     def _check_cache(self, url: str, skip_cache: bool) -> Optional[str]:
-        """Check if content is available in cache."""
+        """Return cached content if available."""
         if self.cache_enabled and not skip_cache and self.request_cache is not None:
             cached_content = self.request_cache.get(url)
             if cached_content is not None:
@@ -94,17 +89,7 @@ class MarkdownScraper:
         return None
 
     def _start_performance_monitoring(self, psutil_available: bool) -> dict[str, Any]:
-        """
-        Begins tracking execution time and memory usage for performance monitoring.
-
-        If `psutil` is available, also prepares a process object for CPU usage tracking.
-
-        Args:
-            psutil_available: Indicates whether the `psutil` library is available.
-
-        Returns:
-            A dictionary containing the start time and, if applicable, a `psutil.Process` object.
-        """
+        """Start performance monitoring with optional CPU tracking."""
         import tracemalloc
 
         start_time = time.time()
@@ -126,14 +111,7 @@ class MarkdownScraper:
     def _log_performance_metrics(
         self, url: str, monitor, psutil_available: bool
     ) -> None:
-        """
-        Logs execution time, memory usage, and CPU usage (if available) for a scraping request.
-
-        Args:
-            url: The URL that was scraped.
-            monitor: Dictionary containing timing and process monitoring data.
-            psutil_available: Indicates if psutil is available for CPU usage tracking.
-        """
+        """Log performance metrics for scraping request."""
         import tracemalloc
 
         end_time = time.time()
@@ -152,7 +130,7 @@ class MarkdownScraper:
         tracemalloc.stop()
 
     def _cache_response(self, url: str, content: str) -> None:
-        """Cache the response if caching is enabled."""
+        """Store response in cache."""
         if self.cache_enabled and self.request_cache is not None:
             self.request_cache.set(url, content)
 
@@ -234,27 +212,7 @@ class MarkdownScraper:
         chunk_format: str = "jsonl",
         output_format: str = "markdown",
     ) -> List[str]:
-        """
-        Scrapes multiple pages from a website using its sitemap and saves the content in the specified format.
-
-        Filters sitemap URLs by priority and regex patterns, limits the number of pages if specified, and processes each URL by scraping, converting, and saving the content. Optionally creates and saves content chunks for retrieval-augmented generation workflows.
-
-        Args:
-            base_url: The root URL of the website whose sitemap will be parsed.
-            output_dir: Directory where the scraped content will be saved.
-            min_priority: If set, only URLs with a sitemap priority greater than or equal to this value are included.
-            include_patterns: Regex patterns; only URLs matching at least one are included.
-            exclude_patterns: Regex patterns; URLs matching any are excluded.
-            limit: Maximum number of URLs to process.
-            save_chunks: If True, splits content into chunks and saves them for downstream use.
-            chunk_dir: Directory for saving chunks; defaults to a subdirectory of output_dir if not specified.
-            chunk_format: Format for saved chunks ("json" or "jsonl").
-            output_format: Output format for scraped content ("markdown", "json", or "xml").
-
-        Returns:
-            A list of URLs that were successfully scraped and saved.
-        """
-        # Delegate to the Converter's sitemap method
+        """Scrape multiple pages discovered via sitemap with filtering and chunking support."""
         return self.converter.convert_sitemap(
             base_url=base_url,
             output_dir=output_dir,
@@ -309,22 +267,10 @@ class MarkdownScraper:
     def _prepare_directories(
         self, output_dir: str, save_chunks: bool, chunk_dir: Optional[str] = None
     ) -> Tuple[Path, Optional[str]]:
-        """
-        Creates the output directory and, if chunking is enabled, creates the chunk directory.
-
-        Args:
-            output_dir: Path to the main output directory.
-            save_chunks: Whether to create a directory for content chunks.
-            chunk_dir: Optional path for the chunk directory; defaults to 'chunks' within the output directory if not provided.
-
-        Returns:
-            A tuple containing the Path object for the output directory and the path to the chunk directory (or None if not used).
-        """
-        # Create output directory
+        """Create output directories and return paths."""
         output_path = Path(output_dir)
         output_path.mkdir(parents=True, exist_ok=True)
 
-        # Set up chunk directory if chunking is enabled
         chunk_directory = None
         if save_chunks:
             if chunk_dir is None:
@@ -405,10 +351,7 @@ class MarkdownScraper:
         """
         chunks = self.create_chunks(markdown_content, url)
 
-        # Create URL-specific chunk directory to prevent filename collisions
-        from pathlib import (
-            Path,  # Ensure import is present (safe to add multiple times)
-        )
+        from pathlib import Path
 
         url_chunk_dir = f"{chunk_dir}/{Path(filename).stem}"
         self.save_chunks(chunks, url_chunk_dir, chunk_format)

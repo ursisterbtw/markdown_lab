@@ -303,13 +303,13 @@ def _convert_interactive(
                 stats["Chunks Created"] = len(chunks)
 
             # Success
-            stats["Status"] = "Yes Completed"
+            stats["Status"] = "Completed"
             stats["Output Size"] = f"{len(content)} chars"
 
             final_table = create_status_table(stats)
             layout["main"].update(
                 Panel(
-                    final_table, title="Yes Conversion Complete", border_style="green"
+                    final_table, title="Conversion Complete", border_style="green"
                 )
             )
 
@@ -319,7 +319,7 @@ def _convert_interactive(
         console.print("\nNo Operation cancelled by user", style="bold red")
         raise typer.Exit(1) from e
     except Exception as e:
-        console.print(f"\nNo Error: {e}", style="bold red")
+        console.print(f"\nError: {e}", style="bold red")
         raise typer.Exit(1) from e
 
     console.print(f"\nYes Successfully converted URL to {output}", style="bold green")
@@ -497,7 +497,7 @@ def convert_sitemap(
 
         # Success summary
         success_panel = Panel(
-            f"Yes Successfully processed [bold cyan]{len(successful_urls)}[/bold cyan] URLs\n"
+            f"Successfully processed [bold cyan]{len(successful_urls)}[/bold cyan] URLs\n"
             f"Output: [bold green]{output_dir}[/bold green]\n"
             f"Format: [bold yellow]{format.value.upper()}[/bold yellow]"
             + (
@@ -518,7 +518,7 @@ def convert_sitemap(
                 console.print(f"  ... and {len(successful_urls) - 10} more")
 
     except Exception as e:
-        console.print(f"\nNo Error: {e}", style="bold red")
+        console.print(f"\nError: {e}", style="bold red")
         raise typer.Exit(1) from e
 
 
@@ -597,7 +597,7 @@ def convert_batch(
 
         # Success summary
         success_panel = Panel(
-            f"Yes Successfully processed [bold cyan]{len(successful_urls)}[/bold cyan] URLs\n"
+            f"Successfully processed [bold cyan]{len(successful_urls)}[/bold cyan] URLs\n"
             f"Output: [bold green]{output_dir}[/bold green]\n"
             f"Format: [bold yellow]{format.value.upper()}[/bold yellow]"
             + (
@@ -618,7 +618,7 @@ def convert_batch(
                 console.print(f"  ... and {len(successful_urls) - 10} more")
 
     except Exception as e:
-        console.print(f"\nNo Error: {e}", style="bold red")
+        console.print(f"\nError: {e}", style="bold red")
         raise typer.Exit(1) from e
 
 

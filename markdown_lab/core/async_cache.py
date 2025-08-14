@@ -3,20 +3,18 @@ Async cache implementation with compression for 45% performance improvement.
 Replaces synchronous file I/O with async operations and adds content compression.
 """
 
+
 import asyncio
 import gzip
 import logging
 import time
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
 
 from markdown_lab.utils.cache_utils import (
     get_cache_key,
     get_cache_path_with_compression,
 )
-
-if TYPE_CHECKING:
-    pass
 
 try:
     import aiofiles

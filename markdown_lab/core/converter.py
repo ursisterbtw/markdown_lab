@@ -30,16 +30,10 @@ class Converter:
     """
 
     def __init__(self, config: Optional[MarkdownLabConfig] = None):
-        """
-        Initialize the converter with configuration.
-
-        Args:
-            config: Optional configuration. Uses default if not provided.
-        """
+        """Initialize converter with configuration."""
         self.config = config or get_config()
         self.client = CachedHttpClient(self.config)
 
-        # Initialize format-specific handlers
         format_config = {
             "include_metadata": self.config.include_metadata,
             "indent": 2,
@@ -51,7 +45,6 @@ class Converter:
             "xml": XmlFormatter(format_config),
         }
 
-        # Initialize Rust backend
         self.rust_backend = get_rust_backend(
             fallback_enabled=self.config.fallback_to_python
         )
@@ -59,25 +52,9 @@ class Converter:
     def convert_url(
         self, url: str, output_format: str = "markdown", skip_cache: bool = False
     ) -> Tuple[str, str]:
-        """
-        Convert content from a URL to the specified format.
-
-        Args:
-            url: The URL to convert
-            output_format: Target format ("markdown", "json", "xml")
-            skip_cache: Whether to bypass cache
-
-        Returns:
-            Tuple of (converted_content, markdown_content)
-
-        Raises:
-            ConversionError: If conversion fails
-        """
+        """Convert URL content to specified format."""
         try:
-            # Fetch HTML content
             html_content = self.client.get(url, skip_cache=skip_cache)
-
-            # Convert to target format
             return self.convert_html(html_content, url, output_format)
 
         except Exception as e:
@@ -92,27 +69,11 @@ class Converter:
     def convert_html(
         self, html_content: str, base_url: str, output_format: str = "markdown"
     ) -> Tuple[str, str]:
-        """
-        Convert HTML content to the specified format.
-
-        Args:
-            html_content: Raw HTML content
-            base_url: Base URL for resolving relative links
-            output_format: Target format ("markdown", "json", "xml")
-
-        Returns:
-            Tuple of (converted_content, markdown_content)
-
-        Raises:
-            ConversionError: If conversion fails
-        """
+        """Convert HTML content to specified format."""
         try:
-            # Get raw converted content from Rust backend
             raw_content = self.rust_backend.convert_html_to_format(
                 html_content, base_url, output_format
             )
-
-            # Also get markdown version for chunking if needed
             markdown_content = (
                 self.rust_backend.convert_html_to_format(
                     html_content, base_url, "markdown"

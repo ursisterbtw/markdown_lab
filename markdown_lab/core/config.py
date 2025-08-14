@@ -106,18 +106,12 @@ class MarkdownLabConfig:
     fallback_to_python: bool = True
 
     def __post_init__(self):
-        """
-        Validates configuration values and applies environment variable overrides after initialization.
-        """
+        """Validate config and apply environment overrides."""
         self._validate_config()
         self._apply_environment_overrides()
 
     def _validate_config(self) -> None:
-        """
-        Validates configuration parameters and raises ValueError if any constraints are violated.
-
-        Checks that numeric parameters are within valid ranges and that the default output format is supported.
-        """
+        """Validate configuration parameters."""
         if self.requests_per_second <= 0:
             raise ValueError("requests_per_second must be positive")
 
@@ -151,11 +145,7 @@ class MarkdownLabConfig:
             )
 
     def _apply_environment_overrides(self) -> None:
-        """
-        Overrides configuration attributes with values from corresponding environment variables.
-
-        Reads predefined environment variables, converts their values to the appropriate types, and updates the configuration instance. Raises ValueError if an environment variable cannot be converted to the expected type.
-        """
+        """Apply environment variable overrides to configuration."""
         env_mappings = {
             "MARKDOWN_LAB_REQUESTS_PER_SECOND": ("requests_per_second", float),
             "MARKDOWN_LAB_TIMEOUT": ("timeout", int),
@@ -186,32 +176,12 @@ class MarkdownLabConfig:
 
     @classmethod
     def from_dict(cls, config_dict: Dict[str, Any]) -> "MarkdownLabConfig":
-        """
-        Creates a MarkdownLabConfig instance from a dictionary of configuration values.
-
-        Args:
-            config_dict: A dictionary containing configuration parameters keyed by attribute name.
-
-        Returns:
-            A MarkdownLabConfig instance initialized with the provided values.
-        """
+        """Create config from dictionary."""
         return cls(**config_dict)
 
     @classmethod
     def from_profile(cls, profile_name: str, **overrides) -> "MarkdownLabConfig":
-        """
-        Creates a MarkdownLabConfig instance from a predefined profile.
-
-        Args:
-            profile_name: Name of the profile ('development', 'production', 'fast', 'minimal')
-            **overrides: Additional configuration parameters to override profile defaults
-
-        Returns:
-            A MarkdownLabConfig instance initialized with profile settings
-
-        Raises:
-            ValueError: If the profile name is not recognized
-        """
+        """Create config from predefined profile with optional overrides."""
         if profile_name not in PROFILES:
             available = ", ".join(PROFILES.keys())
             raise ValueError(
@@ -270,27 +240,13 @@ class MarkdownLabConfig:
         return cls.from_dict(config_dict)
 
     def to_dict(self) -> Dict[str, Any]:
-        """
-        Converts the configuration instance to a dictionary.
-
-        Returns:
-            A dictionary representation of the configuration parameters.
-        """
+        """Convert configuration to dictionary."""
         from dataclasses import asdict
 
         return asdict(self)
 
     def save_to_file(self, config_path: str) -> None:
-        """
-        Saves the configuration to a JSON or YAML file.
-
-        Args:
-            config_path: Path to the output configuration file. The file extension determines the format (.json, .yml, or .yaml).
-
-        Raises:
-            ImportError: If saving as YAML and PyYAML is not installed.
-            ValueError: If the file extension is not supported.
-        """
+        """Save configuration to JSON or YAML file."""
         path = Path(config_path)
         config_dict = self.to_dict()
 
@@ -315,15 +271,7 @@ class MarkdownLabConfig:
             )
 
     def update(self, **kwargs) -> "MarkdownLabConfig":
-        """
-        Returns a new configuration instance with updated values for specified parameters.
-
-        Args:
-            **kwargs: Configuration fields to update.
-
-        Returns:
-            A new MarkdownLabConfig instance with the specified fields updated.
-        """
+        """Return new config instance with updated values."""
         config_dict = self.to_dict()
         config_dict.update(kwargs)
         return self.from_dict(config_dict)
@@ -334,60 +282,31 @@ DEFAULT_CONFIG = MarkdownLabConfig()
 
 
 def get_config() -> MarkdownLabConfig:
-    """
-    Returns the current global MarkdownLab configuration instance.
-    """
+    """Get current global configuration."""
     return DEFAULT_CONFIG
 
 
 def set_config(config: MarkdownLabConfig) -> None:
-    """
-    Sets the global configuration instance for the markdown_lab project.
-
-    Replaces the current global configuration with the provided MarkdownLabConfig instance.
-    """
+    """Set global configuration."""
     global DEFAULT_CONFIG
     DEFAULT_CONFIG = config
 
 
 def load_config_from_env() -> MarkdownLabConfig:
-    """
-    Creates a new MarkdownLabConfig instance with environment variable overrides applied.
-
-    Returns:
-        A MarkdownLabConfig object reflecting any relevant environment variable settings.
-    """
+    """Create config with environment variable overrides."""
     return MarkdownLabConfig()
 
 
 # CLI argument configuration helpers
 def create_config_from_cli_args(profile: Optional[str] = None, **kwargs) -> MarkdownLabConfig:
-    """
-    Create configuration from CLI arguments, with optional profile support.
-
-    Args:
-        profile: Optional profile name to use as base configuration
-        **kwargs: CLI arguments that map to configuration parameters
-
-    Returns:
-        MarkdownLabConfig instance with profile and CLI overrides applied
-    """
-    # Start with profile or default config
+    """Create config from CLI arguments with optional profile."""
     base_config = get_profile(profile) if profile else get_config()
-    # Filter out None values to use profile/defaults
     config_dict = {k: v for k, v in kwargs.items() if v is not None}
-
-    # Override with provided CLI values
     return base_config.update(**config_dict)
 
 
 def get_cli_defaults() -> dict:
-    """
-    Get default values for CLI arguments from configuration.
-
-    Returns:
-        Dictionary of default values for common CLI parameters
-    """
+    """Get CLI argument defaults from configuration."""
     config = get_config()
     return {
         "requests_per_second": config.requests_per_second,
