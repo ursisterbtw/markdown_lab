@@ -211,7 +211,7 @@ set UV_PROJECT_ENVIRONMENT=$InstallPath\.venv
 
     # Print completion
     Write-Host ""
-    Write-Host "🎉 Installation Complete!" -ForegroundColor Green
+    Write-Host "Installation Complete!" -ForegroundColor Green
     Write-Host ""
     
     Write-Host "Available Commands:" -ForegroundColor White

@@ -1,4 +1,4 @@
-# 🚀 Markdown Lab Installation Guide
+# Markdown Lab Installation Guide
 
 ## One-Command Installation
 
@@ -142,6 +142,7 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ```
 
 Then restart your shell or run:
+
 ```bash
 source ~/.cargo/env
 ```

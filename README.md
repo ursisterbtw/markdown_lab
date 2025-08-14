@@ -1,6 +1,6 @@
 ![Markdown Lab](docs/assets/github-banner.svg)
 
-# Markdown Lab 🔄📝
+# Markdown Lab
 
 Markdown Lab combines Python and Rust components to scrape websites and convert HTML content to markdown, JSON, or XML formats. It supports sitemap parsing, semantic chunking for RAG
 (Retrieval-Augmented Generation), and includes performance optimizations through Rust integration.
@@ -15,14 +15,14 @@ Check out [deepwiki](https://deepwiki.com/ursisterbtw/markdown_lab/) for a detai
 
 ## Features
 
-- 🎨 **Modern CLI Interface**: Beautiful terminal output with Typer and Rich, progress bars, and interactive features
-- 🖥️ **Terminal User Interface (TUI)**: Full-featured interactive interface for complex operations
-- 🌐 **Web Scraping**: Scrapes any accessible website with error handling and rate limiting
-- 🗺️ **Sitemap Integration**: Parses sitemap.xml to discover and scrape the most relevant content
-- 📝 **Multiple Output Formats**: Converts HTML to clean Markdown, JSON, or XML formats
-- 🧩 **RAG Chunking**: Implements intelligent chunking for Retrieval-Augmented Generation systems
-- ⚡ **Parallel Processing**: Batch URL processing with configurable worker threads
-- 🔄 **HTML Support**:
+- **Modern CLI Interface**: Terminal output with Typer and Rich, progress bars, and interactive features
+- **Terminal User Interface (TUI)**: Interactive interface for complex operations
+- **Web Scraping**: Scrapes any accessible website with error handling and rate limiting
+- **Sitemap Integration**: Parses sitemap.xml to discover and scrape relevant content
+- **Multiple Output Formats**: Converts HTML to clean Markdown, JSON, or XML formats
+- **RAG Chunking**: Implements chunking for Retrieval-Augmented Generation systems
+- **Parallel Processing**: Batch URL processing with configurable worker threads
+- **HTML Support**:
   - Headers (h1-h6)
   - Paragraphs
   - Links with resolved relative URLs
@@ -30,31 +30,33 @@ Check out [deepwiki](https://deepwiki.com/ursisterbtw/markdown_lab/) for a detai
   - Ordered and unordered lists
   - Blockquotes
   - Code blocks
-- 📊 **Real-time Progress**: Live progress tracking with rich terminal output
-- 📋 **Document Structure Preservation**: Maintains semantic structure during conversion
-- 🪵 **Logging**: Detailed logging with configurable levels
-- ✅ **Error Handling**: Exponential backoff and graceful failure recovery
-- 🏎️ **Performance Optimized**: Rust-powered HTML parsing with cached selectors
-- 🔧 **Centralized Configuration**: Unified configuration management system
-- 🌐 **Connection Pooling**: Efficient HTTP client with connection reuse
+- **Real-time Progress**: Live progress tracking with terminal output
+- **Document Structure Preservation**: Maintains semantic structure during conversion
+- **Logging**: Detailed logging with configurable levels
+- **Error Handling**: Exponential backoff and graceful failure recovery
+- **Performance Optimized**: Rust-powered HTML parsing with cached selectors
+- **Centralized Configuration**: Unified configuration management system
+- **Connection Pooling**: Efficient HTTP client with connection reuse
 
 ## Installation
 
-### 🚀 One-Command Installation (Recommended)
+### One-Command Installation (Recommended)
 
 **Linux/macOS:**
+
 ```bash
 curl -fsSL https://raw.githubusercontent.com/ursisterbtw/markdown_lab/main/scripts/install.sh | bash
 ```
 
 **Windows:**
+
 ```powershell
 irm https://raw.githubusercontent.com/ursisterbtw/markdown_lab/main/scripts/install.ps1 | iex
 ```
 
 This installs everything automatically: dependencies, Rust compilation, and CLI commands.
 
-### 📋 Manual Installation
+### Manual Installation
 
 Requirements: Python 3.12+, Rust, UV package manager
 
@@ -77,7 +79,7 @@ See [INSTALL.md](INSTALL.md) for detailed installation instructions and troubles
 
 ### Modern CLI Interface (Recommended)
 
-The project features a modern CLI built with Typer and Rich for beautiful terminal output:
+The project features a CLI built with Typer and Rich for terminal output:
 
 ```bash
 # Convert single URLs
@@ -484,25 +486,25 @@ This project is licensed under the MIT License - see the [LICENSE file](LICENSE)
 
 ## Roadmap
 
-### ✅ Completed
+### Completed
 
 - [x] Add support for more HTML elements
 - [x] Implement chunking for RAG
 - [x] Add sitemap.xml parsing for systematic scraping
 - [x] Add JSON and XML output formats
-- [x] **Optimize HTML parsing with cached selectors** (40-50% performance improvement)
-- [x] **Centralized configuration management**
-- [x] **Unified error hierarchy with structured exceptions**
-- [x] **Unified HTTP client with connection pooling**
-- [x] **Remove dead dependencies and fix version conflicts**
+- [x] Optimize HTML parsing with cached selectors (40-50% performance improvement)
+- [x] Centralized configuration management
+- [x] Unified error hierarchy with structured exceptions
+- [x] Unified HTTP client with connection pooling
+- [x] Remove dead dependencies and fix version conflicts
 
-### 🚧 In Progress
+### In Progress
 
 - [ ] Async HTTP operations for parallel processing
 - [ ] Memory usage optimization in chunking algorithms
 - [ ] Module restructuring for better maintainability
 
-### 📋 Planned
+### Planned
 
 - [ ] Add support for JavaScript-rendered pages
 - [ ] Implement custom markdown templates
@@ -512,7 +514,7 @@ This project is licensed under the MIT License - see the [LICENSE file](LICENSE)
 
 ## Author
 
-🐍🦀 ursister
+ursister
 
 ---
 

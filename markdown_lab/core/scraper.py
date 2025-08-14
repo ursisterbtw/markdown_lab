@@ -10,18 +10,14 @@ import contextlib
 import logging
 import time
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import Any, List, Optional, Tuple
 
 from markdown_lab.core.config import MarkdownLabConfig, get_config
 from markdown_lab.core.converter import Converter
-from markdown_lab.core.errors import (
-    retry_with_backoff,
-)
 from markdown_lab.utils.chunk_utils import ContentChunker
 from markdown_lab.utils.sitemap_utils import SitemapParser
 from markdown_lab.utils.url_utils import extract_base_url, get_filename_from_url
 
-# Configure logging with more detailed formatting
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -49,13 +45,10 @@ class MarkdownScraper:
         Args:
             config: Optional MarkdownLabConfig instance. Uses default if not provided.
         """
-        # Use provided config or get default
         self.config = config or get_config()
 
-        # Initialize the new Converter internally
         self.converter = Converter(self.config)
 
-        # Store parameters for backwards compatibility
         self.requests_per_second = self.config.requests_per_second
         self.timeout = self.config.timeout
         self.max_retries = self.config.max_retries
@@ -64,7 +57,6 @@ class MarkdownScraper:
         )
         self.cache_enabled = self.config.cache_enabled
 
-        # Legacy properties for compatibility
         self.session = self.converter.client.session
         self.rust_available = self.converter.rust_backend.is_available()
         self.OutputFormat = None  # Legacy compatibility
@@ -74,7 +66,6 @@ class MarkdownScraper:
             else None
         )
 
-        # Legacy request_cache for backwards compatibility
         self.request_cache = self.converter.client.cache
 
     def scrape_website(self, url: str, skip_cache: bool = False) -> str:
@@ -91,7 +82,6 @@ class MarkdownScraper:
         Raises:
             requests.exceptions.RequestException: If all retry attempts fail to retrieve the content.
         """
-        # Delegate to the new Converter's HTTP client
         return self.converter.client.get(url, skip_cache=skip_cache)
 
     def _check_cache(self, url: str, skip_cache: bool) -> Optional[str]:
@@ -103,7 +93,7 @@ class MarkdownScraper:
                 return cached_content
         return None
 
-    def _start_performance_monitoring(self, psutil_available: bool):
+    def _start_performance_monitoring(self, psutil_available: bool) -> dict[str, Any]:
         """
         Begins tracking execution time and memory usage for performance monitoring.
 
@@ -125,7 +115,7 @@ class MarkdownScraper:
                 "start_time": start_time,
                 "process": None,
             }
-        import psutil
+        import psutil  # type: ignore[import-not-found]
 
         process = psutil.Process()
         return {
@@ -133,7 +123,9 @@ class MarkdownScraper:
             "process": process,
         }
 
-    def _log_performance_metrics(self, url: str, monitor, psutil_available: bool):
+    def _log_performance_metrics(
+        self, url: str, monitor, psutil_available: bool
+    ) -> None:
         """
         Logs execution time, memory usage, and CPU usage (if available) for a scraping request.
 
@@ -164,36 +156,6 @@ class MarkdownScraper:
         if self.cache_enabled and self.request_cache is not None:
             self.request_cache.set(url, content)
 
-    def _make_single_request(self, url: str) -> str:
-        """Make a single HTTP request with throttling."""
-        self.throttler.throttle()
-        response = self.session.get(url, timeout=self.timeout)
-        response.raise_for_status()
-
-        logger.info(
-            f"Successfully retrieved the website content (status code: {response.status_code})."
-        )
-        logger.info(f"Network latency: {response.elapsed.total_seconds():.2f} seconds")
-
-        return response.text
-
-    def _fetch_with_retries(self, url: str) -> str:
-        """
-        Attempts to fetch the content of a URL with retry logic for network-related errors.
-
-        Uses the centralized retry mechanism with exponential backoff for consistent error handling.
-
-        Args:
-            url: The URL to fetch.
-
-        Returns:
-            The response content as a string.
-
-        Raises:
-            NetworkError: If the URL cannot be retrieved after all retries.
-        """
-        return retry_with_backoff(self._make_single_request, self.max_retries, url, url)
-
     def save_content(self, content: str, output_file: str) -> None:
         """
         Save content to a file.
@@ -215,7 +177,7 @@ class MarkdownScraper:
         """
         self.save_content(markdown_content, output_file)
 
-    def create_chunks(self, markdown_content: str, source_url: str):
+    def create_chunks(self, markdown_content: str, source_url: str) -> List[Any]:
         """
         Create chunks from the markdown content using the chunk_utils module.
 
@@ -229,7 +191,9 @@ class MarkdownScraper:
         # Delegate to the Converter
         return self.converter.create_chunks(markdown_content, source_url)
 
-    def save_chunks(self, chunks, output_dir, output_format="jsonl"):
+    def save_chunks(
+        self, chunks: List[Any], output_dir: str, output_format: str = "jsonl"
+    ) -> None:
         """
         Save content chunks using the chunk_utils module.
 
@@ -400,7 +364,7 @@ class MarkdownScraper:
         output_file = str(output_path / filename)
 
         # Scrape and convert the page
-        logger.info(f"Scraping URL {index+1}/{total}: {url}")
+        logger.info(f"Scraping URL {index + 1}/{total}: {url}")
         html_content = self.scrape_website(url, skip_cache=False)
 
         # Convert based on output format using the helper method
@@ -522,7 +486,9 @@ class MarkdownScraper:
             try:
                 from ..utils.thread_pool import get_shared_executor
 
-                def process_url(args):
+                def process_url(
+                    args: Tuple[str, int],
+                ) -> Tuple[bool, str, Optional[str]]:
                     """
                     Processes a single URL for scraping and content conversion, capturing success or failure.
 
@@ -608,8 +574,8 @@ class MarkdownScraper:
 
 def main(
     args_list=None,
-    url: str = None,
-    output_file: str = None,
+    url: Optional[str] = None,
+    output_file: Optional[str] = None,
     output_format: str = "markdown",
     save_chunks: bool = True,
     chunk_dir: str = "chunks",
@@ -725,7 +691,7 @@ def main(
         raise
 
 
-def _create_argument_parser():
+def _create_argument_parser() -> argparse.ArgumentParser:
     """
     Creates and configures the argument parser for the command-line interface.
 

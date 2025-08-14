@@ -13,7 +13,7 @@ from xml.etree.ElementTree import ParseError
 
 from markdown_lab.core.client import HttpClient
 from markdown_lab.core.config import MarkdownLabConfig, get_config
-from markdown_lab.core.errors import NetworkError, retry_with_backoff
+from markdown_lab.core.errors import NetworkError
 
 logger = logging.getLogger("sitemap_parser")
 
@@ -66,16 +66,13 @@ class SitemapParser:
         self.discovered_urls: List[SitemapURL] = []
         self.processed_sitemaps: Set[str] = set()
 
-    def _make_single_request(self, url: str) -> str:
-        """Make a single HTTP request using the unified client."""
-        return self.client.get(url)
-
     def _make_request(self, url: str) -> Optional[str]:
         """
         Make an HTTP request with retry logic.
 
-        Uses the centralized retry mechanism but returns None instead of raising
-        exceptions to maintain compatibility with sitemap discovery logic.
+        Uses the unified client which already includes retry logic.
+        Returns None instead of raising exceptions to maintain
+        compatibility with sitemap discovery logic.
 
         Args:
             url: The URL to request
@@ -84,9 +81,8 @@ class SitemapParser:
             The response text or None if failed
         """
         try:
-            return retry_with_backoff(
-                self._make_single_request, self.config.max_retries, url, url
-            )
+            # The unified client already has retry logic built-in
+            return self.client.get(url)
         except NetworkError:
             # Sitemap parsing should continue even if individual requests fail
             return None

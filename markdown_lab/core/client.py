@@ -8,7 +8,8 @@ rate limiting, caching, and consistent error handling.
 
 import logging
 import time
-from typing import Dict, List, Optional
+import warnings
+from typing import Dict, List, Optional, cast
 
 import requests
 from requests.adapters import HTTPAdapter
@@ -93,7 +94,8 @@ class HttpClient:
         Raises:
             NetworkError: If the request fails after all retry attempts.
         """
-        return self._request_with_retries("GET", url, **kwargs)
+        result = self._request_with_retries("GET", url, **kwargs)
+        return cast(str, result)
 
     def head(self, url: str, **kwargs) -> requests.Response:
         """
@@ -109,7 +111,8 @@ class HttpClient:
         Raises:
             NetworkError: If the request fails after all retry attempts.
         """
-        return self._request_with_retries("HEAD", url, return_response=True, **kwargs)
+        result = self._request_with_retries("HEAD", url, return_response=True, **kwargs)
+        return cast(requests.Response, result)
 
     def get_many(self, urls: List[str], **kwargs) -> Dict[str, str]:
         """
@@ -214,13 +217,13 @@ class HttpClient:
             self.session.close()
             logger.debug("HTTP client session closed")
 
-    def __enter__(self):
+    def __enter__(self) -> "HttpClient":
         """
         Enters the context manager and returns the HttpClient instance.
         """
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         """
         Closes the HTTP client session when exiting a context manager block.
         """
@@ -253,41 +256,35 @@ class CachedHttpClient(HttpClient):
             f"Initialized cached HTTP client (cache_enabled: {self.config.cache_enabled})"
         )
 
-    def get(
-        self, url: str, use_cache: bool = True, skip_cache: bool = False, **kwargs
-    ) -> str:
+    def get(self, url: str, skip_cache: bool = False, **kwargs) -> str:
         """
         Retrieve the content of a URL using a GET request, utilizing cache if enabled.
 
-        If caching is enabled and a cached response exists for the URL, returns the cached content. Otherwise, performs the GET request, stores the result in the cache if applicable, and returns the response content.
+        If caching is enabled and a cached response exists for the URL, returns the cached content.
+        Otherwise, performs the GET request, stores the result in the cache if applicable, and returns the response content.
 
-        Parameters:
-            url (str): The URL to fetch.
-            use_cache (bool): Whether to use and update the cache for this request.
-            skip_cache (bool, deprecated): Deprecated. Use 'use_cache' instead. If both 'use_cache' and 'skip_cache' are provided, 'use_cache' takes precedence. Using 'skip_cache' will emit a DeprecationWarning.
+        Args:
+            url: The URL to fetch.
+            skip_cache: If True, bypasses the cache and forces a fresh request.
+            **kwargs: Additional arguments passed to the underlying request.
 
         Returns:
-            str: The response body as text.
+            The response body as text.
         """
-        import warnings
-
-        # Handle deprecated skip_cache parameter
         if skip_cache:
             warnings.warn(
-                "'skip_cache' is deprecated and will be removed in a future version. Please use 'use_cache=False' instead.",
+                "The 'skip_cache' parameter is deprecated. Use cache=None in constructor to disable caching.",
                 DeprecationWarning,
-                stacklevel=2,
+                stacklevel=2
             )
-            # Only override use_cache if it's still at its default value
-            if use_cache:
-                use_cache = False
+        use_cache = not skip_cache
 
         if use_cache and self.cache and (cached_content := self.cache.get(url)):
             logger.debug(f"Cache hit for {url}")
             return cached_content
 
         # Make request
-        content = super().get(url, **kwargs)
+        content = super().get(url, skip_cache=skip_cache, **kwargs)
 
         # Store in cache
         if use_cache and self.cache:

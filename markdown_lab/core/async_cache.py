@@ -7,9 +7,16 @@ import asyncio
 import gzip
 import logging
 import time
-from hashlib import md5
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple
+
+from markdown_lab.utils.cache_utils import (
+    get_cache_key,
+    get_cache_path_with_compression,
+)
+
+if TYPE_CHECKING:
+    pass
 
 try:
     import aiofiles
@@ -18,7 +25,7 @@ try:
 except ImportError:
     # aiofiles not available - will use async thread pool fallback
     AIOFILES_AVAILABLE = False
-    aiofiles = None
+    aiofiles = None  # type: ignore[assignment]
 
 logger = logging.getLogger(__name__)
 
@@ -56,13 +63,11 @@ class AsyncCacheManager:
 
     def _get_cache_key(self, url: str) -> str:
         """Generate a cache key from URL."""
-        return md5(url.encode()).hexdigest()
+        return get_cache_key(url)
 
     def _get_cache_path(self, url: str) -> Path:
         """Get the path to the cache file for a URL."""
-        key = self._get_cache_key(url)
-        suffix = ".gz" if self.enable_compression else ".txt"
-        return self.cache_dir / f"{key}{suffix}"
+        return get_cache_path_with_compression(self.cache_dir, url, self.enable_compression)
 
     async def get(self, url: str) -> Optional[str]:
         """

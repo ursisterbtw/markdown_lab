@@ -11,6 +11,109 @@ from typing import Any, Callable, Dict, Optional
 
 logger = logging.getLogger(__name__)
 
+# Error code catalog with troubleshooting guidance
+ERROR_CATALOG = {
+    "NET001": {
+        "name": "Connection Timeout",
+        "description": "The request timed out while trying to connect to the server",
+        "troubleshooting": [
+            "Check if the URL is accessible in a browser",
+            "Increase timeout with --timeout option",
+            "Try using --profile conservative for slower but more reliable operation",
+            "Check your internet connection",
+        ],
+    },
+    "NET002": {
+        "name": "Connection Refused",
+        "description": "The server refused the connection",
+        "troubleshooting": [
+            "Verify the URL is correct",
+            "Check if the website requires authentication",
+            "The server may be blocking automated requests - try --user-agent option",
+            "Use --profile conservative to reduce request rate",
+        ],
+    },
+    "NET003": {
+        "name": "Rate Limited",
+        "description": "Too many requests sent to the server",
+        "troubleshooting": [
+            "Reduce request rate with --requests-per-second",
+            "Use --profile conservative for respectful crawling",
+            "Enable caching with --cache-enabled to avoid repeat requests",
+            "Wait before retrying the operation",
+        ],
+    },
+    "PARSE001": {
+        "name": "Invalid HTML",
+        "description": "The HTML content could not be parsed",
+        "troubleshooting": [
+            "Check if the URL returns valid HTML content",
+            "Try enabling JavaScript rendering with --js-rendering",
+            "The page may require authentication or cookies",
+            "Use --fallback-to-python to try alternative parser",
+        ],
+    },
+    "PARSE002": {
+        "name": "Content Extraction Failed",
+        "description": "Could not extract main content from the page",
+        "troubleshooting": [
+            "The page structure may be unusual or dynamic",
+            "Try different output format with --format option",
+            "Enable JavaScript rendering for dynamic content",
+            "Check if the page loads content via AJAX",
+        ],
+    },
+    "CONFIG001": {
+        "name": "Invalid Configuration",
+        "description": "Configuration parameters are invalid",
+        "troubleshooting": [
+            "Check configuration file syntax if using --config",
+            "Verify numeric parameters are positive numbers",
+            "Use --profile to load predefined configurations",
+            "Reset to defaults by removing config file",
+        ],
+    },
+    "CONFIG002": {
+        "name": "Profile Not Found",
+        "description": "The specified configuration profile does not exist",
+        "troubleshooting": [
+            "Available profiles: development, production, fast, minimal, conservative",
+            "Use 'mlab config list-profiles' to see all profiles",
+            "Check spelling of the profile name",
+        ],
+    },
+    "CONV001": {
+        "name": "Conversion Failed",
+        "description": "Could not convert content to the requested format",
+        "troubleshooting": [
+            "Try a different output format (markdown, json, xml)",
+            "Check if the source content is valid",
+            "Enable fallback mode with --fallback-to-python",
+            "Verify Rust backend is properly installed",
+        ],
+    },
+    "CACHE001": {
+        "name": "Cache Error",
+        "description": "Error accessing or writing to cache",
+        "troubleshooting": [
+            "Check disk space availability",
+            "Clear cache with 'mlab cache clear'",
+            "Disable cache temporarily with --no-cache",
+            "Check cache directory permissions",
+        ],
+    },
+    "RES001": {
+        "name": "Memory Limit Exceeded",
+        "description": "Operation exceeded memory limits",
+        "troubleshooting": [
+            "Process smaller batches of URLs",
+            "Reduce chunk size with --chunk-size",
+            "Disable caching to free memory",
+            "Use --profile minimal for lower memory usage",
+        ],
+    },
+}
+
 
 class MarkdownLabError(Exception):
     """Base exception for all markdown_lab operations."""
@@ -68,6 +171,15 @@ class NetworkError(MarkdownLabError):
             status_code: HTTP status code returned by the network request, if available.
             retry_count: Number of retry attempts made before the error occurred.
         """
+        # Auto-assign error code based on error type
+        if kwargs.get('error_code') is None:
+            if 'timeout' in message.lower():
+                kwargs['error_code'] = 'NET001'
+            elif 'refused' in message.lower() or 'connection' in message.lower():
+                kwargs['error_code'] = 'NET002'
+            elif status_code == 429 or 'rate' in message.lower():
+                kwargs['error_code'] = 'NET003'
+
         context = kwargs.get("context", {})
         if url:
             context["url"] = url
@@ -410,9 +522,10 @@ def handle_request_exception(
     Maps Timeout, ConnectionError, HTTPError, and other RequestException types to NetworkError
     with appropriate error codes and context, preserving the original exception as the cause.
     """
-    import requests
+    from requests.exceptions import ConnectionError as RequestsConnectionError
+    from requests.exceptions import HTTPError, RequestException, Timeout
 
-    if isinstance(exception, requests.exceptions.Timeout):
+    if isinstance(exception, Timeout):
         return NetworkError(
             f"Request to {url} timed out",
             url=url,
@@ -420,7 +533,7 @@ def handle_request_exception(
             error_code="REQUEST_TIMEOUT",
             cause=exception,
         )
-    if isinstance(exception, requests.exceptions.ConnectionError):
+    if isinstance(exception, RequestsConnectionError):
         return NetworkError(
             f"Failed to connect to {url}",
             url=url,
@@ -428,7 +541,7 @@ def handle_request_exception(
             error_code="CONNECTION_FAILED",
             cause=exception,
         )
-    if isinstance(exception, requests.exceptions.HTTPError):
+    if isinstance(exception, HTTPError):
         status_code = getattr(exception.response, "status_code", None)
         return NetworkError(
             f"HTTP error {status_code} for {url}",
@@ -438,7 +551,7 @@ def handle_request_exception(
             error_code="HTTP_ERROR",
             cause=exception,
         )
-    if isinstance(exception, requests.exceptions.RequestException):
+    if isinstance(exception, RequestException):
         return NetworkError(
             f"Request error for {url}: {str(exception)}",
             url=url,
@@ -707,7 +820,7 @@ def get_status_message(status_code: int) -> str:
 
 def get_troubleshooting_guide(error: MarkdownLabError) -> Dict[str, Any]:
     """
-    Get comprehensive troubleshooting guide for an error.
+    Get troubleshooting guide for an error.
 
     Args:
         error: The MarkdownLabError instance
@@ -774,13 +887,24 @@ def format_error_for_cli(
     Returns:
         Formatted error message for CLI display
     """
-    guide = get_troubleshooting_guide(error)
+    if catalog_entry := ERROR_CATALOG.get(error.error_code):
+        # Use catalog entry for structured error
+        output = [
+            f"[{error.error_code}] {catalog_entry['name']}",
+            f"Description: {catalog_entry['description']}",
+            f"Details: {error.message}",
+        ]
 
-    # Basic error info
-    output = [
-        f"❌ {guide['title']}",
-        f"   {error.message}",
-    ]
+        if show_troubleshooting and catalog_entry.get('troubleshooting'):
+            output.append("\nTroubleshooting:")
+            output.extend(f"  • {step}" for step in catalog_entry['troubleshooting'])
+    else:
+        # Fallback to legacy format
+        guide = get_troubleshooting_guide(error)
+        output = [
+            f"Error: {guide['title']}",
+            f"   {error.message}",
+        ]
 
     # Add context if available
     if error.context:
@@ -788,13 +912,13 @@ def format_error_for_cli(
         output.append(f"   Context: {', '.join(context_items)}")
 
     if show_troubleshooting:
-        output.extend(("", "🔧 Troubleshooting:"))
+        output.extend(("", "Troubleshooting:"))
         output.extend(f"   {step}" for step in guide["troubleshooting"])
 
         if guide.get("examples"):
-            output.extend(("", "💡 Examples:"))
+            output.extend(("", "Examples:"))
             output.extend(f"   {example}" for example in guide["examples"])
 
         if guide.get("docs_url"):
-            output.extend(("", f"📖 Documentation: {guide['docs_url']}"))
+            output.extend(("", f"Documentation: {guide['docs_url']}"))
     return "\n".join(output)

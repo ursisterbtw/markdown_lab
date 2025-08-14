@@ -2,7 +2,7 @@
 
 ## Modern CLI Interface (Recommended)
 
-The project now features a modern CLI built with Typer and Rich, providing beautiful terminal output, progress bars, and interactive features.
+The project features a CLI built with Typer and Rich, providing terminal output, progress bars, and interactive features.
 
 ### CLI Commands
 
@@ -22,14 +22,14 @@ The project now features a modern CLI built with Typer and Rich, providing beaut
 
 ### CLI Features
 
-- 🎨 Rich terminal output with colors and progress bars
-- 🎯 Interactive mode with live progress updates
-- 📊 Real-time status and statistics display
-- ⚙️ Advanced configuration management
-- 🔍 Comprehensive help system with examples
-- 📦 Content chunking for RAG applications
-- 🌐 Multiple output formats (Markdown, JSON, XML)
-- ⚡ Parallel processing support for batch operations
+- Rich terminal output with colors and progress bars
+- Interactive mode with live progress updates
+- Real-time status and statistics display
+- Advanced configuration management
+- Help system with examples
+- Content chunking for RAG applications
+- Multiple output formats (Markdown, JSON, XML)
+- Parallel processing support for batch operations
 
 ### Example Usage
 
@@ -70,7 +70,7 @@ The project uses `justfile` for streamlined development workflows. Run `just` to
 
 - `just dev` - Quick development setup (build + activate environment)
 - `just dev-cycle` - Build + test bindings (for active development)
-- `just full-cycle` - Build + lint + test (comprehensive check)
+- `just full-cycle` - Build + lint + test (complete check)
 - `just fix` - Fix common issues (clear caches, rebuild components)
 
 ### Testing & Quality

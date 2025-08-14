@@ -11,7 +11,7 @@ import json
 import logging
 import xml.etree.ElementTree as ET
 from enum import Enum
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 from xml.dom import minidom
 
 logger = logging.getLogger(__name__)
@@ -140,6 +140,76 @@ def convert_html(
     return markdown_content
 
 
+def _extract_title_from_lines(lines: List[str]) -> str:
+    """Extract title from markdown lines (first h1 heading)."""
+    return next(
+        (line[2:].strip() for line in lines if line.startswith("# ")),
+        "No Title",
+    )
+
+
+def _parse_heading(line: str) -> Optional[dict[str, Any]]:
+    """Parse a heading line and return heading info if valid."""
+    if not line.startswith("#"):
+        return None
+
+    level = 0
+    while level < len(line) and line[level] == "#":
+        level += 1
+
+    if level <= 6 and level < len(line) and line[level] == " ":
+        return {"level": level, "text": line[level + 1 :].strip()}
+
+    return None
+
+
+def _process_markdown_lines(lines: List[str], title: str) -> Dict[str, List]:
+    """Process markdown lines and extract content into document sections."""
+    content_sections = {
+        "headings": [],
+        "paragraphs": [],
+        "code_blocks": [],
+        "blockquotes": [],
+    }
+
+    current_block: List[str] = []
+    in_code_block = False
+    code_lang = ""
+    title_line = f"# {title}"
+
+    for line in lines:
+        # Skip title line which we already processed
+        if line.strip() == title_line:
+            continue
+
+        # Handle code blocks
+        if line.startswith("```"):
+            if not in_code_block:
+                in_code_block = True
+                code_lang = line[3:].strip()
+            else:
+                in_code_block = False
+                content_sections["code_blocks"].append(
+                    {"language": code_lang, "code": "\n".join(current_block)}
+                )
+            current_block = []
+            continue
+
+        # Collect code block content
+        if in_code_block:
+            current_block.append(line)
+            continue
+
+        if heading := _parse_heading(line):
+            content_sections["headings"].append(heading)
+        elif line.startswith(">"):
+            content_sections["blockquotes"].append(line[1:].strip())
+        elif line.strip():
+            content_sections["paragraphs"].append(line.strip())
+
+    return content_sections
+
+
 def parse_markdown_to_document(markdown: str, base_url: str) -> Dict:
     """
     Parse markdown into a document structure that can be serialized to different formats.
@@ -153,70 +223,17 @@ def parse_markdown_to_document(markdown: str, base_url: str) -> Dict:
         Document structure as a dictionary
     """
     lines = markdown.split("\n")
-    document = {
-        "title": "No Title",
+    title = _extract_title_from_lines(lines)
+    content_sections = _process_markdown_lines(lines, title)
+
+    return {
+        "title": title,
         "base_url": base_url,
-        "headings": [],
-        "paragraphs": [],
-        "links": [],
-        "images": [],
-        "lists": [],
-        "code_blocks": [],
-        "blockquotes": [],
+        "links": [],  # Not implemented in fallback
+        "images": [],  # Not implemented in fallback
+        "lists": [],  # Not implemented in fallback
+        **content_sections,
     }
-
-    # Extract title (first h1)
-    for line in lines:
-        if line.startswith("# "):
-            document["title"] = line[2:].strip()
-            break
-
-    # Process other elements with a very simple parser
-    # This is just a fallback implementation
-    current_block = []
-    in_code_block = False
-    code_lang = ""
-
-    for line in lines:
-        # Skip title line which we already processed
-        if line.strip() == f"# {document['title']}":
-            continue
-
-        # Handle headings
-        if line.startswith("#") and not in_code_block:
-            level = 0
-            while level < len(line) and line[level] == "#":
-                level += 1
-            if level <= 6 and level < len(line) and line[level] == " ":
-                document["headings"].append(
-                    {"level": level, "text": line[level + 1 :].strip()}
-                )
-
-        # Handle code blocks
-        elif line.startswith("```") and not in_code_block:
-            in_code_block = True
-            code_lang = line[3:].strip()
-            current_block = []
-        elif line.startswith("```") and in_code_block:
-            in_code_block = False
-            document["code_blocks"].append(
-                {"language": code_lang, "code": "\n".join(current_block)}
-            )
-            current_block = []
-
-        # Collect code block content
-        elif in_code_block:
-            current_block.append(line)
-
-        # Handle blockquotes
-        elif line.startswith(">") and not in_code_block:
-            document["blockquotes"].append(line[1:].strip())
-
-        # Handle paragraphs (very simplified)
-        elif line.strip() and not in_code_block:
-            document["paragraphs"].append(line.strip())
-
-    return document
 
 
 def document_to_xml(document: Dict) -> str:

@@ -76,12 +76,12 @@ current_config = None
 interactive_mode = False
 
 
-def setup_config(profile: str = None, **kwargs) -> MarkdownLabConfig:
+def setup_config(profile: Optional[str] = None, **kwargs) -> MarkdownLabConfig:
     """Setup configuration with provided CLI parameters and optional profile."""
     return create_config_from_cli_args(profile=profile, **kwargs)
 
 
-def print_banner():
+def print_banner() -> None:
     """Display the application banner."""
     banner = """
 ╔══════════════════════════════════════════════════════════════╗
@@ -128,9 +128,7 @@ def convert_url(
     ] = None,
     interactive: Annotated[
         bool,
-        typer.Option(
-            "--interactive", "-i", help="Interactive mode with live progress"
-        ),
+        typer.Option("--interactive", "-i", help="Interactive mode with live progress"),
     ] = False,
     save_chunks: Annotated[
         bool, typer.Option("--chunks", help="Save content chunks for RAG")
@@ -282,9 +280,7 @@ def _convert_interactive(
             )
 
             # Phase 3: Saving content
-            layout["main"].update(
-                Panel("Saving converted content...", title="Phase 3")
-            )
+            layout["main"].update(Panel("Saving converted content...", title="Phase 3"))
             time.sleep(0.5)
 
             converter.save_content(content, output)
@@ -312,7 +308,9 @@ def _convert_interactive(
 
             final_table = create_status_table(stats)
             layout["main"].update(
-                Panel(final_table, title="Yes Conversion Complete", border_style="green")
+                Panel(
+                    final_table, title="Yes Conversion Complete", border_style="green"
+                )
             )
 
             time.sleep(2)  # Show final result
@@ -351,26 +349,19 @@ def _convert_standard(
         TimeRemainingColumn(),
         console=console,
     ) as progress:
-
         # Main conversion task
         main_task = progress.add_task("Converting URL...", total=100)
 
         try:
             # Step 1: Fetch content
-            progress.update(
-                main_task, description="Fetching content...", completed=20
-            )
+            progress.update(main_task, description="Fetching content...", completed=20)
             html_content = converter.client.get(url, skip_cache=skip_cache)
 
             if verbose:
-                console.print(
-                    f"Fetched {len(html_content)} characters of HTML content"
-                )
+                console.print(f"Fetched {len(html_content)} characters of HTML content")
 
             # Step 2: Convert content
-            progress.update(
-                main_task, description="Converting HTML...", completed=50
-            )
+            progress.update(main_task, description="Converting HTML...", completed=50)
             content, markdown_content = converter.convert_html(
                 html_content, url, format_str
             )
@@ -416,9 +407,7 @@ def _convert_standard(
         f"Output: [bold green]{output}[/bold green]\n"
         f"Format: [bold yellow]{format_str.upper()}[/bold yellow]"
         + (
-            f"\nChunks: [bold magenta]{chunk_dir}[/bold magenta]"
-            if save_chunks
-            else ""
+            f"\nChunks: [bold magenta]{chunk_dir}[/bold magenta]" if save_chunks else ""
         ),
         title="Conversion Complete",
         border_style="green",
@@ -457,9 +446,7 @@ def convert_sitemap(
     chunk_format: Annotated[
         ChunkFormat, typer.Option(help="Chunk format")
     ] = ChunkFormat.jsonl,
-    parallel: Annotated[
-        bool, typer.Option(help="Enable parallel processing")
-    ] = False,
+    parallel: Annotated[bool, typer.Option(help="Enable parallel processing")] = False,
     max_workers: Annotated[int, typer.Option(help="Max parallel workers")] = 4,
     requests_per_second: Annotated[float, typer.Option(help="Rate limit")] = 1.0,
     verbose: Annotated[
@@ -549,9 +536,7 @@ def convert_batch(
     interactive: Annotated[
         bool, typer.Option("--interactive", "-i", help="Interactive mode")
     ] = False,
-    parallel: Annotated[
-        bool, typer.Option(help="Enable parallel processing")
-    ] = False,
+    parallel: Annotated[bool, typer.Option(help="Enable parallel processing")] = False,
     max_workers: Annotated[int, typer.Option(help="Max parallel workers")] = 4,
     save_chunks: Annotated[
         bool, typer.Option("--chunks", help="Save content chunks")
@@ -638,7 +623,7 @@ def convert_batch(
 
 
 @app.command("status")
-def show_status():
+def show_status() -> None:
     """
     Show system status and configuration.
 
@@ -713,7 +698,7 @@ def show_status():
 
 
 @app.command("tui")
-def launch_tui():
+def launch_tui() -> None:
     """
     Launch interactive TUI (Terminal User Interface).
 
@@ -737,7 +722,7 @@ def launch_tui():
 
 
 @app.command("profiles")
-def list_config_profiles():
+def list_config_profiles() -> None:
     """
     List available configuration profiles.
 
@@ -789,9 +774,7 @@ def manage_config(
     show: Annotated[
         bool, typer.Option("--show", help="Show current configuration")
     ] = False,
-    reset: Annotated[
-        bool, typer.Option("--reset", help="Reset to defaults")
-    ] = False,
+    reset: Annotated[bool, typer.Option("--reset", help="Reset to defaults")] = False,
     set_key: Annotated[
         Optional[str], typer.Option("--set", help="Set configuration key=value")
     ] = None,
@@ -823,7 +806,7 @@ def manage_config(
 @app.command("legacy")
 def legacy_cli(
     args: Annotated[
-        List[str], typer.Argument(help="Arguments to pass to legacy CLI")
+        Optional[List[str]], typer.Argument(help="Arguments to pass to legacy CLI")
     ] = None,
 ):
     """
@@ -871,7 +854,7 @@ def main(
         console.quiet = True
 
 
-def cli_main():
+def cli_main() -> None:
     """Entry point for the CLI application."""
     try:
         app()

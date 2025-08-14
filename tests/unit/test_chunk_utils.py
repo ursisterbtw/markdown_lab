@@ -32,17 +32,18 @@ It also has multiple lines.
 
         chunks = self.chunker.create_chunks_from_markdown(test_markdown, self.test_url)
 
-        # Check we got the right number of chunks
-        self.assertEqual(len(chunks), 2)
+        # Check we got the right number of chunks (title, section 1, section 2)
+        self.assertEqual(len(chunks), 3)
 
         # Check chunk contents
         self.assertIn("# Title", chunks[0].content)
-        self.assertIn("## Section 1", chunks[0].content)
-        self.assertIn("## Section 2", chunks[1].content)
+        self.assertIn("## Section 1", chunks[1].content)
+        self.assertIn("## Section 2", chunks[2].content)
 
         # Check metadata
         self.assertEqual(chunks[0].metadata["heading"], "# Title")
-        self.assertEqual(chunks[1].metadata["heading"], "## Section 2")
+        self.assertEqual(chunks[1].metadata["heading"], "## Section 1")
+        self.assertEqual(chunks[2].metadata["heading"], "## Section 2")
         self.assertEqual(chunks[0].source_url, self.test_url)
         self.assertEqual(chunks[0].chunk_type, "section")
 

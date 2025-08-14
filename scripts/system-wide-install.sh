@@ -233,7 +233,7 @@ test_installation() {
 
 # Print completion message
 print_completion() {
-    echo -e "\n${GREEN}${BOLD}🎉 Installation Complete!${NC}\n"
+    echo -e "\n${GREEN}${BOLD}Installation Complete!${NC}\n"
     
     echo -e "${BOLD}Available Commands:${NC}"
     echo -e "  ${GREEN}mlab${NC}         - Main CLI (with profiles, modern interface)"

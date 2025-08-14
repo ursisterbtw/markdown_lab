@@ -88,7 +88,7 @@ class TestHttpClient:
         result = http_client.head("https://example.com")
         assert result is not None
         mock_request.assert_called_once_with(
-            "HEAD", "https://example.com", timeout=30, return_response=True
+            "HEAD", "https://example.com", timeout=30
         )
 
     @patch("requests.Session.request")

@@ -10,7 +10,7 @@ from pathlib import Path
 import pytest
 
 from markdown_lab.core.config import MarkdownLabConfig
-from markdown_lab.network.advanced_cache import (
+from markdown_lab.core.async_cache import (
     AdvancedCache,
     CacheEntry,
     CacheStats,

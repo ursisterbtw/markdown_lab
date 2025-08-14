@@ -10,18 +10,18 @@ default:
 setup:
     #!/usr/bin/env bash
     set -euo pipefail
-    echo "🚀 Setting up development environment..."
+    echo "Setting up development environment..."
     
     # Install UV if not present
     if ! command -v uv &> /dev/null; then
-        echo "📦 Installing UV package manager..."
+        echo "Installing UV package manager..."
         curl -LsSf https://astral.sh/uv/install.sh | sh
         export PATH="$HOME/.cargo/bin:$PATH"
     fi
     
     uv sync
     source .venv/bin/activate && maturin develop
-    echo "✅ Setup complete! Run 'just test' to verify."
+    echo "Setup complete! Run 'just test' to verify."
 
 # Clean all build artifacts
 clean:
@@ -35,21 +35,29 @@ clean:
 
 # Build Rust components for development
 build:
+    #!/usr/bin/env bash
+    set -euo pipefail
     source .venv/bin/activate && maturin develop
 
 # Build with optimizations
 build-release:
+    #!/usr/bin/env bash
+    set -euo pipefail
     source .venv/bin/activate && maturin develop --release
 
 # === TESTING ===
 
 # Run all tests
 test:
+    #!/usr/bin/env bash
+    set -euo pipefail
     cargo test --color=always
     source .venv/bin/activate && python -m pytest tests/ -v --color=yes
 
 # Run Python tests only
 test-python:
+    #!/usr/bin/env bash
+    set -euo pipefail
     source .venv/bin/activate && python -m pytest tests/ -v --color=yes
 
 # Run Rust tests only
@@ -58,12 +66,16 @@ test-rust:
 
 # Run tests with coverage
 test-coverage:
+    #!/usr/bin/env bash
+    set -euo pipefail
     source .venv/bin/activate && python -m pytest --cov=markdown_lab --cov-report=html --cov-report=term --color=yes
 
 # === CODE QUALITY ===
 
 # Run all linting and formatting
 lint:
+    #!/usr/bin/env bash
+    set -euo pipefail
     source .venv/bin/activate && ruff check . --fix
     source .venv/bin/activate && black .
     source .venv/bin/activate && isort .
@@ -72,6 +84,8 @@ lint:
 
 # Type checking
 typecheck:
+    #!/usr/bin/env bash
+    set -euo pipefail
     source .venv/bin/activate && mypy markdown_lab/
 
 # === BENCHMARKS ===
@@ -85,14 +99,14 @@ bench:
 # Show project status
 status:
     #!/usr/bin/env bash
-    echo "📊 Markdown Lab Status"
+    echo "Markdown Lab Status"
     echo "====================="
     git status --short
     echo ""
     if [ -d ".venv" ] && source .venv/bin/activate && python -c "import markdown_lab.markdown_lab_rs" 2>/dev/null; then
-        echo "✅ Environment ready"
+        echo "Environment ready"
     else
-        echo "❌ Run 'just setup' first"
+        echo "Run 'just setup' first"
     fi
 
 # Update dependencies
@@ -102,12 +116,14 @@ update:
 
 # Run format conversion demo
 demo:
+    #!/usr/bin/env bash
+    set -euo pipefail
     source .venv/bin/activate && python examples/demo_formats.py
 
 # Fix common issues
 fix:
     #!/usr/bin/env bash
-    echo "🔧 Fixing common issues..."
+    echo "Fixing common issues..."
     find . -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true
     cargo clean 2>/dev/null || true
     rm -rf .pytest_cache .mypy_cache .request_cache 2>/dev/null || true

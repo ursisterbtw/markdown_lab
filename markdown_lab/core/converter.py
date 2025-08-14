@@ -338,7 +338,7 @@ class Converter:
         chunk_format: str,
     ) -> None:
         """Process a single URL: fetch, convert, save, and optionally chunk."""
-        logger.info(f"Processing URL {index+1}/{total}: {url}")
+        logger.info(f"Processing URL {index + 1}/{total}: {url}")
 
         filename = self._generate_output_filename(url, output_format, output_path)
         content, markdown_content = self.convert_url(url, output_format)
@@ -392,13 +392,13 @@ class Converter:
 
         return None
 
-    def close(self):
+    def close(self) -> None:
         """Clean up resources."""
         if hasattr(self, "client"):
             self.client.session.close()
 
-    def __enter__(self):
+    def __enter__(self) -> "Converter":
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         self.close()

@@ -112,8 +112,7 @@ class TestSitemapUtils(unittest.TestCase):
             {"https://example.com/page1", "https://example.com/page2"},
         )
 
-    @mock.patch("markdown_lab.utils.sitemap_utils.SitemapParser._make_request")
-    def test_robots_txt_parser(self, mock_make_request):
+    def test_robots_txt_parser(self):
         # Mock robots.txt and sitemap
         """
         Tests that the parser respects robots.txt sitemap declarations and correctly parses URLs from a custom sitemap.
@@ -121,32 +120,32 @@ class TestSitemapUtils(unittest.TestCase):
         Mocks responses for robots.txt and a custom sitemap, enables robots.txt handling, and verifies that URLs from the declared sitemap are discovered.
         """
         robots_sitemap_responses = {
-            "https://example.com/robots.txt": """
-                User-agent: *
-                Disallow: /private/
+            "https://example.com/robots.txt": """User-agent: *
+Disallow: /private/
 
-                Sitemap: https://example.com/custom_sitemap.xml
-                """,
+Sitemap: https://example.com/custom_sitemap.xml
+""",
             "https://example.com/custom_sitemap.xml": """<?xml version="1.0" encoding="UTF-8"?>
-                <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-                    <url>
-                        <loc>https://example.com/home</loc>
-                        <priority>1.0</priority>
-                    </url>
-                </urlset>
-                """,
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <url>
+        <loc>https://example.com/home</loc>
+        <priority>1.0</priority>
+    </url>
+</urlset>
+""",
         }
 
         # Configure the mock to return appropriate content based on the URL
-        mock_make_request.side_effect = lambda url: robots_sitemap_responses.get(url)
+        with mock.patch.object(self.parser, '_make_request') as mock_make_request:
+            mock_make_request.side_effect = lambda url: robots_sitemap_responses.get(url)
 
-        # Enable respect_robots_txt
-        self.parser.respect_robots_txt = True
-        urls = self.parser.parse_sitemap("https://example.com")
+            # Enable respect_robots_txt
+            self.parser.respect_robots_txt = True
+            urls = self.parser.parse_sitemap("https://example.com")
 
-        # Check that we found the URL from the custom sitemap
-        self.assertEqual(len(urls), 1)
-        self.assertEqual(urls[0].loc, "https://example.com/home")
+            # Check that we found the URL from the custom sitemap
+            self.assertEqual(len(urls), 1)
+            self.assertEqual(urls[0].loc, "https://example.com/home")
 
     def test_filter_urls(self):
         # Create test URLs

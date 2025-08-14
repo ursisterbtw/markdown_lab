@@ -194,6 +194,7 @@ def get_rust_backend(fallback_enabled: bool = False) -> RustBackend:
     global _rust_backend
     if _rust_backend is None:
         _rust_backend = RustBackend(fallback_enabled=fallback_enabled)
+    assert _rust_backend is not None  # Type assertion for type checker
     return _rust_backend
 
 

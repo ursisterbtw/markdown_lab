@@ -10,21 +10,28 @@ from markdown_lab.core.scraper import MarkdownScraper
 
 @pytest.mark.benchmark(group="scrape_website")
 def test_scrape_website_benchmark(benchmark):
-    scraper = MarkdownScraper()
+    from markdown_lab.core.config import MarkdownLabConfig
+    config = MarkdownLabConfig(cache_enabled=False)
+    scraper = MarkdownScraper(config)
     url = "http://example.com"
-    benchmark(scraper.scrape_website, url)
+    with patch("requests.Session.request") as mock_request:
+        mock_request.return_value = MagicMock(text="<html><body>Test</body></html>", status_code=200)
+        benchmark(scraper.scrape_website, url)
 
 
 @pytest.mark.benchmark(group="convert_to_markdown")
+@pytest.mark.skip(reason="Method convert_to_markdown no longer exists in MarkdownScraper")
 def test_convert_to_markdown_benchmark(benchmark):
-    scraper = MarkdownScraper()
-    html_content = "<html><head><title>Test</title></head><body><h1>Header</h1><p>Paragraph</p></body></html>"
-    benchmark(scraper.convert_to_markdown, html_content)
+    from markdown_lab.core.config import MarkdownLabConfig
+    config = MarkdownLabConfig()
+    MarkdownScraper(config)
 
 
 @pytest.mark.benchmark(group="save_markdown")
 def test_save_markdown_benchmark(benchmark, tmp_path):
-    scraper = MarkdownScraper()
+    from markdown_lab.core.config import MarkdownLabConfig
+    config = MarkdownLabConfig()
+    scraper = MarkdownScraper(config)
     markdown_content = "# Test Markdown"
     output_file = tmp_path / "output.md"
     benchmark(scraper.save_markdown, markdown_content, str(output_file))
@@ -32,7 +39,9 @@ def test_save_markdown_benchmark(benchmark, tmp_path):
 
 @pytest.mark.benchmark(group="create_chunks")
 def test_create_chunks_benchmark(benchmark):
-    scraper = MarkdownScraper()
+    from markdown_lab.core.config import MarkdownLabConfig
+    config = MarkdownLabConfig()
+    scraper = MarkdownScraper(config)
     markdown_content = "# Test\n\nThis is a test."
     url = "http://example.com"
     benchmark(scraper.create_chunks, markdown_content, url)
@@ -40,7 +49,9 @@ def test_create_chunks_benchmark(benchmark):
 
 @pytest.mark.benchmark(group="save_chunks")
 def test_save_chunks_benchmark(benchmark, tmp_path):
-    scraper = MarkdownScraper()
+    from markdown_lab.core.config import MarkdownLabConfig
+    config = MarkdownLabConfig()
+    scraper = MarkdownScraper(config)
     markdown_content = "# Test\n\nThis is a test."
     url = "http://example.com"
     chunks = scraper.create_chunks(markdown_content, url)
@@ -56,7 +67,7 @@ def test_benchmark_scrape_with_cache_enabled(benchmark):
     This test uses a temporary cache directory and mocks HTTP GET requests to ensure consistent responses. The initial scrape populates the cache, and the benchmark measures subsequent scrapes that utilize the cache.
     """
     with tempfile.TemporaryDirectory() as temp_dir:
-        with patch("markdown_lab.network.client.requests.Session.get") as mock_get:
+        with patch("requests.Session.request") as mock_get:
             # Setup mock response for first call
             mock_response = MagicMock()
             mock_response.status_code = 200
@@ -66,8 +77,11 @@ def test_benchmark_scrape_with_cache_enabled(benchmark):
             mock_get.return_value = mock_response
 
             # Create scraper with cache enabled
-            scraper = MarkdownScraper(cache_enabled=True)
-            scraper.request_cache.cache_dir = Path(temp_dir)  # Override cache directory
+            from markdown_lab.core.config import MarkdownLabConfig
+            config = MarkdownLabConfig(cache_enabled=True)
+            scraper = MarkdownScraper(config)
+            if hasattr(scraper, 'request_cache') and scraper.request_cache:
+                scraper.request_cache.cache_dir = Path(temp_dir)  # Override cache directory
 
             # Trigger initial request to populate cache
             url = "http://example.com/benchmark"
@@ -87,7 +101,7 @@ def test_benchmark_scrape_with_cache_disabled(benchmark):
 
     Mocks HTTP GET requests to return a fixed HTML response and measures the execution time of the `scrape_website` method in `MarkdownScraper` when cache is turned off.
     """
-    with patch("markdown_lab.network.client.requests.Session.get") as mock_get:
+    with patch("requests.Session.request") as mock_get:
         # Setup mock response
         mock_response = MagicMock()
         mock_response.status_code = 200
@@ -97,7 +111,9 @@ def test_benchmark_scrape_with_cache_disabled(benchmark):
         mock_get.return_value = mock_response
 
         # Create scraper with cache disabled
-        scraper = MarkdownScraper(cache_enabled=False)
+        from markdown_lab.core.config import MarkdownLabConfig
+        config = MarkdownLabConfig(cache_enabled=False)
+        scraper = MarkdownScraper(config)
 
         # Benchmark requests
         def scrape():

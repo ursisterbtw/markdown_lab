@@ -8,7 +8,57 @@ configuration parameters across the codebase and provides validation and default
 import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Optional
+
+# Configuration profiles for common use cases
+PROFILES = {
+    "development": {
+        "requests_per_second": 0.5,
+        "timeout": 60,
+        "max_retries": 5,
+        "cache_enabled": True,
+        "parallel_workers": 2,
+        "enable_performance_monitoring": True,
+        "js_rendering_enabled": False,
+        "rust_backend_enabled": True,
+        "fallback_to_python": True,
+    },
+    "production": {
+        "requests_per_second": 2.0,
+        "timeout": 30,
+        "max_retries": 3,
+        "cache_enabled": True,
+        "parallel_workers": 8,
+        "enable_performance_monitoring": False,
+        "js_rendering_enabled": True,
+        "rust_backend_enabled": True,
+        "fallback_to_python": False,
+    },
+    "fast": {
+        "requests_per_second": 10.0,
+        "timeout": 10,
+        "max_retries": 1,
+        "cache_enabled": True,
+        "parallel_workers": 16,
+        "enable_performance_monitoring": False,
+        "js_rendering_enabled": False,
+        "rust_backend_enabled": True,
+        "fallback_to_python": False,
+        "chunk_size": 2000,
+        "max_concurrent_requests": 20,
+    },
+    "minimal": {
+        "requests_per_second": 1.0,
+        "timeout": 30,
+        "max_retries": 3,
+        "cache_enabled": False,
+        "parallel_workers": 1,
+        "enable_performance_monitoring": False,
+        "js_rendering_enabled": False,
+        "rust_backend_enabled": False,
+        "fallback_to_python": True,
+    },
+}
 
 
 @dataclass
@@ -148,6 +198,35 @@ class MarkdownLabConfig:
         return cls(**config_dict)
 
     @classmethod
+    def from_profile(cls, profile_name: str, **overrides) -> "MarkdownLabConfig":
+        """
+        Creates a MarkdownLabConfig instance from a predefined profile.
+
+        Args:
+            profile_name: Name of the profile ('development', 'production', 'fast', 'minimal')
+            **overrides: Additional configuration parameters to override profile defaults
+
+        Returns:
+            A MarkdownLabConfig instance initialized with profile settings
+
+        Raises:
+            ValueError: If the profile name is not recognized
+        """
+        if profile_name not in PROFILES:
+            available = ", ".join(PROFILES.keys())
+            raise ValueError(
+                f"Unknown profile '{profile_name}'. Available profiles: {available}"
+            )
+
+        # Start with profile defaults
+        config_dict = PROFILES[profile_name].copy()
+
+        # Apply any overrides
+        config_dict.update(overrides)
+
+        return cls(**config_dict)
+
+    @classmethod
     def from_file(cls, config_path: str) -> "MarkdownLabConfig":
         """
         Loads a MarkdownLabConfig instance from a JSON or YAML configuration file.
@@ -163,21 +242,21 @@ class MarkdownLabConfig:
             ImportError: If loading a YAML file without PyYAML installed.
             ValueError: If the file format is not supported.
         """
-        config_path = Path(config_path)
+        path = Path(config_path)
 
-        if not config_path.exists():
-            raise FileNotFoundError(f"Configuration file not found: {config_path}")
+        if not path.exists():
+            raise FileNotFoundError(f"Configuration file not found: {path}")
 
-        if config_path.suffix.lower() == ".json":
+        if path.suffix.lower() == ".json":
             import json
 
-            with open(config_path, "r") as f:
+            with open(path, "r") as f:
                 config_dict = json.load(f)
-        elif config_path.suffix.lower() in {".yml", ".yaml"}:
+        elif path.suffix.lower() in {".yml", ".yaml"}:
             try:
-                import yaml
+                import yaml  # type: ignore[import-not-found]
 
-                with open(config_path, "r") as f:
+                with open(path, "r") as f:
                     config_dict = yaml.safe_load(f)
             except ImportError as e:
                 raise ImportError(
@@ -185,7 +264,7 @@ class MarkdownLabConfig:
                 ) from e
         else:
             raise ValueError(
-                f"Unsupported configuration file format: {config_path.suffix}"
+                f"Unsupported configuration file format: {path.suffix}"
             )
 
         return cls.from_dict(config_dict)
@@ -212,19 +291,19 @@ class MarkdownLabConfig:
             ImportError: If saving as YAML and PyYAML is not installed.
             ValueError: If the file extension is not supported.
         """
-        config_path = Path(config_path)
+        path = Path(config_path)
         config_dict = self.to_dict()
 
-        if config_path.suffix.lower() == ".json":
+        if path.suffix.lower() == ".json":
             import json
 
-            with open(config_path, "w") as f:
+            with open(path, "w") as f:
                 json.dump(config_dict, f, indent=2)
-        elif config_path.suffix.lower() in {".yml", ".yaml"}:
+        elif path.suffix.lower() in {".yml", ".yaml"}:
             try:
-                import yaml
+                import yaml  # type: ignore[import-not-found]
 
-                with open(config_path, "w") as f:
+                with open(path, "w") as f:
                     yaml.dump(config_dict, f, default_flow_style=False)
             except ImportError as e:
                 raise ImportError(
@@ -232,7 +311,7 @@ class MarkdownLabConfig:
                 ) from e
         else:
             raise ValueError(
-                f"Unsupported configuration file format: {config_path.suffix}"
+                f"Unsupported configuration file format: {path.suffix}"
             )
 
     def update(self, **kwargs) -> "MarkdownLabConfig":
@@ -282,7 +361,7 @@ def load_config_from_env() -> MarkdownLabConfig:
 
 
 # CLI argument configuration helpers
-def create_config_from_cli_args(profile: str = None, **kwargs) -> MarkdownLabConfig:
+def create_config_from_cli_args(profile: Optional[str] = None, **kwargs) -> MarkdownLabConfig:
     """
     Create configuration from CLI arguments, with optional profile support.
 
@@ -322,47 +401,12 @@ def get_cli_defaults() -> dict:
     }
 
 
-# Configuration Profiles for simplified CLI usage
+# Use the PROFILES defined at the top of the file, with aliases for compatibility
 CONFIGURATION_PROFILES = {
-    "dev": {
-        "requests_per_second": 0.5,  # Slower for development to avoid rate limits
-        "timeout": 60,  # Longer timeout for debugging
-        "max_retries": 1,  # Fewer retries for faster feedback
-        "cache_enabled": True,
-        "cache_ttl": 300,  # 5 minutes cache for development
-        "parallel_workers": 2,  # Fewer workers to reduce resource usage
-        "chunk_size": 500,  # Smaller chunks for testing
-        "chunk_overlap": 50,
-        "enable_performance_monitoring": True,
-        "rust_backend_enabled": True,
-        "fallback_to_python": True,
-    },
-    "prod": {
-        "requests_per_second": 2.0,  # Faster for production
-        "timeout": 30,  # Standard timeout
-        "max_retries": 3,  # Standard retries
-        "cache_enabled": True,
-        "cache_ttl": 3600,  # 1 hour cache
-        "parallel_workers": 8,  # More workers for production
-        "chunk_size": 1500,  # Larger chunks for efficiency
-        "chunk_overlap": 200,
-        "enable_performance_monitoring": False,  # Reduce overhead
-        "rust_backend_enabled": True,
-        "fallback_to_python": False,  # Fail fast in production
-    },
-    "fast": {
-        "requests_per_second": 5.0,  # Maximum speed
-        "timeout": 15,  # Short timeout
-        "max_retries": 1,  # Minimal retries
-        "cache_enabled": True,
-        "cache_ttl": 7200,  # 2 hours cache
-        "parallel_workers": 16,  # Maximum workers
-        "chunk_size": 2000,  # Large chunks
-        "chunk_overlap": 100,  # Minimal overlap
-        "enable_performance_monitoring": False,
-        "rust_backend_enabled": True,
-        "fallback_to_python": False,
-    },
+    **PROFILES,  # Include all base profiles
+    # Add aliases for backward compatibility
+    "dev": PROFILES["development"],
+    "prod": PROFILES["production"],
     "conservative": {
         "requests_per_second": 0.2,  # Very slow to be respectful
         "timeout": 120,  # Long timeout for slow sites
@@ -421,10 +465,13 @@ def get_profile_description(profile_name: str) -> str:
         Description string for the profile
     """
     descriptions = {
-        "dev": "🔧 Development profile - slower, more debugging, shorter cache",
-        "prod": "🚀 Production profile - balanced performance and reliability",
-        "fast": "⚡ Fast profile - maximum speed, minimal safety margins",
-        "conservative": "🛡️ Conservative profile - respectful, reliable, patient",
+        "development": "Development profile - slower rates, longer timeouts, debugging enabled",
+        "dev": "Development profile - slower rates, longer timeouts, debugging enabled",
+        "production": "Production profile - balanced performance and reliability",
+        "prod": "Production profile - balanced performance and reliability",
+        "fast": "Fast profile - maximum speed, minimal safety margins, parallel processing",
+        "minimal": "Minimal profile - basic features, no caching, sequential processing",
+        "conservative": "Conservative profile - respectful rates, maximum reliability, patient",
     }
     return descriptions.get(profile_name, f"Profile: {profile_name}")
 

@@ -1,549 +1,388 @@
 """Unit tests for rust_backend module."""
 
 import os
-import subprocess
 import sys
-import tempfile
-from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 
 # Add the project root to Python path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
-# Import the module under test
-try:
-    from git.markdown_lab.core.rust_backend import RustBackend
-except ImportError:
-    try:
-        from markdown_lab.core.rust_backend import RustBackend
-    except ImportError:
-        from rust_backend import RustBackend
-
-# Import any custom exceptions
-try:
-    from git.markdown_lab.core.rust_backend import (
-        RustBackendError,
-        RustCompilationError,
-    )
-except ImportError:
-    # Define mock exceptions if they don't exist
-    class RustBackendError(Exception):
-        pass
-
-    class RustCompilationError(Exception):
-        pass
+from markdown_lab.core.errors import RustIntegrationError
+from markdown_lab.core.rust_backend import (
+    RustBackend,
+    get_rust_backend,
+    reset_rust_backend,
+)
 
 
 @pytest.fixture
-def temp_dir():
-    """Create a temporary directory for test files."""
-    with tempfile.TemporaryDirectory() as tmp_dir:
-        yield Path(tmp_dir)
-
-
-@pytest.fixture
-def mock_subprocess():
-    """Mock subprocess module for testing."""
-    with patch("subprocess.run") as mock_run:
-        mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
-        yield mock_run
-
-
-@pytest.fixture
-def sample_rust_config():
-    """Provide sample configuration for RustBackend."""
-    return {
-        "rust_path": "/usr/bin/rustc",
-        "cargo_path": "/usr/bin/cargo",
-        "target": "x86_64-unknown-linux-gnu",
-        "optimization_level": "2",
-        "debug": False,
-        "features": [],
-        "output_dir": "/tmp/rust_output",
-    }
-
-
-@pytest.fixture
-def simple_rust_code():
-    """Provide simple valid Rust source code for testing."""
-    return """
-fn main() {
-    println!("Hello, world!");
-}
-"""
-
-
-@pytest.fixture
-def invalid_rust_code():
-    """Provide invalid Rust source code for error testing."""
-    return """
-fn main() {
-    println!("Hello, world!")  // Missing semicolon
-}
-"""
-
-
-@pytest.fixture
-def rust_backend_instance(sample_rust_config):
+def rust_backend():
     """Create a RustBackend instance for testing."""
-    with patch("subprocess.run"):
-        return RustBackend(sample_rust_config)
+    # Reset the global instance to ensure clean state
+    reset_rust_backend()
+    return RustBackend(fallback_enabled=True)
+
+
+@pytest.fixture
+def sample_html():
+    """Sample HTML content for testing."""
+    return """
+    <html>
+        <head><title>Test Document</title></head>
+        <body>
+            <h1>Main Title</h1>
+            <p>This is a test paragraph with <a href="https://example.com">a link</a>.</p>
+            <ul>
+                <li>Item 1</li>
+                <li>Item 2</li>
+            </ul>
+        </body>
+    </html>
+    """
+
+
+@pytest.fixture
+def sample_markdown():
+    """Sample markdown content for testing."""
+    return """# Main Title
+
+This is a test paragraph with [a link](https://example.com).
+
+* Item 1
+* Item 2
+"""
 
 
 class TestRustBackendInitialization:
     """Test RustBackend initialization and configuration."""
 
-    def test_init_with_valid_config(self, sample_rust_config):
-        """Test successful initialization with valid configuration."""
-        with patch("subprocess.run"):
-            backend = RustBackend(sample_rust_config)
-            assert hasattr(backend, "config")
-            for key, value in sample_rust_config.items():
-                assert getattr(backend, key, None) == value or key in str(
-                    backend.config
-                )
+    def test_init_with_fallback_enabled(self):
+        """Test successful initialization with fallback enabled."""
+        backend = RustBackend(fallback_enabled=True)
+        assert backend.fallback_enabled is True
+        assert hasattr(backend, '_rust_module')
 
-    def test_init_with_minimal_config(self):
-        """Test initialization with minimal configuration."""
-        minimal_config = {"rust_path": "/usr/bin/rustc"}
-        with patch("subprocess.run"):
-            backend = RustBackend(minimal_config)
-            assert hasattr(backend, "config")
+    def test_init_with_fallback_disabled(self):
+        """Test initialization with fallback disabled."""
+        # This might raise RustIntegrationError if Rust module is not available
+        try:
+            backend = RustBackend(fallback_enabled=False)
+            assert backend.fallback_enabled is False
+        except RustIntegrationError:
+            # This is expected if Rust backend is not available
+            pass
 
-    def test_init_with_empty_config(self):
-        """Test initialization with empty configuration raises appropriate error."""
-        with pytest.raises((ValueError, TypeError, RustBackendError)):
-            RustBackend({})
-
-    def test_init_with_none_config(self):
-        """Test initialization with None configuration raises TypeError."""
-        with pytest.raises((TypeError, AttributeError)):
-            RustBackend(None)
-
-    def test_init_with_invalid_config_type(self):
-        """Test initialization with non-dict configuration raises TypeError."""
-        with pytest.raises((TypeError, AttributeError)):
-            RustBackend("invalid_config")
-
-    @pytest.mark.parametrize(
-        "invalid_path", ["/nonexistent/path/rustc", "", None, 123, []]
-    )
-    def test_init_with_invalid_rust_path(self, invalid_path, sample_rust_config):
-        """Test initialization with various invalid rust paths."""
-        sample_rust_config["rust_path"] = invalid_path
-        with pytest.raises((RustBackendError, TypeError, ValueError)):
-            RustBackend(sample_rust_config)
+    def test_init_default_fallback(self):
+        """Test initialization with default fallback setting."""
+        backend = RustBackend()
+        assert backend.fallback_enabled is False  # Default is False
 
 
-class TestRustBackendCompilation:
-    """Test RustBackend compilation methods."""
+class TestRustBackendConversion:
+    """Test RustBackend HTML conversion methods."""
 
-    @patch("subprocess.run")
-    def test_compile_success(self, mock_run, rust_backend_instance, simple_rust_code):
-        """Test successful compilation with valid Rust code."""
-        mock_run.return_value = MagicMock(
-            returncode=0,
-            stdout="Compiling test_program...\nFinished release [optimized] target(s)",
-            stderr="",
+    def test_convert_html_to_format_success(self, rust_backend, sample_html):
+        """Test successful HTML to format conversion."""
+        mock_rust_module = MagicMock()
+        mock_rust_module.convert_html_to_format.return_value = "# Converted Content"
+        rust_backend._rust_module = mock_rust_module
+
+        result = rust_backend.convert_html_to_format(sample_html, "https://example.com", "markdown")
+
+        assert result == "# Converted Content"
+        mock_rust_module.convert_html_to_format.assert_called_once_with(
+            sample_html, "https://example.com", "markdown"
         )
 
-        rust_backend_instance.compile(simple_rust_code, "test_program")
+    def test_convert_html_to_format_no_rust_module(self, rust_backend, sample_html):
+        """Test conversion when Rust module is not available."""
+        rust_backend._rust_module = None
 
-        mock_run.assert_called_once()
-        call_args = mock_run.call_args[0][0] if mock_run.call_args else []
-        assert any("rustc" in str(arg) or "cargo" in str(arg) for arg in call_args)
+        with pytest.raises(RustIntegrationError) as exc_info:
+            rust_backend.convert_html_to_format(sample_html, "https://example.com", "markdown")
 
-    @patch("subprocess.run")
-    def test_compile_failure_syntax_error(
-        self, mock_run, rust_backend_instance, invalid_rust_code
-    ):
-        """Test compilation failure with syntax errors."""
-        mock_run.return_value = MagicMock(
-            returncode=1,
-            stdout="",
-            stderr="error: expected `;`, found `}`\n  --> src/main.rs:3:35",
+        error = exc_info.value
+        assert isinstance(error, RustIntegrationError)
+        assert "Rust backend not available" in str(error)
+        assert error.context["rust_function"] == "convert_html_to_format"
+
+    def test_convert_html_to_format_rust_error(self, rust_backend, sample_html):
+        """Test handling of Rust conversion errors."""
+        mock_rust_module = MagicMock()
+        mock_rust_module.convert_html_to_format.side_effect = Exception("Rust conversion failed")
+        rust_backend._rust_module = mock_rust_module
+
+        with pytest.raises(RustIntegrationError) as exc_info:
+            rust_backend.convert_html_to_format(sample_html, "https://example.com", "markdown")
+
+        error = exc_info.value
+        assert isinstance(error, RustIntegrationError)
+        assert "Rust conversion failed" in str(error)
+        assert error.context["rust_function"] == "convert_html_to_format"
+
+    def test_convert_html_to_markdown_legacy(self, rust_backend, sample_html):
+        """Test legacy HTML to markdown conversion method."""
+        mock_rust_module = MagicMock()
+        mock_rust_module.convert_html_to_format.return_value = "# Converted Markdown"
+        rust_backend._rust_module = mock_rust_module
+
+        result = rust_backend.convert_html_to_markdown(sample_html, "https://example.com")
+
+        assert result == "# Converted Markdown"
+        mock_rust_module.convert_html_to_format.assert_called_once_with(
+            sample_html, "https://example.com", "markdown"
         )
 
-        with pytest.raises(
-            (RustCompilationError, subprocess.CalledProcessError, Exception)
-        ):
-            rust_backend_instance.compile(invalid_rust_code, "test_program")
+    @pytest.mark.parametrize("output_format", ["markdown", "json", "xml"])
+    def test_convert_different_formats(self, rust_backend, sample_html, output_format):
+        """Test conversion to different output formats."""
+        expected_result = f"Converted {output_format} content"
+        mock_rust_module = MagicMock()
+        mock_rust_module.convert_html_to_format.return_value = expected_result
+        rust_backend._rust_module = mock_rust_module
 
-    @patch("subprocess.run")
-    def test_compile_with_optimization_levels(
-        self, mock_run, sample_rust_config, simple_rust_code
-    ):
-        """Test compilation with different optimization levels."""
-        optimization_levels = ["0", "1", "2", "3", "s", "z"]
+        result = rust_backend.convert_html_to_format(sample_html, "https://example.com", output_format)
 
-        for level in optimization_levels:
-            mock_run.reset_mock()
-            mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
-
-            sample_rust_config["optimization_level"] = level
-            backend = RustBackend(sample_rust_config)
-
-            backend.compile(simple_rust_code, f"test_opt_{level}")
-
-            mock_run.assert_called()
-            call_args = str(mock_run.call_args)
-            assert level in call_args or f"opt-level={level}" in call_args
-
-    def test_compile_empty_source(self, rust_backend_instance):
-        """Test compilation with empty source code raises error."""
-        with pytest.raises((ValueError, RustBackendError)):
-            rust_backend_instance.compile("", "test_program")
-
-    def test_compile_whitespace_only_source(self, rust_backend_instance):
-        """Test compilation with whitespace-only source code raises error."""
-        with pytest.raises((ValueError, RustBackendError)):
-            rust_backend_instance.compile("   \n\t  \n  ", "test_program")
-
-    @pytest.mark.parametrize("invalid_name", ["", None, 123, [], {}])
-    def test_compile_invalid_program_name(
-        self, rust_backend_instance, simple_rust_code, invalid_name
-    ):
-        """Test compilation with invalid program names."""
-        with pytest.raises((ValueError, TypeError, RustBackendError)):
-            rust_backend_instance.compile(simple_rust_code, invalid_name)
-
-
-class TestRustBackendErrorHandling:
-    """Test RustBackend error handling scenarios."""
-
-    @patch("subprocess.run")
-    def test_subprocess_timeout(
-        self, mock_run, rust_backend_instance, simple_rust_code
-    ):
-        """Test handling of compilation timeout."""
-        mock_run.side_effect = subprocess.TimeoutExpired("rustc", 30)
-
-        with pytest.raises((subprocess.TimeoutExpired, RustBackendError)):
-            rust_backend_instance.compile(simple_rust_code, "test_timeout")
-
-    @patch("subprocess.run")
-    def test_subprocess_permission_error(
-        self, mock_run, rust_backend_instance, simple_rust_code
-    ):
-        """Test handling of permission errors during compilation."""
-        mock_run.side_effect = PermissionError("Permission denied: rustc")
-
-        with pytest.raises((PermissionError, RustBackendError)):
-            rust_backend_instance.compile(simple_rust_code, "test_permission")
-
-    @patch("subprocess.run")
-    def test_subprocess_file_not_found(
-        self, mock_run, rust_backend_instance, simple_rust_code
-    ):
-        """Test handling when rust compiler is not found."""
-        mock_run.side_effect = FileNotFoundError("rustc: command not found")
-
-        with pytest.raises((FileNotFoundError, RustBackendError)):
-            rust_backend_instance.compile(simple_rust_code, "test_not_found")
-
-    @patch("subprocess.run")
-    def test_compilation_memory_error(self, mock_run, rust_backend_instance):
-        """Test handling of memory-intensive compilation."""
-        large_code = "fn main() {\n" + "    let x = 42;\n" * 10000 + "}\n"
-        mock_run.side_effect = MemoryError("Out of memory during compilation")
-
-        with pytest.raises((MemoryError, RustBackendError)):
-            rust_backend_instance.compile(large_code, "test_memory")
-
-    @patch("subprocess.run")
-    def test_rust_compiler_crash(
-        self, mock_run, rust_backend_instance, simple_rust_code
-    ):
-        """Test handling when rust compiler crashes with high return code."""
-        mock_run.return_value = MagicMock(
-            returncode=101,
-            stdout="",
-            stderr="internal compiler error: compiler crashed",
+        assert result == expected_result
+        mock_rust_module.convert_html_to_format.assert_called_once_with(
+            sample_html, "https://example.com", output_format
         )
 
-        with pytest.raises(
-            (RustCompilationError, subprocess.CalledProcessError, Exception)
-        ):
-            rust_backend_instance.compile(simple_rust_code, "test_crash")
+
+class TestRustBackendChunking:
+    """Test RustBackend markdown chunking functionality."""
+
+    def test_chunk_markdown_success(self, rust_backend, sample_markdown):
+        """Test successful markdown chunking."""
+        expected_chunks = ["# Main Title\n\nThis is a test", "paragraph with a link", "* Item 1\n* Item 2"]
+        mock_rust_module = MagicMock()
+        mock_rust_module.chunk_markdown.return_value = expected_chunks
+        rust_backend._rust_module = mock_rust_module
+
+        result = rust_backend.chunk_markdown(sample_markdown, chunk_size=100, chunk_overlap=20)
+
+        assert result == expected_chunks
+        mock_rust_module.chunk_markdown.assert_called_once_with(sample_markdown, 100, 20)
+
+    def test_chunk_markdown_no_rust_module(self, rust_backend, sample_markdown):
+        """Test chunking when Rust module is not available."""
+        rust_backend._rust_module = None
+
+        with pytest.raises(RustIntegrationError) as exc_info:
+            rust_backend.chunk_markdown(sample_markdown)
+
+        error = exc_info.value
+        assert isinstance(error, RustIntegrationError)
+        assert "Rust backend not available" in str(error)
+        assert error.context["rust_function"] == "chunk_markdown"
+
+    def test_chunk_markdown_default_params(self, rust_backend, sample_markdown):
+        """Test chunking with default parameters."""
+        mock_rust_module = MagicMock()
+        mock_rust_module.chunk_markdown.return_value = ["chunk1", "chunk2"]
+        rust_backend._rust_module = mock_rust_module
+
+        rust_backend.chunk_markdown(sample_markdown)
+
+        mock_rust_module.chunk_markdown.assert_called_once_with(sample_markdown, 1000, 200)
+
+    def test_chunk_markdown_rust_error(self, rust_backend, sample_markdown):
+        """Test handling of Rust chunking errors."""
+        mock_rust_module = MagicMock()
+        mock_rust_module.chunk_markdown.side_effect = Exception("Chunking failed")
+        rust_backend._rust_module = mock_rust_module
+
+        with pytest.raises(RustIntegrationError) as exc_info:
+            rust_backend.chunk_markdown(sample_markdown)
+
+        assert "Rust chunking failed" in str(exc_info.value)
 
 
-class TestRustBackendParameterized:
-    """Parameterized tests for comprehensive coverage."""
+class TestRustBackendJSRendering:
+    """Test RustBackend JavaScript rendering functionality."""
 
-    @pytest.mark.parametrize(
-        "target",
-        [
-            "x86_64-unknown-linux-gnu",
-            "aarch64-unknown-linux-gnu",
-            "x86_64-pc-windows-msvc",
-            "x86_64-apple-darwin",
-            "wasm32-unknown-unknown",
-            "thumbv7em-none-eabihf",
-        ],
-    )
-    @patch("subprocess.run")
-    def test_compile_different_targets(
-        self, mock_run, target, sample_rust_config, simple_rust_code
-    ):
-        """Test compilation for different target architectures."""
-        mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
+    def test_render_js_page_success(self, rust_backend):
+        """Test successful JavaScript page rendering."""
+        expected_html = "<html>Rendered with JS</html>"
+        mock_rust_module = MagicMock()
+        mock_rust_module.render_js_page.return_value = expected_html
+        rust_backend._rust_module = mock_rust_module
 
-        sample_rust_config["target"] = target
-        backend = RustBackend(sample_rust_config)
+        result = rust_backend.render_js_page("https://example.com", wait_time=5000)
 
-        backend.compile(simple_rust_code, "test_target")
+        assert result == expected_html
+        mock_rust_module.render_js_page.assert_called_once_with("https://example.com", 5000)
 
-        mock_run.assert_called()
-        call_args = str(mock_run.call_args)
-        assert target in call_args or "--target" in call_args
+    def test_render_js_page_no_rust_module(self, rust_backend):
+        """Test JS rendering when Rust module is not available."""
+        rust_backend._rust_module = None
 
-    @pytest.mark.parametrize(
-        "feature_set",
-        [[], ["serde"], ["serde", "tokio"], ["default", "extra-traits"], ["full"]],
-    )
-    @patch("subprocess.run")
-    def test_compile_with_features(
-        self, mock_run, feature_set, sample_rust_config, simple_rust_code
-    ):
-        """Test compilation with different feature sets."""
-        mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
+        with pytest.raises(RustIntegrationError) as exc_info:
+            rust_backend.render_js_page("https://example.com")
 
-        sample_rust_config["features"] = feature_set
-        backend = RustBackend(sample_rust_config)
+        error = exc_info.value
+        assert isinstance(error, RustIntegrationError)
+        assert "Rust backend not available" in str(error)
+        assert error.context["rust_function"] == "render_js_page"
+        assert error.context["fallback_available"] is False  # No Python fallback for JS rendering
 
-        backend.compile(simple_rust_code, "test_features")
+    def test_render_js_page_default_wait_time(self, rust_backend):
+        """Test JS rendering with default wait time."""
+        mock_rust_module = MagicMock()
+        mock_rust_module.render_js_page.return_value = "<html>Rendered</html>"
+        rust_backend._rust_module = mock_rust_module
 
-        mock_run.assert_called()
-        if feature_set:
-            call_args = str(mock_run.call_args)
-            assert "--features" in call_args or any(
-                feature in call_args for feature in feature_set
-            )
+        rust_backend.render_js_page("https://example.com")
 
-    @pytest.mark.parametrize(
-        "source_variant",
-        [
-            'fn main() { println!("Hello"); }',
-            'fn main() {\n    let x = 42;\n    println!("{}", x);\n}',
-            "use std::collections::HashMap;\nfn main() { let _map = HashMap::new(); }",
-            "#[derive(Debug)]\nstruct Point { x: i32, y: i32 }\nfn main() { let _p = Point { x: 1, y: 2 }; }",
-        ],
-    )
-    @patch("subprocess.run")
-    def test_compile_various_source_patterns(
-        self, mock_run, source_variant, rust_backend_instance
-    ):
-        """Test compilation with various valid Rust source code patterns."""
-        mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
-
-        rust_backend_instance.compile(source_variant, "test_variant")
-        mock_run.assert_called()
+        mock_rust_module.render_js_page.assert_called_once_with("https://example.com", None)
 
 
 class TestRustBackendUtilities:
     """Test utility methods and helper functions."""
 
-    @patch("subprocess.run")
-    def test_get_rust_version(self, mock_run, rust_backend_instance):
-        """Test retrieving Rust compiler version."""
-        mock_run.return_value = MagicMock(
-            returncode=0, stdout="rustc 1.70.0 (90c541806 2023-05-31)\nbinary: rustc"
-        )
+    def test_is_available_with_rust_module(self, rust_backend):
+        """Test is_available when Rust module is loaded."""
+        rust_backend._rust_module = MagicMock()
+        assert rust_backend.is_available() is True
 
-        if hasattr(rust_backend_instance, "get_rust_version"):
-            version = rust_backend_instance.get_rust_version()
-            assert "1.70.0" in version
-        else:
-            rust_backend_instance.compile("fn main() {}", "version_test")
-            mock_run.assert_called()
+    def test_is_available_without_rust_module(self, rust_backend):
+        """Test is_available when Rust module is not loaded."""
+        rust_backend._rust_module = None
+        assert rust_backend.is_available() is False
 
-    @patch("subprocess.run")
-    def test_list_available_targets(self, mock_run, rust_backend_instance):
-        """Test listing available compilation targets."""
-        mock_targets = "x86_64-unknown-linux-gnu\naarch64-unknown-linux-gnu\nx86_64-pc-windows-msvc"
-        mock_run.return_value = MagicMock(returncode=0, stdout=mock_targets)
+    def test_get_version_info_with_rust_module(self, rust_backend):
+        """Test version info when Rust module is available."""
+        mock_module = MagicMock()
+        mock_module.__version__ = "1.0.0"
+        rust_backend._rust_module = mock_module
 
-        if hasattr(rust_backend_instance, "list_targets"):
-            targets = rust_backend_instance.list_targets()
-            assert "x86_64-unknown-linux-gnu" in targets
-            assert "aarch64-unknown-linux-gnu" in targets
+        version_info = rust_backend.get_version_info()
 
-    @patch("subprocess.run")
-    def test_validate_configuration(self, mock_run, sample_rust_config):
-        """Test configuration validation."""
-        mock_run.return_value = MagicMock(returncode=0)
+        assert version_info["available"] is True
+        assert version_info["version"] == "1.0.0"
 
-        backend = RustBackend(sample_rust_config)
-        if hasattr(backend, "validate_config"):
-            assert backend.validate_config() is True
+    def test_get_version_info_without_rust_module(self, rust_backend):
+        """Test version info when Rust module is not available."""
+        rust_backend._rust_module = None
 
-        invalid_config = sample_rust_config.copy()
-        invalid_config["optimization_level"] = "invalid"
-        with pytest.raises((ValueError, RustBackendError)):
-            RustBackend(invalid_config)
+        version_info = rust_backend.get_version_info()
 
-    def test_cleanup_resources(self, rust_backend_instance, temp_dir):
-        """Test proper cleanup of temporary resources."""
-        temp_file = temp_dir / "test.rs"
-        temp_file.write_text("fn main() {}")
+        assert version_info["available"] is False
+        assert version_info["version"] is None
 
-        if hasattr(rust_backend_instance, "cleanup"):
-            rust_backend_instance.cleanup()
+    def test_get_version_info_no_version_attribute(self, rust_backend):
+        """Test version info when Rust module has no version attribute."""
+        rust_backend._rust_module = MagicMock()
+        del rust_backend._rust_module.__version__  # Remove version attribute
 
-        if hasattr(rust_backend_instance, "__enter__"):
-            with rust_backend_instance:
-                pass
+        version_info = rust_backend.get_version_info()
+
+        assert version_info["available"] is True
+        assert version_info["version"] == "unknown"
 
 
-class TestRustBackendIntegration:
-    """Integration tests for complete workflows."""
+class TestRustBackendGlobalInstance:
+    """Test global instance management."""
 
-    @patch("subprocess.run")
-    def test_complete_build_workflow(self, mock_run, temp_dir, sample_rust_config):
-        """Test complete build workflow from source to executable."""
-        mock_run.return_value = MagicMock(returncode=0, stdout="Build successful")
+    def test_get_rust_backend_creates_instance(self):
+        """Test that get_rust_backend creates a new instance."""
+        reset_rust_backend()  # Ensure clean state
 
-        backend = RustBackend(sample_rust_config)
+        backend = get_rust_backend(fallback_enabled=True)
 
-        source_code = """
-use std::env;
+        assert isinstance(backend, RustBackend)
+        assert backend.fallback_enabled is True
 
-fn main() {
-    let args: Vec<String> = env::args().collect();
-    println!("Hello from Rust! Args: {:?}", args);
-}
-"""
+    def test_get_rust_backend_returns_same_instance(self):
+        """Test that get_rust_backend returns the same instance on subsequent calls."""
+        reset_rust_backend()  # Ensure clean state
 
-        backend.compile(source_code, "integration_test")
-        mock_run.assert_called()
+        backend1 = get_rust_backend(fallback_enabled=True)
+        backend2 = get_rust_backend(fallback_enabled=False)  # Different params, but should return same instance
 
-        if hasattr(backend, "get_build_artifacts"):
-            artifacts = backend.get_build_artifacts()
-            assert len(artifacts) >= 0
+        assert backend1 is backend2
 
-    @patch("subprocess.run")
-    def test_error_recovery_workflow(self, mock_run, rust_backend_instance):
-        """Test error recovery and retry mechanisms."""
-        mock_run.return_value = MagicMock(returncode=1, stderr="temporary error")
-        with pytest.raises((RustCompilationError, Exception)):
-            rust_backend_instance.compile("fn main() {}", "retry_test")
+    def test_reset_rust_backend(self):
+        """Test that reset_rust_backend clears the global instance."""
+        backend1 = get_rust_backend(fallback_enabled=True)
+        reset_rust_backend()
+        backend2 = get_rust_backend(fallback_enabled=True)
 
-        mock_run.return_value = MagicMock(returncode=0, stdout="success")
-        if hasattr(rust_backend_instance, "retry_compilation"):
-            rust_backend_instance.retry_compilation("fn main() {}", "retry_test")
-        else:
-            rust_backend_instance.compile("fn main() {}", "retry_test2")
+        assert backend1 is not backend2
 
 
-@pytest.mark.slow
-class TestRustBackendStress:
-    """Stress tests and performance-related tests."""
+class TestRustBackendErrorHandling:
+    """Test error handling scenarios."""
 
-    @pytest.mark.parametrize("code_size", [100, 1000, 5000])
-    @patch("subprocess.run")
-    def test_large_source_compilation(self, mock_run, code_size, rust_backend_instance):
-        """Test compilation with large source files."""
-        mock_run.return_value = MagicMock(returncode=0)
+    def test_rust_integration_error_context(self, rust_backend):
+        """Test that RustIntegrationError includes proper context."""
+        mock_rust_module = MagicMock()
+        mock_rust_module.convert_html_to_format.side_effect = ValueError("Test error")
+        rust_backend._rust_module = mock_rust_module
 
-        large_code = "fn main() {\n"
-        large_code += "    let mut sum = 0;\n" * code_size
-        large_code += '    println!("Sum: {}", sum);\n}\n'
+        with pytest.raises(RustIntegrationError) as exc_info:
+            rust_backend.convert_html_to_format("<html></html>", "https://example.com")
 
-        rust_backend_instance.compile(large_code, f"large_test_{code_size}")
-        mock_run.assert_called()
+        error = exc_info.value
+        assert isinstance(error, RustIntegrationError)
+        assert error.context["rust_function"] == "convert_html_to_format"
+        assert error.context["fallback_available"] is True
+        assert error.cause is not None
+        assert isinstance(error.cause, ValueError)
 
-    @patch("subprocess.run")
-    def test_concurrent_compilation_safety(self, mock_run, rust_backend_instance):
-        """Test thread safety during concurrent operations."""
-        import threading
+    def test_fallback_available_context(self, sample_html):
+        """Test that fallback_available is correctly set in error context."""
+        # Test with fallback enabled
+        backend_with_fallback = RustBackend(fallback_enabled=True)
+        backend_with_fallback._rust_module = None
 
-        mock_run.return_value = MagicMock(returncode=0)
+        with pytest.raises(RustIntegrationError) as exc_info:
+            backend_with_fallback.convert_html_to_format(sample_html, "https://example.com")
 
-        results = []
-        errors = []
+        error = exc_info.value
+        assert isinstance(error, RustIntegrationError)
+        assert error.context["fallback_available"] is True
 
-        def compile_worker(worker_id):
-            try:
-                code = f'fn main() {{ println!("Worker {worker_id}"); }}'
-                result = rust_backend_instance.compile(code, f"worker_{worker_id}")
-                results.append(result)
-            except Exception as e:
-                errors.append(e)
+        # Test with fallback disabled
+        backend_no_fallback = RustBackend(fallback_enabled=False)
+        backend_no_fallback._rust_module = None
 
-        threads = [threading.Thread(target=compile_worker, args=(i,)) for i in range(3)]
-        for thread in threads:
-            thread.start()
-        for thread in threads:
-            thread.join()
+        with pytest.raises(RustIntegrationError) as exc_info:
+            backend_no_fallback.render_js_page("https://example.com")
 
-        assert not errors or all(
-            isinstance(e, (RustBackendError, Exception)) for e in errors
-        )
+        error = exc_info.value
+        assert isinstance(error, RustIntegrationError)
+        assert error.context["fallback_available"] is False
 
 
-class TestRustBackendEdgeCases:
-    """Test edge cases and boundary conditions."""
+class TestRustBackendParameterized:
+    """Parameterized tests for comprehensive coverage."""
 
-    @pytest.mark.parametrize(
-        "special_chars",
-        [
-            'fn main() { println!("Hello 世界"); }',
-            'fn main() { println!("Quote: \\"test\\""); }',
-            'fn main() { println!(r#"Raw string"#); }',
-        ],
-    )
-    @patch("subprocess.run")
-    def test_special_character_handling(
-        self, mock_run, special_chars, rust_backend_instance
-    ):
-        """Test handling of special characters in source code."""
-        mock_run.return_value = MagicMock(returncode=0)
+    @pytest.mark.parametrize("fallback_enabled", [True, False])
+    def test_initialization_with_different_fallback_settings(self, fallback_enabled):
+        """Test initialization with different fallback settings."""
+        try:
+            backend = RustBackend(fallback_enabled=fallback_enabled)
+            assert backend.fallback_enabled == fallback_enabled
+        except RustIntegrationError:
+            # Expected when fallback is disabled and Rust module is not available
+            if fallback_enabled:
+                raise
 
-        rust_backend_instance.compile(special_chars, "special_chars_test")
-        mock_run.assert_called()
+    @pytest.mark.parametrize("chunk_size,chunk_overlap", [
+        (500, 100),
+        (1000, 200),
+        (2000, 400),
+        (100, 0),
+    ])
+    def test_chunk_markdown_different_params(self, rust_backend, sample_markdown, chunk_size, chunk_overlap):
+        """Test chunking with different parameter combinations."""
+        mock_rust_module = MagicMock()
+        mock_rust_module.chunk_markdown.return_value = ["chunk1", "chunk2"]
+        rust_backend._rust_module = mock_rust_module
 
-    def test_configuration_edge_cases(self, sample_rust_config):
-        """Test configuration with edge case values."""
-        edge_cases = [
-            {"rust_path": "/usr/bin/rustc", "optimization_level": ""},
-            {"rust_path": "/usr/bin/rustc", "target": ""},
-            {"rust_path": "/usr/bin/rustc", "debug": None},
-        ]
+        rust_backend.chunk_markdown(sample_markdown, chunk_size, chunk_overlap)
 
-        for config in edge_cases:
-            try:
-                with patch("subprocess.run"):
-                    backend = RustBackend(config)
-                    assert backend is not None
-            except (ValueError, TypeError, RustBackendError):
-                pass
-
-
-def test_module_imports():
-    """Test that all required modules can be imported."""
-    try:
-        import pathlib
-        import subprocess
-        import tempfile
-    except ImportError as e:
-        pytest.fail(f"Required module import failed: {e}")
-
-
-def test_rust_backend_class_exists():
-    """Test that RustBackend class exists and is instantiable."""
-    try:
-        with patch("subprocess.run"):
-            RustBackend({"rust_path": "/usr/bin/rustc"})
-    except (TypeError, ValueError, RustBackendError):
-        pass
-    except Exception as e:
-        pytest.fail(f"Unexpected error instantiating RustBackend: {e}")
-
-
-def test_rust_backend_has_docstrings():
-    """Test that RustBackend class and methods have proper documentation."""
-    for method_name in dir(RustBackend):
-        if not method_name.startswith("_"):  # Skip private methods
-            assert getattr(RustBackend, method_name).__doc__ is not None
+        mock_rust_module.chunk_markdown.assert_called_once_with(sample_markdown, chunk_size, chunk_overlap)

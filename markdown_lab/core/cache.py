@@ -7,7 +7,6 @@ compression support for optimal performance and storage efficiency.
 
 import asyncio
 import gzip
-import hashlib
 import logging
 import sys
 import time
@@ -17,6 +16,7 @@ from typing import Dict, List, Optional, Tuple, Union
 import aiofiles
 
 from markdown_lab.core.config import MarkdownLabConfig, get_config
+from markdown_lab.utils.cache_utils import get_cache_key, get_cache_path
 
 logger = logging.getLogger("request_cache")
 
@@ -57,12 +57,11 @@ class RequestCache:
         """
         Generates an MD5 hash of the URL to use as a cache key.
         """
-        return hashlib.md5(url.encode()).hexdigest()
+        return get_cache_key(url)
 
     def _get_cache_path(self, url: str) -> Path:
         """Get the path to the cache file for a URL."""
-        key = self._get_cache_key(url)
-        return self.cache_dir / key
+        return get_cache_path(self.cache_dir, url)
 
     def get(self, url: str) -> Optional[str]:
         """
@@ -250,12 +249,11 @@ class AsyncRequestCache:
 
     def _get_cache_key(self, url: str) -> str:
         """Generate MD5 hash of the URL to use as cache key."""
-        return hashlib.md5(url.encode()).hexdigest()
+        return get_cache_key(url)
 
     def _get_cache_path(self, url: str) -> Path:
         """Get the path to the compressed cache file for a URL."""
-        key = self._get_cache_key(url)
-        return self.cache_dir / f"{key}.gz"
+        return get_cache_path(self.cache_dir, url, ".gz")
 
     async def get(self, url: str) -> Optional[str]:
         """
