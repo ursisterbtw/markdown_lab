@@ -76,20 +76,20 @@ pub fn extract_main_content(html: &str) -> Result<Html, ParserError> {
     let document = Html::parse_document(html);
 
     // First try the combined selector for efficiency
-    if let Some(selector) = SELECTOR_CACHE.get("main_content") {
-        if let Some(element) = document.select(selector).next() {
-            return Ok(Html::parse_fragment(&element.html()));
-        }
+    if let Some(selector) = SELECTOR_CACHE.get("main_content")
+        && let Some(element) = document.select(selector).next()
+    {
+        return Ok(Html::parse_fragment(&element.html()));
     }
 
     // Fallback to individual selectors in order of preference
     let fallback_selectors = ["main", "article", "content_id", "content_class", "body"];
 
     for selector_key in fallback_selectors {
-        if let Some(selector) = SELECTOR_CACHE.get(selector_key) {
-            if let Some(element) = document.select(selector).next() {
-                return Ok(Html::parse_fragment(&element.html()));
-            }
+        if let Some(selector) = SELECTOR_CACHE.get(selector_key)
+            && let Some(element) = document.select(selector).next()
+        {
+            return Ok(Html::parse_fragment(&element.html()));
         }
     }
 

@@ -1,12 +1,13 @@
+use once_cell::sync::Lazy;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
-use once_cell::sync::Lazy;
 
 /// Pre-compiled regex patterns for optimized text processing (40% performance improvement)
 static SENTENCE_BOUNDARY_REGEX: Lazy<Regex> = Lazy::new(|| {
-    // Matches sentence endings followed by whitespace and capital letter or end of string
-    Regex::new(r"(?<=[.!?])\s+(?=[A-Z]|$)").unwrap()
+    // Matches sentence endings followed by whitespace
+    // Note: Rust regex doesn't support lookbehind, so we match the punctuation too
+    Regex::new(r"[.!?]\s+").unwrap()
 });
 
 static PARAGRAPH_BOUNDARY_REGEX: Lazy<Regex> = Lazy::new(|| {
@@ -187,7 +188,7 @@ fn find_good_split_point(text: &str, approximate_position: usize) -> usize {
     }
 
     let search_text = &text[approximate_position..];
-    
+
     // Look for paragraph break first (highest priority)
     if let Some(mat) = PARAGRAPH_BOUNDARY_REGEX.find(search_text) {
         return approximate_position + mat.end();
@@ -195,7 +196,8 @@ fn find_good_split_point(text: &str, approximate_position: usize) -> usize {
 
     // Look for sentence break using optimized regex
     if let Some(mat) = SENTENCE_BOUNDARY_REGEX.find(search_text) {
-        return approximate_position + mat.start();
+        // Return position after the punctuation and whitespace
+        return approximate_position + mat.end();
     }
 
     // Fall back to newline
@@ -229,7 +231,7 @@ fn calculate_semantic_density(text: &str) -> f32 {
     // Count uppercase words (named entities)
     semantic_indicators += UPPERCASE_WORD_REGEX.find_iter(text).count() as f32 * 0.5;
 
-    // Count numeric patterns  
+    // Count numeric patterns
     semantic_indicators += NUMERIC_PATTERN_REGEX.find_iter(text).count() as f32 * 0.3;
 
     // Calculate ratio (scale it between 0.0-1.0)

@@ -1,170 +1,129 @@
-# Commands & Guidelines for markdown_lab
+# CLAUDE.md
 
-## Modern CLI Interface (Recommended)
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-The project now features a modern CLI built with Typer and Rich, providing beautiful terminal output, progress bars, and interactive features.
+## Essential Commands
 
-### CLI Commands
-
-- `python -m markdown_lab --help` - Main help and command overview
-- `python -m markdown_lab convert <url>` - Convert single URL to Markdown/JSON/XML
-- `python -m markdown_lab batch <links_file>` - Batch convert URLs from file
-- `python -m markdown_lab sitemap <base_url>` - Convert URLs discovered via sitemap
-- `python -m markdown_lab tui` - Launch interactive Terminal User Interface
-- `python -m markdown_lab status` - Show system status and configuration
-- `python -m markdown_lab config` - Manage configuration settings
-
-### Short Command Aliases
-
-- `mlab convert <url>` - Direct CLI access
-- `mlab-tui` - Launch TUI directly
-- `mlab-legacy` - Use legacy CLI interface
-
-### CLI Features
-
-- 🎨 Rich terminal output with colors and progress bars
-- 🎯 Interactive mode with live progress updates
-- 📊 Real-time status and statistics display
-- ⚙️ Advanced configuration management
-- 🔍 Comprehensive help system with examples
-- 📦 Content chunking for RAG applications
-- 🌐 Multiple output formats (Markdown, JSON, XML)
-- ⚡ Parallel processing support for batch operations
-
-### Example Usage
-
+### Building & Testing
 ```bash
-# Convert single URL with interactive progress
-mlab convert "https://example.com" --interactive --output article.md
+# Quick development build with Rust bindings
+just build-dev
+# or directly:
+source .venv/bin/activate && maturin develop
 
-# Batch convert with parallel processing
-mlab batch links.txt --output batch_results --parallel --max-workers 8
+# Run all tests (Rust + Python + integration)
+just test
 
-# Convert to JSON with chunking for RAG
-mlab convert "https://docs.example.com" --format json --chunks --chunk-size 1500
+# Run specific test suites
+just test-python          # Python tests only
+just test-rust            # Rust tests only  
+just test-bindings        # Python binding tests
+pytest tests/rust/test_python_bindings.py -v  # Direct binding tests
 
-# Discover and convert via sitemap
-mlab sitemap "https://example.com" --min-priority 0.7 --limit 50
+# Run single test
+pytest tests/unit/test_main.py::test_convert_to_markdown -v
 
-# Launch full TUI interface
-mlab-tui
+# Test with coverage
+just test-coverage
 ```
 
-## Justfile Workflow (Alternative)
-
-The project uses `justfile` for streamlined development workflows. Run `just` to see all available commands.
-
-### Essential Commands
-
-- `just setup` - Install dependencies and set up development environment
-- `just test` - Run all tests (Rust + Python + integration)
-- `just test-python` - Run Python tests only
-- `just test-rust` - Run Rust tests only
-- `just build-dev` - Build Rust components for development
-- `just build-release` - Build optimized Rust components
-- `just lint` - Run all linting and formatting
-- `just demo` - Run format conversion demo
-- `just status` - Show project status and environment info
-
-### Development Workflow
-
-- `just dev` - Quick development setup (build + activate environment)
-- `just dev-cycle` - Build + test bindings (for active development)
-- `just full-cycle` - Build + lint + test (comprehensive check)
-- `just fix` - Fix common issues (clear caches, rebuild components)
-
-### Testing & Quality
-
-- `just test-bindings` - Run Python binding tests specifically
-- `just test-integration` - Run integration tests
-- `just test-coverage` - Run tests with coverage reporting
-- `just typecheck` - Run type checking
-- `just bench` - Run all benchmarks
-
-## Legacy CLI Commands (Fallback)
-
-The original argparse-based CLI is still available for compatibility. Use `MARKDOWN_LAB_LEGACY=1` or `mlab-legacy` to access it:
-
+### Code Quality
 ```bash
-# Use legacy CLI directly
-MARKDOWN_LAB_LEGACY=1 python -m markdown_lab "https://example.com" --output article.md
-# or
-mlab-legacy "https://example.com" --output article.md
+# Run all linting and formatting
+just lint
+
+# Python linting
+ruff check . --fix
+black .
+mypy markdown_lab/
+
+# Rust linting
+cargo fmt -- --check
+cargo clippy -- -D warnings
+
+# Type checking
+just typecheck
 ```
 
-## Raw Development Commands (Alternative)
+### CLI Development
+```bash
+# Modern CLI (Typer-based)
+mlab convert "https://example.com" --output article.md
+mlab batch links.txt --parallel --max-workers 8
+mlab-tui  # Launch TUI
 
-If you prefer direct commands without justfile or the modern CLI:
+# Legacy CLI (argparse-based) 
+MARKDOWN_LAB_LEGACY=1 python -m markdown_lab "https://example.com"
+mlab-legacy "https://example.com"
 
-### Build & Test Commands
+# Test format conversion
+python examples/demo_formats.py
+```
 
-- `cargo build` - Build Rust components
-- `cargo build --release --features real_rendering` - Build with JS rendering support
-- `uv sync` - Sync dependencies with uv package manager
-- `source .venv/bin/activate && maturin develop` - Build Rust module for Python development
-- `source .venv/bin/activate && pytest` - Run all Python tests
-- `source .venv/bin/activate && pytest tests/rust/test_python_bindings.py -v` - Run Python binding tests
-- `source .venv/bin/activate && pytest test_main.py::test_convert_to_markdown -v` - Run specific Python test
-- `source .venv/bin/activate && pytest test_main.py::test_format_conversion -v` - Test JSON and XML output formats
-- `cargo test` - Run Rust tests
-- `RUST_LOG=debug cargo test -- --nocapture` - Run Rust tests with logging
-- `cargo bench` - Run all benchmarks
-- `cargo bench html_to_markdown` - Run specific benchmark
-- `python demo_formats.py` - Demonstrate all output formats (markdown, JSON, XML)
-- `mypy *.py` - Type checking
+## High-Level Architecture
 
-### Code Quality Commands
+### Hybrid Python-Rust Design
+The codebase uses a dual-backend architecture where performance-critical operations are implemented in Rust with PyO3 bindings, while high-level orchestration remains in Python.
 
-- `ruff check . --fix` - Run linter and auto-fix issues
-- `ruff check . --fix --unsafe-fixes` - Run linter with more aggressive fixes
-- `black .` - Format Python code
-- `isort .` - Sort imports
-- `sourcery review . --fix` - Analyze and improve code quality
-- `mypy *.py` - Type checking
+**Rust Core (`src/`):**
+- `html_parser.rs`: HTML parsing with cached selectors using once_cell for 40-50% performance gains
+- `markdown_converter.rs`: HTML to Markdown/JSON/XML conversion with format-specific serialization
+- `chunker.rs`: Semantic content chunking for RAG applications
+- `lib.rs`: PyO3 bindings exposing Rust functions to Python
 
-## Code Style Guidelines
+**Python Orchestration (`markdown_lab/`):**
+- `core/converter.py`: Unified converter that automatically selects Rust or Python backend
+- `core/rust_backend.py`: Wrapper for Rust bindings with automatic fallback
+- `core/scraper.py`: Legacy interface maintained for backwards compatibility
+- `core/client.py`: HTTP client with connection pooling and exponential backoff
+- `core/config.py`: Centralized configuration management
 
-- **Python**: Python 3.12+ with type annotations
-- **Imports**: Group imports (stdlib, third-party, local)
-- **Formatting**: Follow PEP 8 guidelines
-- **Error handling**: Use exception handling with specific exceptions
-- **Naming**: snake_case for Python, snake_case for Rust
-- **Testing**: Use pytest fixtures and mocks
-- **Documentation**: Docstrings for public functions and classes
-- **Rust**: Follow Rust 2024 edition idioms and use thiserror for errors
-- **Type annotations**: Required for all new code
+### Key Design Patterns
 
-## Repository Structure
+1. **Automatic Backend Selection**: The `Converter` class transparently uses Rust when available, falling back to Python implementations without code changes.
 
-- **src/**: Rust code with PyO3 bindings
-  - **html_parser.rs**: Optimized HTML parsing with cached selectors
-  - **markdown_converter.rs**: HTML to Markdown/JSON/XML conversion
-  - **chunker.rs**: Semantic content chunking for RAG
-  - **lib.rs**: PyO3 bindings and Python module exports
-- **markdown_lab/**: Main Python package
-  - **core/**: Core functionality
-    - **config.py**: Centralized configuration management
-    - **errors.py**: Unified error hierarchy with structured exceptions
-    - **scraper.py**: Main scraper implementation
-    - **cache.py**: Request caching
-    - **throttle.py**: Rate limiting for web requests
-  - **network/**: HTTP client and networking utilities
-    - **client.py**: Unified HTTP client with connection pooling
-  - **utils/**: Utility modules
-    - **chunk_utils.py**: Utilities for chunking text for RAG
-    - **sitemap_utils.py**: Sitemap parsing and URL discovery
-  - **markdown_lab_rs.py**: Python interface to Rust implementations
-- **tests/**: Test files for both Python and Rust components
-- **benches/**: Performance benchmarks
+2. **Cached Selectors**: Rust HTML parser pre-compiles and caches CSS selectors using `once_cell::sync::Lazy`, providing significant performance improvements on repeated operations.
 
-## Output Format Features
+3. **Unified Error Hierarchy**: All errors inherit from `MarkdownLabError` with structured exception types for network, parsing, configuration, and conversion errors.
 
-- **Markdown**: Human-readable plain text format (default)
-- **JSON**: Structured data format for programmatic usage
-  - Document structure with title, headers, paragraphs, links, images, etc.
-  - Serialized with proper indentation for readability
-- **XML**: Markup format for document interchange
-  - Document structure with proper XML tags and hierarchy
-  - Includes XML declaration and proper escaping
-- Use `-f/--format` CLI argument to specify output format
-- All formats support the same HTML elements and content structure
+4. **Connection Pooling**: HTTP client maintains persistent connections with configurable pool sizes and automatic retry logic.
+
+### Format Support Architecture
+
+The system supports multiple output formats through a pluggable architecture:
+- **Markdown**: Default human-readable format
+- **JSON**: Structured document representation with headers, paragraphs, links, images
+- **XML**: Hierarchical document structure with proper escaping
+
+Format selection happens at the Rust level for performance, with Python providing the interface.
+
+### CLI Architecture
+
+Two CLI systems coexist:
+1. **Modern CLI (`cli.py`)**: Typer-based with Rich output, progress bars, and TUI support
+2. **Legacy CLI (`scraper.py:main`)**: Argparse-based for backwards compatibility
+
+The modern CLI is the default, with `MARKDOWN_LAB_LEGACY=1` environment variable enabling legacy mode.
+
+### Testing Strategy
+
+- **Unit Tests**: Isolated component testing in `tests/unit/`
+- **Integration Tests**: End-to-end workflows in `tests/integration/`
+- **Rust Binding Tests**: PyO3 interface validation in `tests/rust/`
+- **Benchmarks**: Performance testing with criterion (Rust) and pytest-benchmark (Python)
+
+### Performance Optimizations
+
+1. **Cached Selectors**: CSS selectors compiled once and reused
+2. **Connection Pooling**: Reuses HTTP connections across requests
+3. **Rust Processing**: Critical paths implemented in Rust
+4. **Chunking Algorithm**: Optimized for semantic coherence with minimal overhead
+
+## Development Notes
+
+- Always run `maturin develop` after modifying Rust code
+- The project supports Python 3.12+ only
+- Use `uv` for dependency management (faster than pip)
+- JavaScript rendering available with `--features real_rendering` (requires headless Chrome)
+- Centralized configuration in `MarkdownLabConfig` class - avoid scattered config parameters
+- Legacy `MarkdownScraper` class wraps new `Converter` for backwards compatibility
