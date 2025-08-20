@@ -2,6 +2,7 @@
 .request_cache/
 tmp/
 markdown_scraper.log
+settings.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
