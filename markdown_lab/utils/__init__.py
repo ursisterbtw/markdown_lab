@@ -14,7 +14,7 @@ from .url_utils import (
 
 __all__ = [
     "extract_base_url",
-    "get_domain_from_url", 
+    "get_domain_from_url",
     "get_filename_from_url",
     "get_url_path_parts",
     "is_absolute_url",

@@ -12,7 +12,6 @@ This module provides a full-screen terminal interface with:
 
 import threading
 import time
-from markdown_lab.utils.url_utils import validate_url
 
 from textual.app import App, ComposeResult
 from textual.binding import Binding
@@ -44,6 +43,7 @@ from textual.widgets import (
 
 from markdown_lab.core.config import MarkdownLabConfig
 from markdown_lab.core.converter import Converter
+from markdown_lab.utils.url_utils import validate_url
 
 
 class URLValidator(Validator):

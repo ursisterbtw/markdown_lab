@@ -32,7 +32,12 @@ from rich.progress import (
 from rich.prompt import Confirm
 from rich.table import Table
 
-from markdown_lab.core.config import MarkdownLabConfig, get_config, create_config_from_cli_args, get_cli_defaults
+from markdown_lab.core.config import (
+    MarkdownLabConfig,
+    create_config_from_cli_args,
+    get_cli_defaults,
+    get_config,
+)
 from markdown_lab.core.converter import Converter
 from markdown_lab.core.scraper import MarkdownScraper  # Legacy support
 from markdown_lab.utils.url_utils import get_domain_from_url

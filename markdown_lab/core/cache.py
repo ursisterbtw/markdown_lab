@@ -17,7 +17,12 @@ logger = logging.getLogger("request_cache")
 class RequestCache:
     """Simple cache for HTTP requests to avoid repeated network calls."""
 
-    def __init__(self, config: Optional[MarkdownLabConfig] = None, cache_dir: Optional[str] = None, max_age: Optional[int] = None):
+    def __init__(
+        self,
+        config: Optional[MarkdownLabConfig] = None,
+        cache_dir: Optional[str] = None,
+        max_age: Optional[int] = None,
+    ):
         """
         Initializes a RequestCache instance with centralized configuration.
 
@@ -29,7 +34,9 @@ class RequestCache:
         # Use provided config or get default, with optional parameter overrides for backward compatibility
         self.config = config or get_config()
 
-        self.cache_dir = Path(cache_dir if cache_dir is not None else self.config.cache_dir)
+        self.cache_dir = Path(
+            cache_dir if cache_dir is not None else self.config.cache_dir
+        )
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         self.max_age = max_age if max_age is not None else self.config.cache_ttl
         self.max_memory_size = self.config.cache_max_memory
@@ -120,11 +127,16 @@ class RequestCache:
         cache_path = self._get_cache_path(url)
         try:
             # Check disk space before writing
-            if self._get_disk_cache_size() + len(content.encode('utf-8')) <= self.max_disk_size:
+            if (
+                self._get_disk_cache_size() + len(content.encode("utf-8"))
+                <= self.max_disk_size
+            ):
                 with open(cache_path, "w", encoding="utf-8") as f:
                     f.write(content)
             else:
-                logger.warning(f"Disk cache size limit exceeded, skipping disk cache for {url}")
+                logger.warning(
+                    f"Disk cache size limit exceeded, skipping disk cache for {url}"
+                )
         except IOError as e:
             logger.warning(f"Failed to save response to cache: {e}")
 

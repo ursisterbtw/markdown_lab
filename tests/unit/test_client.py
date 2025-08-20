@@ -87,7 +87,9 @@ class TestHttpClient:
         mock_request.return_value = mock_response
         result = http_client.head("https://example.com")
         assert result is not None
-        mock_request.assert_called_once_with("HEAD", "https://example.com", timeout=30, return_response=True)
+        mock_request.assert_called_once_with(
+            "HEAD", "https://example.com", timeout=30, return_response=True
+        )
 
     @patch("requests.Session.request")
     def test_get_many_urls(self, mock_request, http_client, mock_response):
@@ -130,19 +132,19 @@ class TestCachedHttpClient:
         """Test use_cache parameter controls cache behavior."""
         url = "https://example.com/test"
         test_content = "test content"
-        
+
         # Directly test cache behavior by manually setting cache
         # First, clear the cache to ensure clean state
         cached_client.clear_cache()
-        
+
         # Set a value in the cache directly
         if cached_client.cache:
             cached_client.cache.set(url, test_content)
-        
+
         # Test that use_cache=True returns cached value
         result1 = cached_client.get(url, use_cache=True)
         assert result1 == test_content
-        
+
         # Test that use_cache=False bypasses cache
         # Since we can't easily test the network call without complex mocking,
         # we'll just ensure the parameter is accepted without error
@@ -153,7 +155,9 @@ class TestCachedHttpClient:
             pass
 
     @patch("requests.Session.request")
-    def test_skip_cache_deprecation_warning(self, mock_request, cached_client, mock_response):
+    def test_skip_cache_deprecation_warning(
+        self, mock_request, cached_client, mock_response
+    ):
         """Test that skip_cache parameter emits deprecation warning."""
         import warnings
 
@@ -167,4 +171,3 @@ class TestCachedHttpClient:
             assert len(w) == 1
             assert issubclass(w[0].category, DeprecationWarning)
             assert "skip_cache" in str(w[0].message)
-

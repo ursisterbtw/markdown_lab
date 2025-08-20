@@ -187,7 +187,6 @@ class Converter:
             logger.error(f"Failed to save content to {output_file}: {e}")
             raise
 
-
     def convert_sitemap(
         self,
         base_url: str,

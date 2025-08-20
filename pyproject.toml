@@ -94,8 +94,25 @@ line_length = 88
 [tool.ruff]
 target-version = "py312"
 line-length = 88
+
+[tool.ruff.lint]
 select = ["E", "F", "I", "N", "W", "B", "C4", "SIM", "T20", "RET", "ERA", "PL"]
-ignore = ["E203", "E501"]
+ignore = [
+    "E203", "E501", "F401",  # Allow unused imports for optional dependencies
+    "PLC0415",  # Allow imports outside top-level for conditional imports
+    "PLR0913",  # Allow many arguments for CLI functions  
+    "PLW0603",  # Allow global statements for CLI state
+    "PLR2004",  # Allow magic values in tests and CLI
+    "ERA001",   # Allow commented-out code in tests
+    "SIM105",   # Allow try-except-pass patterns in tests
+    "PLR0911",  # Allow many return statements in complex functions
+    "PLR0912",  # Allow many branches in complex functions
+    "PLR0915",  # Allow many statements in complex functions
+    "B017",     # Allow general exception assertions in tests
+    "SIM102",   # Allow nested if statements for clarity
+    "SIM117",   # Allow nested with statements for clarity
+    "SIM118",   # Allow .keys() for explicit dictionary key iteration
+]
 
 [tool.mypy]
 python_version = "3.12"

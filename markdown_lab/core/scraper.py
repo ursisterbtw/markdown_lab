@@ -17,7 +17,11 @@ import requests
 
 from markdown_lab.core.config import MarkdownLabConfig, get_config
 from markdown_lab.core.converter import Converter
-from markdown_lab.core.errors import NetworkError, handle_request_exception, retry_with_backoff
+from markdown_lab.core.errors import (
+    NetworkError,
+    handle_request_exception,
+    retry_with_backoff,
+)
 from markdown_lab.utils.chunk_utils import ContentChunker
 from markdown_lab.utils.sitemap_utils import SitemapParser
 from markdown_lab.utils.url_utils import extract_base_url, get_filename_from_url
@@ -52,7 +56,7 @@ class MarkdownScraper:
         """
         # Use provided config or get default
         self.config = config or get_config()
-        
+
         # Initialize the new Converter internally
         self.converter = Converter(self.config)
 
@@ -60,7 +64,9 @@ class MarkdownScraper:
         self.requests_per_second = self.config.requests_per_second
         self.timeout = self.config.timeout
         self.max_retries = self.config.max_retries
-        self.chunker = ContentChunker(chunk_size=self.config.chunk_size, chunk_overlap=self.config.chunk_overlap)
+        self.chunker = ContentChunker(
+            chunk_size=self.config.chunk_size, chunk_overlap=self.config.chunk_overlap
+        )
         self.cache_enabled = self.config.cache_enabled
 
         # Legacy properties for compatibility
@@ -172,9 +178,7 @@ class MarkdownScraper:
         logger.info(
             f"Successfully retrieved the website content (status code: {response.status_code})."
         )
-        logger.info(
-            f"Network latency: {response.elapsed.total_seconds():.2f} seconds"
-        )
+        logger.info(f"Network latency: {response.elapsed.total_seconds():.2f} seconds")
 
         return response.text
 
@@ -193,13 +197,7 @@ class MarkdownScraper:
         Raises:
             NetworkError: If the URL cannot be retrieved after all retries.
         """
-        return retry_with_backoff(
-            self._make_single_request,
-            self.max_retries,
-            url,
-            url
-        )
-
+        return retry_with_backoff(self._make_single_request, self.max_retries, url, url)
 
     def save_content(self, content: str, output_file: str) -> None:
         """
@@ -377,7 +375,6 @@ class MarkdownScraper:
             Path(chunk_directory).mkdir(parents=True, exist_ok=True)
 
         return output_path, chunk_directory
-
 
     def _process_single_url(
         self,
@@ -560,9 +557,7 @@ class MarkdownScraper:
                 # Process URLs in parallel with shared thread pool (50% performance improvement)
                 executor = get_shared_executor(max_workers)
                 results = list(
-                    executor.map(
-                        process_url, [(url, i) for i, url in enumerate(links)]
-                    )
+                    executor.map(process_url, [(url, i) for i, url in enumerate(links)])
                 )
 
                 # Process results
@@ -683,7 +678,7 @@ def main(
         cache_enabled=cache_enabled,
         cache_ttl=cache_max_age,
     )
-    
+
     scraper = MarkdownScraper(config)
 
     try:

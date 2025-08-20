@@ -243,7 +243,9 @@ class CachedHttpClient(HttpClient):
         super().__init__(config)
 
         if cache is None:
-            self.cache = RequestCache(config=self.config) if self.config.cache_enabled else None
+            self.cache = (
+                RequestCache(config=self.config) if self.config.cache_enabled else None
+            )
         else:
             self.cache = cache
 
@@ -251,7 +253,9 @@ class CachedHttpClient(HttpClient):
             f"Initialized cached HTTP client (cache_enabled: {self.config.cache_enabled})"
         )
 
-    def get(self, url: str, use_cache: bool = True, skip_cache: bool = False, **kwargs) -> str:
+    def get(
+        self, url: str, use_cache: bool = True, skip_cache: bool = False, **kwargs
+    ) -> str:
         """
         Retrieve the content of a URL using a GET request, utilizing cache if enabled.
 
@@ -275,7 +279,7 @@ class CachedHttpClient(HttpClient):
                 stacklevel=2,
             )
             # Only override use_cache if it's still at its default value
-            if use_cache is True:
+            if use_cache:
                 use_cache = False
 
         if use_cache and self.cache and (cached_content := self.cache.get(url)):
@@ -329,4 +333,3 @@ def create_cached_http_client(
         config = get_config()
 
     return CachedHttpClient(config, cache)
-
