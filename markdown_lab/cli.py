@@ -351,7 +351,6 @@ def _convert_standard(
         TimeRemainingColumn(),
         console=console,
     ) as progress:
-
         # Main conversion task
         main_task = progress.add_task("🔄 Converting URL...", total=100)
 

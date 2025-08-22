@@ -22,7 +22,6 @@ def main():
 
             cli_main()
         except ImportError:
-
             # Fall back to legacy CLI
             from markdown_lab.core.scraper import main as legacy_main
 

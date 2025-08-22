@@ -200,7 +200,7 @@ class TestCacheLimits:
         for i in range(10):
             cache.set(f"url{i}", f"content{i}")
             if i % 2 == 0:
-                cache.get(f"url{i//2}")  # Access some items
+                cache.get(f"url{i // 2}")  # Access some items
 
         # Should maintain consistency
         assert len(cache.memory_cache) <= cache.max_memory_items

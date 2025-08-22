@@ -41,9 +41,9 @@ class RequestCache:
         self.max_age = max_age if max_age is not None else self.config.cache_ttl
         self.max_memory_size = self.config.cache_max_memory
         self.max_disk_size = self.config.cache_max_disk
-        self.memory_cache: Dict[str, Tuple[str, float]] = (
-            {}
-        )  # url -> (content, timestamp)
+        self.memory_cache: Dict[
+            str, Tuple[str, float]
+        ] = {}  # url -> (content, timestamp)
         self.current_memory_size = 0
 
     def _get_cache_key(self, url: str) -> str:

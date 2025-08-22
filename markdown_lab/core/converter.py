@@ -320,7 +320,7 @@ class Converter:
         chunk_format: str,
     ) -> None:
         """Process a single URL: fetch, convert, save, and optionally chunk."""
-        logger.info(f"Processing URL {index+1}/{total}: {url}")
+        logger.info(f"Processing URL {index + 1}/{total}: {url}")
 
         filename = self._generate_output_filename(url, output_format, output_path)
         content, markdown_content = self.convert_url(url, output_format)

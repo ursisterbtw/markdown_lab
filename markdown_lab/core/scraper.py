@@ -393,7 +393,7 @@ class MarkdownScraper:
         output_file = str(output_path / filename)
 
         # Scrape and convert the page
-        logger.info(f"Scraping URL {index+1}/{total}: {url}")
+        logger.info(f"Scraping URL {index + 1}/{total}: {url}")
         html_content = self.scrape_website(url, skip_cache=False)
 
         # Convert based on output format using the helper method
