@@ -510,7 +510,10 @@ class TestRustBackendPerformanceAndResources:
 
     def test_memory_usage_monitoring(self, rust_backend, sample_rust_code, temp_dir):
         """Test memory usage during compilation."""
-        import psutil
+        try:
+            import psutil
+        except ImportError:
+            pytest.skip("psutil not available for memory monitoring")
 
         process = psutil.Process(os.getpid())
         initial_memory = process.memory_info().rss
@@ -522,8 +525,6 @@ class TestRustBackendPerformanceAndResources:
                 peak_memory = process.memory_info().rss
                 memory_increase = peak_memory - initial_memory
                 assert memory_increase < 100 * 1024 * 1024
-            except ImportError:
-                pytest.skip("psutil not available for memory monitoring")
             except Exception:
                 pass
 
