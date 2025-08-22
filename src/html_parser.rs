@@ -59,10 +59,9 @@ static SELECTOR_CACHE: Lazy<HashMap<&'static str, Selector>> = Lazy::new(|| {
     cache
 });
 
-/// Extracts the main content from an HTML document by identifying and
-/// Extracts the main content section from an HTML document using cached CSS selectors.
+/// extracts main content from HTML document using cached CSS selectors
 ///
-/// Attempts to locate the primary content container by first using a combined selector for common main content elements. If not found, falls back to individual selectors in a preferred order. Returns the extracted fragment as an `Html` object, or the entire document if no specific section is found.
+/// tries combined selector first, falls back to individual selectors, returns Html fragment or whole document
 ///
 /// # Examples
 ///
@@ -97,7 +96,7 @@ pub fn extract_main_content(html: &str) -> Result<Html, ParserError> {
     Ok(document)
 }
 
-/// Cleans up HTML by removing unwanted elements like scripts, ads, etc.
+/// removes unwanted elements like scripts, ads
 /// Removes unwanted elements from the HTML using cached CSS selectors.
 ///
 /// Unwanted elements such as scripts, ads, banners, and navigation are identified using a cached selector and removed from the HTML. If the selector cache is unavailable, returns the original HTML.
@@ -139,7 +138,7 @@ pub fn clean_html(html: &str) -> Result<String, ParserError> {
 }
 
 /// More efficient version that works directly with the DOM structure
-/// Cleans HTML content by removing unwanted elements, with a placeholder for future DOM-based optimization.
+/// cleans HTML content by removing unwanted elements
 ///
 /// Currently delegates to `clean_html`, but intended for future enhancement to perform more efficient DOM manipulation when supported.
 ///
@@ -161,9 +160,9 @@ pub fn clean_html_advanced(html: &str) -> Result<String, ParserError> {
     clean_html(html)
 }
 
-/// Extracts all unique absolute URLs from anchor elements in the HTML document.
+/// extracts unique absolute URLs from anchor elements
 ///
-/// Parses the HTML and uses a cached selector to find all anchor tags with `href` attributes. Filters out JavaScript, fragment-only, and empty links. Resolves relative URLs against the provided base URL, returning a sorted vector of unique absolute URLs.
+/// finds anchor tags with href, filters out javascript/fragment/empty links, resolves relative URLs
 ///
 /// # Parameters
 /// - `html`: The HTML content to parse.
@@ -252,7 +251,7 @@ pub fn resolve_url(base_url: &str, relative_url: &str) -> Result<String, ParserE
     }
 }
 
-/// Extracts and normalizes the text content from an HTML element, collapsing consecutive whitespace into single spaces.
+/// extracts and normalizes text content, collapses whitespace
 ///
 /// # Examples
 ///

@@ -53,7 +53,7 @@ This optimization is particularly valuable for repeated scraping of the same URL
     - Improved fallback mechanisms when Rust implementations are unavailable
     - Consistent error handling across all conversion paths
 
-3. **Robust Output Format Handling:**
+3. **Output Format Handling:**
     - Graceful fallbacks for JSON and XML formats when dependencies are missing
     - Proper extension management for output files based on available format converters
     - Clear logging when format conversion isn't possible

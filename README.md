@@ -15,9 +15,9 @@ Check out [deepwiki](https://deepwiki.com/ursisterbtw/markdown_lab/) for a detai
 
 ## Features
 
-- 🎨 **Modern CLI Interface**: Beautiful terminal output with Typer and Rich, progress bars, and interactive features
+- 🎨 **Modern CLI Interface**: Terminal output with Typer and Rich, progress bars, and interactive features
 - 🖥️ **Terminal User Interface (TUI)**: Full-featured interactive interface for complex operations
-- 🌐 **Web Scraping**: Scrapes any accessible website with robust error handling and rate limiting
+- 🌐 **Web Scraping**: Scrapes any accessible website with error handling and rate limiting
 - 🗺️ **Sitemap Integration**: Parses sitemap.xml to discover and scrape the most relevant content
 - 📝 **Multiple Output Formats**: Converts HTML to clean Markdown, JSON, or XML formats
 - 🧩 **RAG Chunking**: Implements intelligent chunking for Retrieval-Augmented Generation systems
@@ -33,7 +33,7 @@ Check out [deepwiki](https://deepwiki.com/ursisterbtw/markdown_lab/) for a detai
 - 📊 **Real-time Progress**: Live progress tracking with rich terminal output
 - 📋 **Document Structure Preservation**: Maintains semantic structure during conversion
 - 🪵 **Comprehensive Logging**: Detailed logging with configurable levels
-- ✅ **Robust Error Handling**: Exponential backoff and graceful failure recovery
+- ✅ **Error Handling**: Exponential backoff and graceful failure recovery
 - 🏎️ **Performance Optimized**: Rust-powered HTML parsing with cached selectors
 - 🔧 **Centralized Configuration**: Unified configuration management system
 - 🌐 **Connection Pooling**: Efficient HTTP client with connection reuse
@@ -57,7 +57,7 @@ maturin develop
 
 ### Modern CLI Interface (Recommended)
 
-The project features a modern CLI built with Typer and Rich for beautiful terminal output:
+The project features a modern CLI built with Typer and Rich for terminal output:
 
 ```bash
 # Convert single URLs
@@ -432,7 +432,7 @@ See `docs/JS_RENDERING.md` for more details.
 - **requests**: Web scraping and HTTP requests
 - **beautifulsoup4**: HTML parsing fallback
 - **typer**: Modern CLI framework with rich terminal output
-- **rich**: Beautiful terminal formatting and progress bars
+- **rich**: Terminal formatting and progress bars
 - **textual**: Terminal User Interface framework
 
 ### Development Dependencies
@@ -453,9 +453,9 @@ See `docs/JS_RENDERING.md` for more details.
 ## Contributing
 
 1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
+2. Create your feature branch (`git checkout -b feature/my-feature`)
+3. Commit your changes (`git commit -m 'Add my feature'`)
+4. Push to the branch (`git push origin feature/my-feature`)
 5. Open a Pull Request
 
 ## License

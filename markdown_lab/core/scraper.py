@@ -1,8 +1,8 @@
 """
 Main module for scraping websites and converting content to markdown, JSON, or XML.
 
-This module provides backwards compatibility with the original MarkdownScraper interface
-while using the new simplified Converter architecture internally.
+backwards compatibility with original MarkdownScraper interface
+using simplified Converter architecture internally
 """
 
 import argparse
@@ -43,8 +43,8 @@ class MarkdownScraper:
     """
     Legacy MarkdownScraper class that provides backwards compatibility.
 
-    This class now uses the simplified Converter architecture internally
-    while maintaining the original API for existing code.
+    uses simplified Converter architecture internally
+    maintains original API for existing code
     """
 
     def __init__(self, config: Optional[MarkdownLabConfig] = None) -> None:

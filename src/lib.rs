@@ -9,8 +9,8 @@ pub mod html_parser;
 pub mod js_renderer;
 pub mod markdown_converter;
 
-/// Shared Tokio runtime for JavaScript rendering operations
-/// This eliminates the expensive runtime creation overhead for each request
+/// shared tokio runtime for JS rendering operations
+/// eliminates expensive runtime creation overhead per request
 static SHARED_RUNTIME: Lazy<tokio::runtime::Runtime> = Lazy::new(|| {
     tokio::runtime::Runtime::new()
         .expect("Failed to create shared Tokio runtime for JavaScript rendering")
@@ -101,7 +101,7 @@ fn chunk_markdown(
 }
 
 /// Renders a JavaScript-enabled page and returns the HTML content
-/// Uses shared Tokio runtime for optimal performance
+/// uses shared tokio runtime for better performance
 #[pyfunction]
 fn render_js_page(url: &str, wait_time: Option<u64>) -> PyResult<String> {
     let html = SHARED_RUNTIME
@@ -111,7 +111,7 @@ fn render_js_page(url: &str, wait_time: Option<u64>) -> PyResult<String> {
     Ok(html)
 }
 
-/// Python wrapper for clean_html function
+/// wrapper for clean_html function
 #[pyfunction]
 fn clean_html(html: &str) -> PyResult<String> {
     html_parser::clean_html(html)

@@ -1,6 +1,6 @@
 """
 Python interface to the Rust implementation of markdown_lab components.
-This module provides a fallback to Python implementations if the Rust extension is not available.
+fallback to Python implementations if Rust extension not available
 
 To build the Rust extension:
 1. Install maturin: pip install maturin
@@ -128,13 +128,13 @@ def convert_html(
     # This is a simplified implementation - the real one would parse the HTML directly
     markdown_content = _python_html_to_markdown(html, base_url)
 
-    # Parse markdown into our document structure
-    document = parse_markdown_to_document(markdown_content, base_url)
+    # parse markdown into document structure
+    doc_structure = parse_markdown_to_document(markdown_content, base_url)
 
     if output_format == OutputFormat.JSON:
-        return json.dumps(document, indent=2)
+        return json.dumps(doc_structure, indent=2)
     if output_format == OutputFormat.XML:
-        return document_to_xml(document)
+        return document_to_xml(doc_structure)
 
     # Fallback to markdown if format not recognized
     return markdown_content

@@ -2,7 +2,7 @@
 """
 Modern CLI interface for markdown_lab using Typer and Rich.
 
-This module provides a beautiful, modern command-line interface with:
+Modern command-line interface with:
 - Rich terminal output with colors and formatting
 - Progress bars and status indicators
 - Interactive TUI mode
@@ -83,12 +83,12 @@ interactive_mode = False
 
 
 def setup_config(**kwargs) -> MarkdownLabConfig:
-    """Setup configuration with provided CLI parameters."""
+    """setup configuration with provided CLI parameters"""
     return create_config_from_cli_args(**kwargs)
 
 
 def print_banner():
-    """Display the application banner."""
+    """display the application banner"""
     banner = """
 ╔══════════════════════════════════════════════════════════════╗
 ║                        🔬 Markdown Lab                       ║
@@ -102,7 +102,7 @@ def print_banner():
 
 
 def create_status_table(stats: dict) -> Table:
-    """Create a status table showing current operation statistics."""
+    """create status table showing current operation statistics"""
     table = Table(
         title="📊 Operation Status", show_header=True, header_style="bold magenta"
     )
@@ -236,7 +236,7 @@ def _convert_interactive(
     skip_cache,
     stats,
 ):
-    """Interactive conversion with live progress display."""
+    """interactive conversion with live progress display"""
 
     layout = Layout()
     layout.split_column(
@@ -339,7 +339,7 @@ def _convert_standard(
     stats,
     verbose,
 ):
-    """Standard conversion with progress bars."""
+    """standard conversion with progress bars"""
 
     console.print(create_status_table(stats))
 
@@ -797,7 +797,7 @@ def main(
 
 
 def cli_main():
-    """Entry point for the CLI application."""
+    """entry point for the CLI application"""
     try:
         app()
     except KeyboardInterrupt:

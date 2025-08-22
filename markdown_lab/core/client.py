@@ -1,9 +1,9 @@
 """
 Unified HTTP client for markdown_lab.
 
-This module provides a consolidated HTTP client that eliminates duplicate request
-handling logic found in scraper.py and sitemap_utils.py. It includes retry logic,
-rate limiting, caching, and consistent error handling.
+consolidated HTTP client that eliminates duplicate request
+handling logic, includes retry logic, rate limiting, caching,
+and consistent error handling
 """
 
 import logging
@@ -178,7 +178,12 @@ class HttpClient:
 
                 return response if return_response else response.text
 
+            except (requests.exceptions.RequestException, OSError, ValueError) as e:
+                last_exception = e
+                network_error = handle_request_exception(e, url, attempt)
             except Exception as e:
+                # catch-all for unexpected errors
+                logger.error(f"Unexpected error type {type(e).__name__} for {url}: {e}")
                 last_exception = e
                 network_error = handle_request_exception(e, url, attempt)
 

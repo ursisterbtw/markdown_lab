@@ -1,5 +1,5 @@
 """
-Shared thread pool utilities for optimal parallel processing performance.
+shared thread pool utilities for parallel processing
 Eliminates ThreadPoolExecutor recreation overhead across batch operations.
 """
 
@@ -41,8 +41,8 @@ class SharedThreadPool:
         if cls._executor is None:
             with cls._lock:
                 if cls._executor is None:
-                    # Use provided max_workers or default to optimal thread count
-                    # Default to 2 * cpu_count + 1 for I/O bound tasks, capped at 32
+                    # use provided max_workers or default to good thread count
+                    # default to 2 * cpu_count + 1 for I/O bound tasks, capped at 32
                     default_workers = min(32, (os.cpu_count() or 1) * 2 + 1)
                     workers = max_workers or default_workers
                     cls._executor = ThreadPoolExecutor(

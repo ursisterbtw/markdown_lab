@@ -1,8 +1,7 @@
 """
 Centralized configuration management for markdown_lab.
 
-This module provides a unified configuration system that eliminates scattered
-configuration parameters across the codebase and provides validation and defaults.
+unified configuration system with validation and defaults
 """
 
 import os
@@ -137,7 +136,7 @@ class MarkdownLabConfig:
     @classmethod
     def from_dict(cls, config_dict: Dict[str, Any]) -> "MarkdownLabConfig":
         """
-        Creates a MarkdownLabConfig instance from a dictionary of configuration values.
+        creates config instance from dictionary
 
         Args:
             config_dict: A dictionary containing configuration parameters keyed by attribute name.
@@ -206,7 +205,7 @@ class MarkdownLabConfig:
         Saves the configuration to a JSON or YAML file.
 
         Args:
-            config_path: Path to the output configuration file. The file extension determines the format (.json, .yml, or .yaml).
+            config_path: output config file path, extension determines format
 
         Raises:
             ImportError: If saving as YAML and PyYAML is not installed.
@@ -256,14 +255,14 @@ DEFAULT_CONFIG = MarkdownLabConfig()
 
 def get_config() -> MarkdownLabConfig:
     """
-    Returns the current global MarkdownLab configuration instance.
+    returns current global config instance
     """
     return DEFAULT_CONFIG
 
 
 def set_config(config: MarkdownLabConfig) -> None:
     """
-    Sets the global configuration instance for the markdown_lab project.
+    sets global config instance
 
     Replaces the current global configuration with the provided MarkdownLabConfig instance.
     """
@@ -273,7 +272,7 @@ def set_config(config: MarkdownLabConfig) -> None:
 
 def load_config_from_env() -> MarkdownLabConfig:
     """
-    Creates a new MarkdownLabConfig instance with environment variable overrides applied.
+    creates config with environment variable overrides
 
     Returns:
         A MarkdownLabConfig object reflecting any relevant environment variable settings.
