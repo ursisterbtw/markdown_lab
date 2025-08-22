@@ -44,7 +44,7 @@ from markdown_lab.utils.url_utils import get_domain_from_url
 
 app = typer.Typer(
     name="markdown-lab",
-    help="🔬 Modern HTML to Markdown converter with TUI support",
+    help="HTML to Markdown converter with TUI support",
     rich_markup_mode="rich",
     no_args_is_help=True,
     context_settings={"help_option_names": ["-h", "--help"]},
@@ -91,8 +91,8 @@ def print_banner():
     """display the application banner"""
     banner = """
 ╔══════════════════════════════════════════════════════════════╗
-║                        🔬 Markdown Lab                       ║
-║              HTML to Markdown Converter Suite                ║
+║                       Markdown Lab                          ║
+║              HTML to Markdown Converter                      ║
 ║                                                              ║
 ║  Convert web content to Markdown, JSON, or XML               ║
 ║  with semantic chunking for RAG applications                 ║

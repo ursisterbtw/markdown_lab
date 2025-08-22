@@ -8,7 +8,7 @@ from markdown_lab.core.config import MarkdownLabConfig
 
 @pytest.fixture
 def mock_response():
-    """Mock HTTP response for testing network operations."""
+    """mock http response"""
     mock_resp = Mock()
     mock_resp.status_code = 200
     mock_resp.text = "<html><body><h1>Test HTML</h1></body></html>"
@@ -46,7 +46,7 @@ def sample_config():
 
 
 class TestHttpClient:
-    """Test suite for HttpClient functionality."""
+    """test http client"""
 
     def test_client_initialization_default(self):
         """Test HttpClient initializes with default parameters."""

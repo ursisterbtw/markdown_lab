@@ -9,8 +9,7 @@ pub mod html_parser;
 pub mod js_renderer;
 pub mod markdown_converter;
 
-/// shared tokio runtime for JS rendering operations
-/// eliminates expensive runtime creation overhead per request
+/// shared tokio runtime for js rendering
 static SHARED_RUNTIME: Lazy<tokio::runtime::Runtime> = Lazy::new(|| {
     tokio::runtime::Runtime::new()
         .expect("Failed to create shared Tokio runtime for JavaScript rendering")

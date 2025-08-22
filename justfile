@@ -25,7 +25,7 @@ setup:
     #!/usr/bin/env bash
     set -euo pipefail
     
-    echo "🚀 Setting up Markdown Lab development environment..."
+    echo "Setting up Markdown Lab development environment..."
     
     # Check for required tools
     for cmd in python3 pip curl cargo; do
@@ -37,18 +37,18 @@ setup:
 
     # Install UV if not present
     if ! command -v uv &> /dev/null; then
-        echo "📦 Installing UV package manager..."
+        echo "Installing UV package manager..."
         curl -LsSf https://astral.sh/uv/install.sh | sh
         export PATH="$HOME/.cargo/bin:$PATH"
     fi
     
-    echo "📦 Installing Python dependencies..."
+    echo "Installing Python dependencies..."
     uv sync
     
-    echo "🦀 Building Rust components..."
+    echo "Building Rust components..."
     @just _activate_venv && maturin develop
     
-    echo "✅ Setup complete! Run 'just test' to verify installation."
+    echo "Setup complete. Run 'just test' to verify installation."
 
 # Clean all build artifacts
 clean:

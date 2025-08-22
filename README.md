@@ -1,6 +1,6 @@
 ![Markdown Lab](docs/assets/github-banner.svg)
 
-# Markdown Lab 🔄📝
+# Markdown Lab
 
 Markdown Lab combines Python and Rust components to scrape websites and convert HTML content to markdown, JSON, or XML formats. It supports sitemap parsing, semantic chunking for RAG
 (Retrieval-Augmented Generation), and includes performance optimizations through Rust integration.
@@ -15,14 +15,14 @@ Check out [deepwiki](https://deepwiki.com/ursisterbtw/markdown_lab/) for a detai
 
 ## Features
 
-- 🎨 **Modern CLI Interface**: Terminal output with Typer and Rich, progress bars, and interactive features
-- 🖥️ **Terminal User Interface (TUI)**: Full-featured interactive interface for complex operations
-- 🌐 **Web Scraping**: Scrapes any accessible website with error handling and rate limiting
-- 🗺️ **Sitemap Integration**: Parses sitemap.xml to discover and scrape the most relevant content
-- 📝 **Multiple Output Formats**: Converts HTML to clean Markdown, JSON, or XML formats
-- 🧩 **RAG Chunking**: Implements intelligent chunking for Retrieval-Augmented Generation systems
-- ⚡ **Parallel Processing**: Batch URL processing with configurable worker threads
-- 🔄 **Comprehensive HTML Support**:
+- **CLI Interface**: Terminal output with Typer and Rich, progress bars, and interactive features
+- **Terminal User Interface (TUI)**: Interactive interface for complex operations
+- **Web Scraping**: Scrapes accessible websites with error handling and rate limiting
+- **Sitemap Integration**: Parses sitemap.xml to discover and scrape relevant content
+- **Multiple Output Formats**: Converts HTML to Markdown, JSON, or XML formats
+- **RAG Chunking**: Implements chunking for Retrieval-Augmented Generation systems
+- **Parallel Processing**: Batch URL processing with configurable worker threads
+- **HTML Support**:
   - Headers (h1-h6)
   - Paragraphs
   - Links with resolved relative URLs
@@ -30,13 +30,13 @@ Check out [deepwiki](https://deepwiki.com/ursisterbtw/markdown_lab/) for a detai
   - Ordered and unordered lists
   - Blockquotes
   - Code blocks
-- 📊 **Real-time Progress**: Live progress tracking with rich terminal output
-- 📋 **Document Structure Preservation**: Maintains semantic structure during conversion
-- 🪵 **Comprehensive Logging**: Detailed logging with configurable levels
-- ✅ **Error Handling**: Exponential backoff and graceful failure recovery
-- 🏎️ **Performance Optimized**: Rust-powered HTML parsing with cached selectors
-- 🔧 **Centralized Configuration**: Unified configuration management system
-- 🌐 **Connection Pooling**: Efficient HTTP client with connection reuse
+- **Real-time Progress**: Live progress tracking with terminal output
+- **Document Structure Preservation**: Maintains semantic structure during conversion
+- **Logging**: Detailed logging with configurable levels
+- **Error Handling**: Exponential backoff and graceful failure recovery
+- **Performance**: Rust-powered HTML parsing with cached selectors
+- **Configuration**: Unified configuration management system
+- **Connection Pooling**: Efficient HTTP client with connection reuse
 
 ## Installation
 
@@ -492,7 +492,7 @@ This project is licensed under the MIT License - see the [LICENSE file](LICENSE)
 
 ## Author
 
-🐍🦀 ursister
+ursister
 
 ---
 

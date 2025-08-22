@@ -3,7 +3,7 @@ use regex::Regex;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-/// Pre-compiled regex patterns for optimized text processing (40% performance improvement)
+/// pre-compiled regex patterns for text processing
 static SENTENCE_BOUNDARY_REGEX: Lazy<Regex> = Lazy::new(|| {
     // Matches sentence endings followed by whitespace
     // Note: Rust regex doesn't support lookbehind, so we match the punctuation too
@@ -16,7 +16,7 @@ static PARAGRAPH_BOUNDARY_REGEX: Lazy<Regex> = Lazy::new(|| {
 });
 
 static SEMANTIC_PATTERNS_REGEX: Lazy<Regex> = Lazy::new(|| {
-    // Pre-compiled regex for semantic keywords for better performance
+    // semantic keywords regex
     Regex::new(r"(?i)\b(function|class|method|algorithm|process|system|data|model|analysis|implementation)\b").unwrap()
 });
 

@@ -520,13 +520,11 @@ class TestRustBackendPerformanceAndResources:
         source_file = temp_dir / "main.rs"
         source_file.write_text(sample_rust_code)
         if hasattr(rust_backend, "compile"):
-            try:
+            with contextlib.suppress(Exception):
                 rust_backend.compile(str(source_file))
                 peak_memory = process.memory_info().rss
                 memory_increase = peak_memory - initial_memory
                 assert memory_increase < 100 * 1024 * 1024
-            except Exception:
-                pass
 
     def test_compilation_timeout_handling(self, rust_backend, temp_dir):
         """Test compilation timeout handling."""

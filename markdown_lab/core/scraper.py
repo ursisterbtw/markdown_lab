@@ -83,19 +83,7 @@ class MarkdownScraper:
         self.request_cache = self.converter.client.cache
 
     def scrape_website(self, url: str, skip_cache: bool = False) -> str:
-        """
-        Fetches the HTML content of a website with support for caching, rate limiting, and automatic retries.
-
-        Args:
-            url: The URL of the website to scrape.
-            skip_cache: If True, bypasses the cache and forces a fresh request.
-
-        Returns:
-            The HTML content of the requested URL as a string.
-
-        Raises:
-            requests.exceptions.RequestException: If all retry attempts fail to retrieve the content.
-        """
+        """fetch html content from url"""
         # Delegate to the new Converter's HTTP client
         return self.converter.client.get(url, skip_cache=skip_cache)
 

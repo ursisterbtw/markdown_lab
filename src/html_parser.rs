@@ -59,18 +59,7 @@ static SELECTOR_CACHE: Lazy<HashMap<&'static str, Selector>> = Lazy::new(|| {
     cache
 });
 
-/// extracts main content from HTML document using cached CSS selectors
-///
-/// tries combined selector first, falls back to individual selectors, returns Html fragment or whole document
-///
-/// # Examples
-///
-/// ```
-/// use markdown_lab_rs::html_parser::extract_main_content;
-/// let html = r#"<html><body><main><p>Hello</p></main></body></html>"#;
-/// let main_content = extract_main_content(html).unwrap();
-/// assert!(main_content.root_element().html().contains("Hello"));
-/// ```
+/// extract main content from html using cached selectors
 pub fn extract_main_content(html: &str) -> Result<Html, ParserError> {
     let document = Html::parse_document(html);
 
@@ -96,8 +85,7 @@ pub fn extract_main_content(html: &str) -> Result<Html, ParserError> {
     Ok(document)
 }
 
-/// removes unwanted elements like scripts, ads
-/// Removes unwanted elements from the HTML using cached CSS selectors.
+/// remove unwanted elements using cached selectors
 ///
 /// Unwanted elements such as scripts, ads, banners, and navigation are identified using a cached selector and removed from the HTML. If the selector cache is unavailable, returns the original HTML.
 ///

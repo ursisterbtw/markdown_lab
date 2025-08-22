@@ -55,18 +55,12 @@ class MarkdownLabConfig:
     fallback_to_python: bool = True
 
     def __post_init__(self):
-        """
-        Validates configuration values and applies environment variable overrides after initialization.
-        """
+        """validate config and apply env overrides"""
         self._validate_config()
         self._apply_environment_overrides()
 
     def _validate_config(self) -> None:
-        """
-        Validates configuration parameters and raises ValueError if any constraints are violated.
-
-        Checks that numeric parameters are within valid ranges and that the default output format is supported.
-        """
+        """validate config parameters"""
         if self.requests_per_second <= 0:
             raise ValueError("requests_per_second must be positive")
 

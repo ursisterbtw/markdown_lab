@@ -22,12 +22,7 @@ logger = logging.getLogger(__name__)
 
 
 class Converter:
-    """
-    Lightweight converter for HTML content to markdown, JSON, or XML formats.
-
-    This class coordinates the conversion pipeline without complex state management
-    or performance monitoring overhead, focusing on simplicity and performance.
-    """
+    """convert HTML to markdown, JSON, or XML formats"""
 
     def __init__(self, config: Optional[MarkdownLabConfig] = None):
         """
@@ -59,20 +54,7 @@ class Converter:
     def convert_url(
         self, url: str, output_format: str = "markdown", skip_cache: bool = False
     ) -> Tuple[str, str]:
-        """
-        Convert content from a URL to the specified format.
-
-        Args:
-            url: The URL to convert
-            output_format: Target format ("markdown", "json", "xml")
-            skip_cache: Whether to bypass cache
-
-        Returns:
-            Tuple of (converted_content, markdown_content)
-
-        Raises:
-            ConversionError: If conversion fails
-        """
+        """convert content from url to specified format"""
         try:
             # Fetch HTML content
             html_content = self.client.get(url, skip_cache=skip_cache)
