@@ -55,7 +55,7 @@ markers = [
     "integration: marks tests as integration tests", 
     "unit: marks tests as unit tests",
 ]
-addopts = "--benchmark-disable"
+addopts = "-v --strict-markers --tb=short"
 
 [tool.pytest-benchmark]
 min_rounds = 5

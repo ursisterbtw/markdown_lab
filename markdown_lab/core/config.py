@@ -26,6 +26,11 @@ class MarkdownLabConfig:
         "MarkdownLab/1.0 (Python; +https://github.com/ursisterbtw/markdown_lab)"
     )
 
+    # Connection pool configuration
+    max_pool_connections: int = 10  # Maximum number of connection pools
+    max_pool_size: int = 20  # Maximum connections per pool
+    pool_block: bool = False  # Whether to block when pool is full
+
     # Processing configuration
     chunk_size: int = 1000
     chunk_overlap: int = 200
@@ -92,6 +97,15 @@ class MarkdownLabConfig:
             raise ValueError(
                 "default_output_format must be 'markdown', 'json', or 'xml'"
             )
+
+        if self.max_pool_connections <= 0:
+            raise ValueError("max_pool_connections must be positive")
+
+        if self.max_pool_size <= 0:
+            raise ValueError("max_pool_size must be positive")
+
+        if self.max_pool_size < self.max_pool_connections:
+            raise ValueError("max_pool_size must be >= max_pool_connections")
 
     def _apply_environment_overrides(self) -> None:
         """

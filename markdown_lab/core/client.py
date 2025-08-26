@@ -67,10 +67,11 @@ class HttpClient:
             }
         )
 
-        # Configure connection pooling
+        # Configure connection pooling with explicit limits
         adapter = HTTPAdapter(
-            pool_connections=self.config.max_concurrent_requests,
-            pool_maxsize=self.config.max_concurrent_requests * 2,
+            pool_connections=self.config.max_pool_connections,
+            pool_maxsize=self.config.max_pool_size,
+            pool_block=self.config.pool_block,
             max_retries=0,  # We handle retries manually for better control
         )
         session.mount("http://", adapter)
@@ -181,8 +182,8 @@ class HttpClient:
             except (requests.exceptions.RequestException, OSError, ValueError) as e:
                 last_exception = e
                 network_error = handle_request_exception(e, url, attempt)
-            except Exception as e:
-                # catch-all for unexpected errors
+            except (KeyError, AttributeError, TypeError, RuntimeError) as e:
+                # catch specific unexpected errors
                 logger.error(f"Unexpected error type {type(e).__name__} for {url}: {e}")
                 last_exception = e
                 network_error = handle_request_exception(e, url, attempt)

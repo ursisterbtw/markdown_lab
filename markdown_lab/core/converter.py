@@ -11,7 +11,7 @@ from typing import List, Optional, Tuple
 
 from markdown_lab.core.client import CachedHttpClient
 from markdown_lab.core.config import MarkdownLabConfig, get_config
-from markdown_lab.core.errors import ConversionError
+from markdown_lab.core.errors import ConversionError, NetworkError
 from markdown_lab.core.rust_backend import get_rust_backend
 from markdown_lab.formats import JsonFormatter, MarkdownFormatter, XmlFormatter
 from markdown_lab.utils.chunk_utils import create_semantic_chunks
@@ -62,7 +62,7 @@ class Converter:
             # Convert to target format
             return self.convert_html(html_content, url, output_format)
 
-        except Exception as e:
+        except (NetworkError, ValueError, TypeError, AttributeError) as e:
             raise ConversionError(
                 f"Failed to convert URL {url}",
                 source_format="html",
@@ -115,7 +115,7 @@ class Converter:
 
             return converted_content, markdown_content
 
-        except Exception as e:
+        except (ValueError, TypeError, AttributeError, RuntimeError) as e:
             raise ConversionError(
                 "Rust conversion failed",
                 source_format="html",
@@ -141,7 +141,7 @@ class Converter:
                 source_url=source_url,
                 config=self.config,
             )
-        except Exception as e:
+        except (ValueError, TypeError, AttributeError) as e:
             logger.error(f"Failed to create chunks: {e}")
             return []
 
@@ -165,7 +165,7 @@ class Converter:
 
             logger.info(f"Content saved to {output_file}")
 
-        except Exception as e:
+        except (IOError, OSError, PermissionError) as e:
             logger.error(f"Failed to save content to {output_file}: {e}")
             raise
 
@@ -243,7 +243,7 @@ class Converter:
                     chunk_format,
                 )
                 successfully_processed.append(url)
-            except Exception as e:
+            except (ConversionError, NetworkError, IOError) as e:
                 logger.error(f"Error processing URL {url}: {e}")
                 continue
 
@@ -299,7 +299,7 @@ class Converter:
                     chunk_format,
                 )
                 successfully_processed.append(url)
-            except Exception as e:
+            except (ConversionError, NetworkError, IOError) as e:
                 logger.error(f"Error processing URL {url}: {e}")
                 continue
 

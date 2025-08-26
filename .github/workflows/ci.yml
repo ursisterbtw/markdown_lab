@@ -66,10 +66,21 @@ jobs:
         run: |
           source .venv/bin/activate
           ruff check .
-          mypy . || true
+          mypy markdown_lab/
       
       - name: Run tests
         run: |
           source .venv/bin/activate
           pytest -x --tb=short  # Stop on first failure
           cargo test --release
+      
+      - name: Security scan - Python
+        run: |
+          source .venv/bin/activate
+          pip install safety
+          safety check --json || true  # Non-blocking for now
+      
+      - name: Security scan - Rust
+        run: |
+          cargo install cargo-audit --features vendored-libgit2 --locked || true
+          cargo audit || true  # Non-blocking for now
