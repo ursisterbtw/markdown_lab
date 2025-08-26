@@ -182,15 +182,31 @@ markdown_content = scraper.convert_to_markdown(html_content, "https://example.co
 scraper.save_content(markdown_content, "output.md")
 
 # Using JSON or XML format with the Rust implementation
-from markdown_lab.markdown_lab_rs import convert_html, OutputFormat
+from markdown_lab import markdown_lab_rs
 
 html_content = scraper.scrape_website("https://example.com")
-# Convert to JSON
-json_content = convert_html(html_content, "https://example.com", OutputFormat.JSON)
+
+# Convert to Markdown (legacy helper)
+markdown_content = markdown_lab_rs.convert_html_to_markdown(
+    html_content, "https://example.com"
+)
+scraper.save_content(markdown_content, "output.md")
+
+# Convert to JSON or XML using string format names
+json_content = markdown_lab_rs.convert_html_to_format(
+    html_content, "https://example.com", "json"
+)
 scraper.save_content(json_content, "output.json")
-# Convert to XML
-xml_content = convert_html(html_content, "https://example.com", OutputFormat.XML)
+
+xml_content = markdown_lab_rs.convert_html_to_format(
+    html_content, "https://example.com", "xml"
+)
 scraper.save_content(xml_content, "output.xml")
+
+# Note: An OutputFormat enum is exposed for convenience:
+# from markdown_lab import markdown_lab_rs
+# fmt = markdown_lab_rs.OutputFormat.from_str("json")  # returns an enum value
+# The current Python bindings accept string names ("markdown"|"json"|"xml").
 ```
 
 #### With Sitemap Discovery

@@ -165,7 +165,7 @@ test-coverage:
         --cov=markdown_lab \
         --cov-report=html \
         --cov-report=term \
-        --cov-fail-under=80 \
+        --cov-fail-under=85 \
         --color=yes
 
 # Run a specific test file or test case
