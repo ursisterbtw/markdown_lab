@@ -72,20 +72,64 @@ class ContentChunker:
         Returns:
             A list of Chunk objects
         """
-        # Split markdown into sections based on headers
+        # Split markdown into sections based on headers with hierarchy awareness
         sections = []
         current_section = ""
         current_heading = ""
+        current_heading_level = 0
+        seen_h2_under_h1 = False  # Track if we've seen an h2 under current h1
+
+        def get_heading_level(line):
+            """Get the heading level (number of # characters) from a line."""
+            if line.startswith("#"):
+                return len(line) - len(line.lstrip("#"))
+            return 0
 
         for line in markdown_content.split("\n"):
             # Check if the line is a header
             if line.startswith("#"):
-                # If we have content in the current section, save it
-                if current_section:
-                    sections.append((current_heading, current_section))
+                heading_level = get_heading_level(line)
 
-                current_heading = line
-                current_section = line + "\n"
+                if current_heading_level == 0:
+                    # First heading - start the first section
+                    current_heading = line
+                    current_heading_level = heading_level
+                    current_section = line + "\n"
+                    if heading_level == 1:
+                        seen_h2_under_h1 = False
+                elif heading_level == 1:
+                    # New h1 heading - always start a new section
+                    if current_section:
+                        sections.append((current_heading, current_section))
+                    current_heading = line
+                    current_heading_level = heading_level
+                    current_section = line + "\n"
+                    seen_h2_under_h1 = False
+                elif heading_level == 2:
+                    # h2 heading - behavior depends on context
+                    if current_heading_level == 1 and not seen_h2_under_h1:
+                        # First h2 under an h1 - include in current section
+                        current_section += line + "\n"
+                        seen_h2_under_h1 = True
+                    else:
+                        # Subsequent h2 or h2 not under h1 - start new section
+                        if current_section:
+                            sections.append((current_heading, current_section))
+                        current_heading = line
+                        current_heading_level = heading_level
+                        current_section = line + "\n"
+                elif heading_level > current_heading_level:
+                    # Sub-heading - include in current section
+                    current_section += line + "\n"
+                else:
+                    # Same or higher priority heading - start new section
+                    if current_section:
+                        sections.append((current_heading, current_section))
+                    current_heading = line
+                    current_heading_level = heading_level
+                    current_section = line + "\n"
+                    if heading_level == 1:
+                        seen_h2_under_h1 = False
             else:
                 current_section += line + "\n"
 

@@ -26,16 +26,6 @@ from markdown_lab.utils.chunk_utils import ContentChunker
 from markdown_lab.utils.sitemap_utils import SitemapParser
 from markdown_lab.utils.url_utils import extract_base_url, get_filename_from_url
 
-# Configure logging with more detailed formatting
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    handlers=[
-        logging.StreamHandler(),
-        logging.FileHandler("markdown_scraper.log", mode="a"),
-    ],
-)
-
 logger = logging.getLogger("markdown_scraper")
 
 
@@ -69,6 +59,11 @@ class MarkdownScraper:
         )
         self.cache_enabled = self.config.cache_enabled
 
+        # Initialize throttler for legacy compatibility
+        from markdown_lab.core.throttle import RequestThrottler
+
+        self.throttler = RequestThrottler(self.config.requests_per_second)
+
         # Legacy properties for compatibility
         self.session = self.converter.client.session
         self.rust_available = self.converter.rust_backend.is_available()
@@ -81,6 +76,18 @@ class MarkdownScraper:
 
         # Legacy request_cache for backwards compatibility
         self.request_cache = self.converter.client.cache
+
+        # Check psutil availability for performance monitoring
+        self.psutil_available = self._check_psutil_availability()
+
+    def _check_psutil_availability(self) -> bool:
+        """Check if psutil is available for performance monitoring."""
+        try:
+            import psutil
+
+            return True
+        except ImportError:
+            return False
 
     def scrape_website(self, url: str, skip_cache: bool = False) -> str:
         """fetch html content from url"""
@@ -185,7 +192,9 @@ class MarkdownScraper:
         Raises:
             NetworkError: If the URL cannot be retrieved after all retries.
         """
-        return retry_with_backoff(self._make_single_request, self.max_retries, url, url)
+        return retry_with_backoff(
+            self._make_single_request, self.max_retries, 2, url, url
+        )
 
     def save_content(self, content: str, output_file: str) -> None:
         """

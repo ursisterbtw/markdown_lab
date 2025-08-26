@@ -71,8 +71,10 @@ jobs:
       - name: Run tests
         run: |
           source .venv/bin/activate
-          pytest -x --tb=short  # Stop on first failure
+          pytest -m "not integration" -x --tb=short  # Unit tests first
           cargo test --release
+          # Attempt integration tests (non-networked)
+          pytest -m integration -x --tb=short
       
       - name: Security scan - Python
         run: |

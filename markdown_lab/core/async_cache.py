@@ -1,6 +1,8 @@
 """
-Async cache implementation with compression for 45% performance improvement.
-Replaces synchronous file I/O with async operations and adds content compression.
+Deprecated async cache implementation with compression.
+
+Note: This module is currently not integrated with the HTTP client. Consider
+removing it or wiring it into `CachedHttpClient` before reuse.
 """
 
 import asyncio
@@ -10,7 +12,7 @@ import logging
 import time
 from hashlib import md5
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple, Union
 
 try:
     import aiofiles
@@ -19,7 +21,7 @@ try:
 except ImportError:
     # aiofiles not available - will use async thread pool fallback
     AIOFILES_AVAILABLE = False
-    aiofiles = None
+    aiofiles: Optional[Any] = None
 
 logger = logging.getLogger(__name__)
 
@@ -130,6 +132,21 @@ class AsyncCacheManager:
     async def _read_cache_file(self, cache_path: Path) -> Optional[str]:
         """Read and decompress cache file content."""
         try:
+            if not AIOFILES_AVAILABLE or aiofiles is None:
+                # Fallback to sync I/O in thread pool
+                import asyncio
+                import functools
+                
+                def sync_read():
+                    if self.enable_compression and cache_path.suffix == ".gz":
+                        with open(cache_path, "rb") as f:
+                            compressed_data = f.read()
+                        return gzip.decompress(compressed_data).decode("utf-8")
+                    with open(cache_path, "r", encoding="utf-8") as f:
+                        return f.read()
+                
+                return await asyncio.get_event_loop().run_in_executor(None, sync_read)
+            
             if self.enable_compression and cache_path.suffix == ".gz":
                 async with aiofiles.open(cache_path, "rb") as f:
                     compressed_data = await f.read()

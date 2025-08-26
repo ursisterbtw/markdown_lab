@@ -12,6 +12,12 @@ from markdown_lab.core.errors import RustIntegrationError
 
 logger = logging.getLogger(__name__)
 
+# Try to import OutputFormat at module level to avoid namespace issues
+try:
+    from markdown_lab.markdown_lab_rs import OutputFormat
+except ImportError:
+    OutputFormat = None
+
 
 class RustBackend:
     """Simplified interface to Rust functions."""
@@ -69,10 +75,15 @@ class RustBackend:
             )
 
         try:
-            # Unified conversion using convert_html_to_format for all formats
-            return self._rust_module.convert_html_to_format(
-                html, base_url, output_format
-            )
+            # Always pass a normalized string to the underlying module
+            normalized = (output_format or "markdown").lower()
+            # Prefer the explicit convert_html_to_format entrypoint
+            if hasattr(self._rust_module, "convert_html_to_format"):
+                return self._rust_module.convert_html_to_format(
+                    html, base_url, normalized
+                )
+            # Fallback to older wrapper name if present
+            return self._rust_module.convert_html(html, base_url, normalized)
         except Exception as e:
             raise RustIntegrationError(
                 f"Rust conversion failed: {str(e)}",
@@ -194,7 +205,8 @@ def get_rust_backend(fallback_enabled: bool = False) -> RustBackend:
     global _rust_backend
     if _rust_backend is None:
         _rust_backend = RustBackend(fallback_enabled=fallback_enabled)
-    return _rust_backend
+    # _rust_backend is guaranteed to be non-None after initialization
+    return _rust_backend  # type: ignore
 
 
 def reset_rust_backend() -> None:

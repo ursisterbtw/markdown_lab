@@ -113,8 +113,10 @@ class SitemapParser:
 
         sitemap_urls = []
         for line in robots_content.splitlines():
-            if line.lower().startswith("sitemap:"):
-                sitemap_url = line[8:].strip()
+            # Strip leading/trailing whitespace before checking
+            stripped_line = line.strip()
+            if stripped_line.lower().startswith("sitemap:"):
+                sitemap_url = stripped_line[8:].strip()
                 sitemap_urls.append(sitemap_url)
 
         if sitemap_urls:

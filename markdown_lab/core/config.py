@@ -7,7 +7,15 @@ unified configuration system with validation and defaults
 import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Union
+
+# Optional YAML support
+try:
+    import yaml
+    HAS_YAML = True
+except ImportError:
+    yaml = None
+    HAS_YAML = False
 
 
 @dataclass
@@ -155,12 +163,12 @@ class MarkdownLabConfig:
         return cls(**config_dict)
 
     @classmethod
-    def from_file(cls, config_path: str) -> "MarkdownLabConfig":
+    def from_file(cls, config_path: Union[str, Path]) -> "MarkdownLabConfig":
         """
         Loads a MarkdownLabConfig instance from a JSON or YAML configuration file.
 
         Args:
-            config_path: Path to the configuration file.
+            config_path: Path to the configuration file (string or Path object).
 
         Returns:
             A MarkdownLabConfig instance populated with values from the file.
@@ -181,15 +189,13 @@ class MarkdownLabConfig:
             with open(config_path, "r") as f:
                 config_dict = json.load(f)
         elif config_path.suffix.lower() in {".yml", ".yaml"}:
-            try:
-                import yaml
-
-                with open(config_path, "r") as f:
-                    config_dict = yaml.safe_load(f)
-            except ImportError as e:
+            if not HAS_YAML or yaml is None:
                 raise ImportError(
                     "PyYAML is required to load YAML configuration files"
-                ) from e
+                )
+            
+            with open(config_path, "r") as f:
+                config_dict = yaml.safe_load(f)
         else:
             raise ValueError(
                 f"Unsupported configuration file format: {config_path.suffix}"

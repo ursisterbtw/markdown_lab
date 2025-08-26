@@ -296,7 +296,10 @@ just full-cycle           # Complete build + lint + test
 
 ```bash
 # All tests
-pytest
+pytest -m "not integration"  # unit tests
+
+# Run integration tests (Rust-backed path)
+pytest -m integration
 
 # Rust tests
 cargo test
@@ -415,6 +418,14 @@ cargo build --release --features real_rendering
 ```
 
 See `docs/JS_RENDERING.md` for more details.
+
+### Rust-Python module naming
+
+The PyO3 extension is built and imported as `markdown_lab.markdown_lab_rs` (namespaced module).
+
+- In Python, import via `from markdown_lab import markdown_lab_rs`.
+- The internal wrapper `markdown_lab/markdown_lab_rs.py` calls functions on this module and provides Python fallbacks.
+- Do not import a top-level `markdown_lab_rs` package; it will fail to resolve.
 
 ## Performance Considerations
 

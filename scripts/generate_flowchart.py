@@ -343,6 +343,7 @@ def run_dot(dot_file: Path, svg_file: Path) -> bool:
             text=True,
             check=False,  # Don't raise exception on non-zero exit code immediately
             encoding="utf-8",
+            timeout=60,
         )
         if result.returncode != 0:
             log.error(f"'dot' command failed with exit code {result.returncode}")

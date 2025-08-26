@@ -12,6 +12,7 @@ from typing import Dict, List, Optional
 
 import requests
 from requests.adapters import HTTPAdapter
+from requests import exceptions as requests_exceptions
 
 from markdown_lab.core.cache import RequestCache
 from markdown_lab.core.config import MarkdownLabConfig, get_config
@@ -179,7 +180,7 @@ class HttpClient:
 
                 return response if return_response else response.text
 
-            except (requests.exceptions.RequestException, OSError, ValueError) as e:
+            except (requests_exceptions.RequestException, OSError, ValueError) as e:
                 last_exception = e
                 network_error = handle_request_exception(e, url, attempt)
             except (KeyError, AttributeError, TypeError, RuntimeError) as e:

@@ -11,6 +11,7 @@ Modern command-line interface with:
 """
 
 import sys
+import logging
 import time
 from enum import Enum
 from pathlib import Path
@@ -798,6 +799,10 @@ def main(
 def cli_main():
     """entry point for the CLI application"""
     try:
+        logging.basicConfig(
+            level=logging.INFO,
+            format="%(asctime)s - %(levelname)s - %(message)s",
+        )
         app()
     except KeyboardInterrupt:
         console.print("\n❌ Operation cancelled by user", style="bold red")
