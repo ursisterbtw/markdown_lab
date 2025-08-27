@@ -5,7 +5,7 @@
 Markdown Lab combines Python and Rust components to scrape websites and convert HTML content to markdown, JSON, or XML formats. It supports sitemap parsing, semantic chunking for RAG
 (Retrieval-Augmented Generation), and includes performance optimizations through Rust integration.
 
-Key features include HTML-to-markdown/JSON/XML conversion with support for various elements (headers, links, images, lists, code blocks), intelligent content chunking that preserves document structure, and systematic content discovery
+Key features include HTML-to-markdown/JSON/XML conversion with support for various elements (headers, links, images, lists, code blocks), content chunking that preserves document structure, and systematic content discovery
 through sitemap parsing. The hybrid architecture uses Python for high-level operations and Rust for performance-critical tasks.
 
 Check out [deepwiki](https://deepwiki.com/ursisterbtw/markdown_lab/) for a detailed breakdown of the repository.
@@ -269,7 +269,7 @@ parser.export_urls_to_file(urls, "sitemap_urls.txt")
 
 ## Sitemap Integration Features
 
-The library intelligently discovers and parses XML sitemaps to scrape exactly what you need:
+The library discovers and parses XML sitemaps to scrape exactly what you need:
 
 - **Automatic Discovery**: Finds sitemaps through robots.txt or common locations
 - **Sitemap Index Support**: Handles multi-level sitemap index files
@@ -280,11 +280,11 @@ The library intelligently discovers and parses XML sitemaps to scrape exactly wh
 
 ## RAG Chunking Capabilities
 
-The library implements intelligent chunking designed specifically for RAG (Retrieval-Augmented Generation) systems:
+The library implements chunking designed specifically for RAG (Retrieval-Augmented Generation) systems:
 
 - **Semantic Chunking**: Preserves the semantic structure of documents by chunking based on headers
-- **Content-Aware**: Large sections are split into overlapping chunks for better context preservation
-- **Metadata-Rich**: Each chunk contains detailed metadata for better retrieval
+- **Content-aware**: Large sections are split into overlapping chunks for better context preservation
+- **Metadata-rich**: Each chunk contains detailed metadata for better retrieval
 - **Multiple Formats**: Save chunks as individual JSON files or as a single JSONL file
 - **Customizable**: Control chunk size and overlap to balance between precision and context
 

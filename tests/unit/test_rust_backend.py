@@ -17,6 +17,7 @@ pytestmark = pytest.mark.skip(reason="Legacy compile() tests are skipped")
 # pytest does not support unskipping a single test in a file-level skip easily.
 # So we provide a tiny separate assertion in a different file if needed.
 
+
 # New minimal tests to assert correct function name usage
 def test_rust_backend_calls_convert_html_to_format(monkeypatch):
     from markdown_lab.core.rust_backend import RustBackend
@@ -30,6 +31,7 @@ def test_rust_backend_calls_convert_html_to_format(monkeypatch):
     backend._rust_module = DummyModule()
     out = backend.convert_html_to_format("<html/>", "https://x", "json")
     assert out == "ok"
+
 
 # Add the project root to Python path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))

@@ -38,6 +38,8 @@ def test_rust_backed_conversion_end_to_end_markdown_json_xml(monkeypatch):
     # XML
     xml, _ = converter.convert_html(html, "https://example.com", "xml")
     assert "<title>Integration Title</title>" in xml
+
+
 """
 Integration tests for Rust-Python binding error paths and fallback behavior.
 

@@ -137,7 +137,9 @@ def test_format_conversion(mock_get, scraper):
         )
 
         # Convert to markdown first
-        markdown_content = scraper.convert_html_to_format(mock_response.text, "http://example.com", "markdown")
+        markdown_content = scraper.convert_html_to_format(
+            mock_response.text, "http://example.com", "markdown"
+        )
 
         # Then convert to JSON
         document = parse_markdown_to_document(markdown_content, "http://example.com")

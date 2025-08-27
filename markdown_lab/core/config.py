@@ -12,6 +12,7 @@ from typing import Any, Dict, Union
 # Optional YAML support
 try:
     import yaml
+
     HAS_YAML = True
 except ImportError:
     yaml = None
@@ -190,10 +191,8 @@ class MarkdownLabConfig:
                 config_dict = json.load(f)
         elif config_path.suffix.lower() in {".yml", ".yaml"}:
             if not HAS_YAML or yaml is None:
-                raise ImportError(
-                    "PyYAML is required to load YAML configuration files"
-                )
-            
+                raise ImportError("PyYAML is required to load YAML configuration files")
+
             with open(config_path, "r") as f:
                 config_dict = yaml.safe_load(f)
         else:

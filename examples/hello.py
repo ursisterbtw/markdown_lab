@@ -5,7 +5,6 @@ Simple demo example of using markdown_lab to convert HTML to markdown.
 
 from markdown_lab.markdown_lab_rs import convert_html_to_markdown
 
-# Sample HTML
 html = """
 <html>
 <head>
@@ -23,7 +22,4 @@ html = """
 </html>
 """
 
-# Convert HTML to markdown
 markdown = convert_html_to_markdown(html)
-
-# Print the result

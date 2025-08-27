@@ -810,7 +810,9 @@ class HelpScreen(Screen):
 
 def main():
     """Main entry point for TUI."""
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+    logging.basicConfig(
+        level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+    )
     app = MarkdownLabTUI()
     app.run()
 

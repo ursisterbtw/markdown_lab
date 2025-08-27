@@ -34,7 +34,6 @@ class Converter:
         self.config = config or get_config()
         self.client = CachedHttpClient(self.config)
 
-        # Initialize format-specific handlers
         format_config = {
             "include_metadata": self.config.include_metadata,
             "indent": 2,
@@ -46,7 +45,6 @@ class Converter:
             "xml": XmlFormatter(format_config),
         }
 
-        # Initialize Rust backend
         self.rust_backend = get_rust_backend(
             fallback_enabled=self.config.fallback_to_python
         )
@@ -56,10 +54,8 @@ class Converter:
     ) -> Tuple[str, str]:
         """convert content from url to specified format"""
         try:
-            # Fetch HTML content
             html_content = self.client.get(url, skip_cache=skip_cache)
 
-            # Convert to target format
             return self.convert_html(html_content, url, output_format)
 
         except (NetworkError, ValueError, TypeError, AttributeError) as e:
@@ -89,12 +85,10 @@ class Converter:
             ConversionError: If conversion fails
         """
         try:
-            # Get raw converted content from Rust backend
             raw_content = self.rust_backend.convert_html_to_format(
                 html_content, base_url, output_format
             )
 
-            # Also get markdown version for chunking if needed
             markdown_content = (
                 self.rust_backend.convert_html_to_format(
                     html_content, base_url, "markdown"
@@ -200,7 +194,6 @@ class Converter:
         Returns:
             List of successfully processed URLs
         """
-        # Discover URLs from sitemap using config
         sitemap_parser = SitemapParser(config=self.config)
 
         logger.info(f"Discovering URLs from sitemap for {base_url}")
@@ -218,7 +211,6 @@ class Converter:
 
         logger.info(f"Found {len(filtered_urls)} URLs to process")
 
-        # Prepare directories
         output_path = Path(output_dir)
         output_path.mkdir(parents=True, exist_ok=True)
 
@@ -227,7 +219,6 @@ class Converter:
             chunk_directory = chunk_dir or str(output_path / "chunks")
             Path(chunk_directory).mkdir(parents=True, exist_ok=True)
 
-        # Process URLs
         successfully_processed = []
         for i, url_info in enumerate(filtered_urls):
             url = url_info.loc
@@ -284,7 +275,6 @@ class Converter:
             chunk_directory = chunk_dir or str(output_path / "chunks")
             Path(chunk_directory).mkdir(parents=True, exist_ok=True)
 
-        # Process URLs
         successfully_processed = []
         for i, url in enumerate(urls):
             try:

@@ -48,7 +48,6 @@ class AsyncCacheManager:
         self.enable_compression = enable_compression
         self.memory_cache: Dict[str, Tuple[str, float]] = {}
 
-        # Create cache directory if it doesn't exist
         self.cache_dir.mkdir(parents=True, exist_ok=True)
 
         if not AIOFILES_AVAILABLE:
@@ -77,21 +76,17 @@ class AsyncCacheManager:
         Returns:
             The cached content or None if not in cache or expired
         """
-        # First check memory cache
         if url in self.memory_cache:
             content, timestamp = self.memory_cache[url]
             if time.time() - timestamp <= self.max_age:
                 return content
-            # Remove expired item from memory cache
             del self.memory_cache[url]
 
-        # Check disk cache asynchronously
         if not AIOFILES_AVAILABLE:
             return await self._get_sync_fallback(url)
 
         cache_path = self._get_cache_path(url)
         if cache_path.exists():
-            # Check if cache is expired
             if time.time() - cache_path.stat().st_mtime <= self.max_age:
                 try:
                     content = await self._read_cache_file(cache_path)
@@ -102,7 +97,6 @@ class AsyncCacheManager:
                 except Exception as e:
                     logger.error(f"Failed to read async cache file {cache_path}: {e}")
 
-            # Remove expired cache file asynchronously
             await self._remove_cache_file(cache_path)
 
         return None
@@ -115,7 +109,6 @@ class AsyncCacheManager:
             url: The URL to cache
             content: The content to cache
         """
-        # Update memory cache immediately
         self.memory_cache[url] = (content, time.time())
 
         # Update disk cache asynchronously
@@ -133,10 +126,9 @@ class AsyncCacheManager:
         """Read and decompress cache file content."""
         try:
             if not AIOFILES_AVAILABLE or aiofiles is None:
-                # Fallback to sync I/O in thread pool
                 import asyncio
                 import functools
-                
+
                 def sync_read():
                     if self.enable_compression and cache_path.suffix == ".gz":
                         with open(cache_path, "rb") as f:
@@ -144,9 +136,9 @@ class AsyncCacheManager:
                         return gzip.decompress(compressed_data).decode("utf-8")
                     with open(cache_path, "r", encoding="utf-8") as f:
                         return f.read()
-                
+
                 return await asyncio.get_event_loop().run_in_executor(None, sync_read)
-            
+
             if self.enable_compression and cache_path.suffix == ".gz":
                 async with aiofiles.open(cache_path, "rb") as f:
                     compressed_data = await f.read()
@@ -171,7 +163,6 @@ class AsyncCacheManager:
     async def _remove_cache_file(self, cache_path: Path) -> None:
         """Asynchronously remove cache file."""
         try:
-            # Use asyncio to run synchronous unlink operation in thread pool
             await asyncio.get_event_loop().run_in_executor(None, cache_path.unlink)
         except OSError as e:
             logger.warning(f"Failed to remove expired cache file {cache_path}: {e}")
@@ -189,7 +180,6 @@ class AsyncCacheManager:
         if max_age is None:
             max_age = self.max_age
 
-        # Clear memory cache
         current_time = time.time()
         expired_keys = [
             k
@@ -200,8 +190,6 @@ class AsyncCacheManager:
             del self.memory_cache[k]
 
         memory_cleared = len(expired_keys)
-
-        # Clear disk cache asynchronously
         disk_cleared = 0
         if AIOFILES_AVAILABLE:
             disk_cleared = await self._clear_expired_disk_cache(max_age, current_time)
@@ -216,10 +204,8 @@ class AsyncCacheManager:
         """Clear expired disk cache entries asynchronously."""
         disk_cleared = 0
 
-        # Process cache files in batches to avoid overwhelming I/O
         cache_files = list(self.cache_dir.glob("*"))
 
-        # Use semaphore to limit concurrent file operations
         semaphore = asyncio.Semaphore(10)  # Max 10 concurrent file operations
 
         async def check_and_remove_file(cache_file: Path):
@@ -232,7 +218,6 @@ class AsyncCacheManager:
                 except Exception as e:
                     logger.debug(f"Error checking cache file {cache_file}: {e}")
 
-        # Process files concurrently with controlled parallelism
         if cache_files:
             await asyncio.gather(
                 *[check_and_remove_file(f) for f in cache_files], return_exceptions=True
@@ -261,7 +246,6 @@ class AsyncCacheManager:
                     pass
             return None
 
-        # Run sync operation in thread pool to avoid blocking
         return await asyncio.get_event_loop().run_in_executor(None, sync_get)
 
     async def _set_sync_fallback(self, url: str, content: str) -> None:
@@ -280,7 +264,6 @@ class AsyncCacheManager:
             except Exception as e:
                 logger.warning(f"Failed to save response to cache: {e}")
 
-        # Run sync operation in thread pool to avoid blocking
         await asyncio.get_event_loop().run_in_executor(None, sync_set)
 
     def get_cache_stats(self) -> Dict[str, Any]:
@@ -299,7 +282,6 @@ class AsyncCacheManager:
         }
 
 
-# Convenience function for easy usage
 async def create_async_cache(
     cache_dir: Path, max_age: int = 3600, enable_compression: bool = True
 ) -> AsyncCacheManager:

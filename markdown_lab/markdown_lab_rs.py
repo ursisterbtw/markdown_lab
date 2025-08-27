@@ -22,34 +22,34 @@ def _python_html_to_markdown(html: str, base_url: str = "") -> str:
     Simple Python fallback for HTML to markdown conversion.
     This is a basic implementation that should be sufficient for testing.
     """
-    # Very basic HTML to markdown conversion using regex
+    # basic html to markdown conversion using regex
     import re
 
-    # Remove script and style tags
+    # remove script and style tags
     html = re.sub(
         r"<(script|style)[^>]*>.*?</\1>", "", html, flags=re.DOTALL | re.IGNORECASE
     )
 
-    # Extract title and convert to main header
+    # extract title and convert to main header
     title_match = re.search(r"<title[^>]*>(.*?)</title>", html, flags=re.IGNORECASE)
     title = ""
     if title_match:
         title = f"# {title_match.group(1).strip()}\n\n"
 
-    # Remove title tag after extracting content
+    # remove title tag after extracting content
     html = re.sub(r"<title[^>]*>.*?</title>", "", html, flags=re.IGNORECASE)
 
-    # Convert headers
+    # convert headers
     html = re.sub(r"<h1[^>]*>(.*?)</h1>", r"# \1\n\n", html, flags=re.IGNORECASE)
     html = re.sub(r"<h2[^>]*>(.*?)</h2>", r"## \1\n\n", html, flags=re.IGNORECASE)
     html = re.sub(r"<h3[^>]*>(.*?)</h3>", r"### \1\n\n", html, flags=re.IGNORECASE)
 
-    # Convert paragraphs
+    # convert paragraphs
     html = re.sub(
         r"<p[^>]*>(.*?)</p>", r"\1\n\n", html, flags=re.DOTALL | re.IGNORECASE
     )
 
-    # Convert links
+    # convert links
     html = re.sub(
         r'<a[^>]*href=["\']([^"\']*)["\'][^>]*>(.*?)</a>',
         r"[\2](\1)",
@@ -57,14 +57,14 @@ def _python_html_to_markdown(html: str, base_url: str = "") -> str:
         flags=re.IGNORECASE,
     )
 
-    # Convert images with alt text
+    # convert images with alt text
     html = re.sub(
         r'<img[^>]*src=["\']([^"\']*)["\'][^>]*alt=["\']([^"\']*)["\'][^>]*>',
         r"![\2](\1)",
         html,
         flags=re.IGNORECASE,
     )
-    # Handle images without alt text
+    # handle images without alt text
     html = re.sub(
         r'<img[^>]*src=["\']([^"\']*)["\'][^>]*>',
         r"![](\1)",
@@ -72,19 +72,19 @@ def _python_html_to_markdown(html: str, base_url: str = "") -> str:
         flags=re.IGNORECASE,
     )
 
-    # Convert list items (basic handling)
+    # convert list items (basic handling)
     html = re.sub(r"<li[^>]*>(.*?)</li>", r"- \1\n", html, flags=re.IGNORECASE)
 
-    # Remove list container tags
+    # remove list container tags
     html = re.sub(r"</?[uo]l[^>]*>", "", html, flags=re.IGNORECASE)
 
-    # Remove remaining HTML tags
+    # remove remaining html tags
     html = re.sub(r"<[^>]+>", "", html)
 
-    # Clean up whitespace
+    # clean up whitespace
     html = re.sub(r"\n\s*\n", "\n\n", html)
 
-    # Combine title with body content
+    # combine title with body content
     return title + html.strip()
 
 
@@ -96,7 +96,7 @@ class OutputFormat(str, Enum):
     XML = "xml"
 
 
-# Try to import the Rust extension (namespaced by maturin)
+# try to import the rust extension (namespaced by maturin)
 try:
     from markdown_lab import markdown_lab_rs as _rust_module
 
@@ -143,7 +143,7 @@ def convert_html_to_format(
     lightweight Python implementation. Accepts either a string ("markdown",
     "json", "xml") or the local OutputFormat enum.
     """
-    # Normalize to string value
+    # normalize to string value
     if isinstance(output_format, OutputFormat):
         fmt_value = output_format.value
     else:
@@ -157,13 +157,13 @@ def convert_html_to_format(
                 f"Error in Rust HTML conversion to {fmt_value}, falling back to Python: {e}"
             )
 
-    # Fall back to Python implementation - use a simple HTML to markdown converter
+    # fall back to python implementation - use a simple html to markdown converter
     logger.warning("Using basic Python HTML to markdown conversion fallback")
 
     if fmt_value == "markdown":
         return _python_html_to_markdown(html, base_url)
 
-    # For JSON and XML, first convert to markdown to get structured content
+    # for json and xml, first convert to markdown to get structured content
     markdown_content = _python_html_to_markdown(html, base_url)
     doc_structure = parse_markdown_to_document(markdown_content, base_url)
 
@@ -172,7 +172,7 @@ def convert_html_to_format(
     if fmt_value == "xml":
         return document_to_xml(doc_structure)
 
-    # Fallback to markdown if format not recognized
+    # fallback to markdown if format not recognized
     return markdown_content
 
 
@@ -208,24 +208,24 @@ def parse_markdown_to_document(markdown: str, base_url: str) -> Dict:
         "blockquotes": [],
     }
 
-    # Extract title (first h1)
+    # extract title (first h1)
     for line in lines:
         if line.startswith("# "):
             document["title"] = line[2:].strip()
             break
 
-    # Process other elements with a very simple parser
-    # This is just a fallback implementation
+    # process other elements with a very simple parser
+    # this is just a fallback implementation
     current_block = []
     in_code_block = False
     code_lang = ""
 
     for line in lines:
-        # Skip title line which we already processed
+        # skip title line which we already processed
         if line.strip() == f"# {document['title']}":
             continue
 
-        # Handle headings
+        # handle headings
         if line.startswith("#") and not in_code_block:
             level = 0
             while level < len(line) and line[level] == "#":
@@ -235,7 +235,7 @@ def parse_markdown_to_document(markdown: str, base_url: str) -> Dict:
                     {"level": level, "text": line[level + 1 :].strip()}
                 )
 
-        # Handle code blocks
+        # handle code blocks
         elif line.startswith("```") and not in_code_block:
             in_code_block = True
             code_lang = line[3:].strip()
@@ -247,15 +247,15 @@ def parse_markdown_to_document(markdown: str, base_url: str) -> Dict:
             )
             current_block = []
 
-        # Collect code block content
+        # collect code block content
         elif in_code_block:
             current_block.append(line)
 
-        # Handle blockquotes
+        # handle blockquotes
         elif line.startswith(">") and not in_code_block:
             document["blockquotes"].append(line[1:].strip())
 
-        # Handle paragraphs (very simplified)
+        # handle paragraphs (very simplified)
         elif line.strip() and not in_code_block:
             document["paragraphs"].append(line.strip())
 
@@ -274,31 +274,31 @@ def document_to_xml(document: Dict) -> str:
     """
     root = ET.Element("document")
 
-    # Add title
+    # add title
     title = ET.SubElement(root, "title")
     title.text = document["title"]
 
-    # Add base URL
+    # add base url
     base_url = ET.SubElement(root, "base_url")
     base_url.text = document["base_url"]
 
-    # Add headings
+    # add headings
     headings = ET.SubElement(root, "headings")
     for h in document["headings"]:
         heading = ET.SubElement(headings, "heading")
         heading.set("level", str(h["level"]))
         heading.text = h["text"]
 
-    # Add paragraphs
+    # add paragraphs
     paragraphs = ET.SubElement(root, "paragraphs")
     for p in document["paragraphs"]:
         paragraph = ET.SubElement(paragraphs, "paragraph")
         paragraph.text = p
 
-    # Add other elements similarly
-    # This is simplified for brevity
+    # add other elements similarly
+    # this is simplified for brevity
 
-    # Convert to string with pretty formatting
+    # convert to string with pretty formatting
     rough_string = ET.tostring(root, "utf-8")
     reparsed = minidom.parseString(rough_string)
     return reparsed.toprettyxml(indent="  ")
@@ -325,12 +325,12 @@ def chunk_markdown(
         except Exception as e:
             logger.warning(f"Error in Rust chunking, falling back to Python: {e}")
 
-    # Fall back to Python implementation
+    # fall back to python implementation
     from markdown_lab.utils.chunk_utils import create_semantic_chunks
 
     chunks = create_semantic_chunks(
         content=markdown,
-        source_url="",  # Not used for content
+        source_url="",  # not used for content
         chunk_size=chunk_size,
         chunk_overlap=chunk_overlap,
     )
@@ -349,9 +349,9 @@ def render_js_page(url: str, wait_time_ms: Optional[int] = None) -> str:
         except Exception as e:
             logger.warning(f"Error in Rust JS rendering, falling back to Python: {e}")
 
-    # Fall back to Python implementation
-    # This would require a JS renderer like Playwright or Selenium
-    # For now, we'll just log a warning and return None
+    # fall back to python implementation
+    # this would require a js renderer like playwright or selenium
+    # for now, we'll just log a warning and return none
     logger.warning(
         "JS rendering requires the Rust extension or an external browser automation tool"
     )
