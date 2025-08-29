@@ -78,8 +78,8 @@ class NetworkError(MarkdownLabError):
         url: Optional[str] = None,
         status_code: Optional[int] = None,
         retry_count: Optional[int] = None,
-        **kwargs,
-    ):
+        **kwargs: Any,
+    ) -> None:
         """
         Initializes a NetworkError with message and optional network context.
 

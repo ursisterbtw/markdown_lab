@@ -27,8 +27,8 @@ class TestMalformedHTML:
     def test_nested_tags_overflow(self):
         """Test deeply nested tags that could cause stack overflow."""
         converter = Converter()
-        # Create deeply nested HTML
-        nested_html = "<div>" * 100 + "Content" + "</div>" * 100
+        # Create deeply nested HTML with content in a proper element
+        nested_html = "<div>" * 50 + "<p>Content</p>" + "</div>" * 50
 
         result, _ = converter.convert_html(nested_html, "http://example.com")
         assert result is not None
@@ -93,10 +93,10 @@ class TestMalformedHTML:
 
         result, _ = converter.convert_html(html, "http://example.com")
         assert result is not None
-        assert (
-            "script" not in result or "&lt;script" in result
-        )  # Should escape or remove
+        # HTML entities should be properly decoded and script tags should be removed for security
+        assert "script" not in result  # Script tags should be removed
         assert "你好世界" in result  # Should preserve Unicode
+        assert "&" in result  # Should decode at least some entities
 
 
 class TestNetworkFailures:

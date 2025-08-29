@@ -81,9 +81,7 @@ class ContentChunker:
 
         def get_heading_level(line):
             """Get the heading level (number of # characters) from a line."""
-            if line.startswith("#"):
-                return len(line) - len(line.lstrip("#"))
-            return 0
+            return len(line) - len(line.lstrip("#")) if line.startswith("#") else 0
 
         for line in markdown_content.split("\n"):
             # Check if the line is a header

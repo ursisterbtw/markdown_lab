@@ -12,11 +12,7 @@ from markdown_lab.core.errors import RustIntegrationError
 
 logger = logging.getLogger(__name__)
 
-# Try to import OutputFormat at module level to avoid namespace issues
-try:
-    from markdown_lab.markdown_lab_rs import OutputFormat
-except ImportError:
-    OutputFormat = None
+from markdown_lab.types import OutputFormat
 
 
 class RustBackend:
@@ -77,13 +73,8 @@ class RustBackend:
         try:
             # Always pass a normalized string to the underlying module
             normalized = (output_format or "markdown").lower()
-            # Prefer the explicit convert_html_to_format entrypoint
-            if hasattr(self._rust_module, "convert_html_to_format"):
-                return self._rust_module.convert_html_to_format(
-                    html, base_url, normalized
-                )
-            # Fallback to older wrapper name if present
-            return self._rust_module.convert_html(html, base_url, normalized)
+            # Use the convert_html_to_format entrypoint
+            return self._rust_module.convert_html_to_format(html, base_url, normalized)
         except Exception as e:
             raise RustIntegrationError(
                 f"Rust conversion failed: {str(e)}",

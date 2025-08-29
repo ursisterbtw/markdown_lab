@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Script to standardize error handling by replacing generic Exception catches."""
 
-import os
 import re
 import sys
 from pathlib import Path
@@ -10,17 +9,14 @@ from typing import List, Tuple
 
 def find_generic_exceptions(file_path: Path) -> List[Tuple[int, str]]:
     """Find lines with generic Exception catches."""
-    issues = []
-
     with open(file_path, "r") as f:
         lines = f.readlines()
 
-    for i, line in enumerate(lines, 1):
-        # Match "except Exception" patterns
-        if re.search(r"except\s+Exception(?:\s+as\s+\w+)?:", line):
-            issues.append((i, line.strip()))
-
-    return issues
+    return [
+        (i, line.strip())
+        for i, line in enumerate(lines, 1)
+        if re.search(r"except\s+Exception(?:\s+as\s+\w+)?:", line)
+    ]
 
 
 def suggest_specific_exception(context: str, file_path: Path) -> str:
@@ -53,8 +49,8 @@ def main():
     python_files = [
         f
         for f in python_files
-        if not any(
-            part in f.parts
+        if all(
+            part not in f.parts
             for part in [".venv", "build", "dist", "__pycache__", ".git"]
         )
     ]
@@ -63,8 +59,7 @@ def main():
     files_with_issues = []
 
     for file_path in python_files:
-        issues = find_generic_exceptions(file_path)
-        if issues:
+        if issues := find_generic_exceptions(file_path):
             total_issues += len(issues)
             files_with_issues.append((file_path, issues))
 
@@ -73,12 +68,6 @@ def main():
             file_path.relative_to(project_root)
             for _line_num, line_content in issues:
                 suggest_specific_exception(line_content, file_path)
-    else:
-        pass
-
-    if total_issues > 0:
-        pass
-
     return total_issues
 
 

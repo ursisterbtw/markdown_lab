@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from markdown_lab.core.cache import RequestCache
+from markdown_lab.core.config import MarkdownLabConfig
 from markdown_lab.core.scraper import MarkdownScraper
 
 
@@ -19,7 +20,11 @@ def test_scrape_website_benchmark(benchmark):
 def test_convert_to_markdown_benchmark(benchmark):
     scraper = MarkdownScraper()
     html_content = "<html><head><title>Test</title></head><body><h1>Header</h1><p>Paragraph</p></body></html>"
-    benchmark(scraper.convert_to_markdown, html_content)
+    benchmark(
+        lambda: scraper._convert_content(
+            html_content, "http://example.com", "markdown"
+        )[0]
+    )
 
 
 @pytest.mark.benchmark(group="save_markdown")
@@ -56,7 +61,7 @@ def test_benchmark_scrape_with_cache_enabled(benchmark):
     This test uses a temporary cache directory and mocks HTTP GET requests to ensure consistent responses. The initial scrape populates the cache, and the benchmark measures subsequent scrapes that utilize the cache.
     """
     with tempfile.TemporaryDirectory() as temp_dir:
-        with patch("markdown_lab.network.client.requests.Session.get") as mock_get:
+        with patch("markdown_lab.core.client.requests.Session.request") as mock_get:
             # Setup mock response for first call
             mock_response = MagicMock()
             mock_response.status_code = 200
@@ -66,8 +71,12 @@ def test_benchmark_scrape_with_cache_enabled(benchmark):
             mock_get.return_value = mock_response
 
             # Create scraper with cache enabled
-            scraper = MarkdownScraper(cache_enabled=True)
-            scraper.request_cache.cache_dir = Path(temp_dir)  # Override cache directory
+            config = MarkdownLabConfig(cache_enabled=True)
+            scraper = MarkdownScraper(config=config)
+            if scraper.request_cache:
+                scraper.request_cache.cache_dir = Path(
+                    temp_dir
+                )  # Override cache directory
 
             # Trigger initial request to populate cache
             url = "http://example.com/benchmark"
@@ -87,7 +96,7 @@ def test_benchmark_scrape_with_cache_disabled(benchmark):
 
     Mocks HTTP GET requests to return a fixed HTML response and measures the execution time of the `scrape_website` method in `MarkdownScraper` when cache is turned off.
     """
-    with patch("markdown_lab.network.client.requests.Session.get") as mock_get:
+    with patch("markdown_lab.core.client.requests.Session.request") as mock_get:
         # Setup mock response
         mock_response = MagicMock()
         mock_response.status_code = 200
@@ -97,7 +106,8 @@ def test_benchmark_scrape_with_cache_disabled(benchmark):
         mock_get.return_value = mock_response
 
         # Create scraper with cache disabled
-        scraper = MarkdownScraper(cache_enabled=False)
+        config = MarkdownLabConfig(cache_enabled=False)
+        scraper = MarkdownScraper(config=config)
 
         # Benchmark requests
         def scrape():

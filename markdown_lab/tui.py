@@ -10,6 +10,7 @@ This module provides a full-screen terminal interface with:
 - Keyboard shortcuts and mouse support
 """
 
+import logging
 import threading
 import time
 
@@ -44,7 +45,6 @@ from textual.widgets import (
 from markdown_lab.core.config import MarkdownLabConfig
 from markdown_lab.core.converter import Converter
 from markdown_lab.utils.url_utils import validate_url
-import logging
 
 
 class URLValidator(Validator):

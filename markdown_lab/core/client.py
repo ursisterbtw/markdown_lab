@@ -11,8 +11,8 @@ import time
 from typing import Dict, List, Optional
 
 import requests
-from requests.adapters import HTTPAdapter
 from requests import exceptions as requests_exceptions
+from requests.adapters import HTTPAdapter
 
 from markdown_lab.core.cache import RequestCache
 from markdown_lab.core.config import MarkdownLabConfig, get_config

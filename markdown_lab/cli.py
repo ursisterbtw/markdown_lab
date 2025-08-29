@@ -10,8 +10,8 @@ Modern command-line interface with:
 - Comprehensive help system
 """
 
-import sys
 import logging
+import sys
 import time
 from enum import Enum
 from pathlib import Path
@@ -36,7 +36,6 @@ from rich.table import Table
 from markdown_lab.core.config import (
     MarkdownLabConfig,
     create_config_from_cli_args,
-    get_cli_defaults,
     get_config,
 )
 from markdown_lab.core.converter import Converter

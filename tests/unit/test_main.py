@@ -242,8 +242,8 @@ def test_scrape_website_with_cache(mock_request):
         # The mock should not have been called again
         assert mock_request.call_count == 1
 
-        # Request with skip_cache should hit the network again
-        result3 = scraper.scrape_website(url, skip_cache=True)
+        # Request with use_cache=False should hit the network again
+        result3 = scraper.scrape_website(url, use_cache=False)
         assert (
             result3
             == "<html><head><title>Cached Test</title></head><body></body></html>"

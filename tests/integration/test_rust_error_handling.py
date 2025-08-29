@@ -1,8 +1,10 @@
 import pytest
 
-from markdown_lab.markdown_lab_rs import OutputFormat as RustOutputFormat  # type: ignore
-from markdown_lab.core.converter import Converter
 from markdown_lab.core.config import MarkdownLabConfig
+from markdown_lab.core.converter import Converter
+from markdown_lab.markdown_lab_rs import (
+    OutputFormat as RustOutputFormat,  # type: ignore
+)
 
 
 @pytest.mark.integration
@@ -428,7 +430,7 @@ class TestRustBackendEdgeCases:
             t.join()
 
         # Check that concurrent calls work correctly
-        assert len(errors) == 0  # No errors should occur
+        assert not errors
         assert len(results) == 5  # All calls should succeed
         assert all(isinstance(r, str) for r in results)
 

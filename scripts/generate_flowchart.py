@@ -112,9 +112,6 @@ def scan_directory(
                 elif entry.is_file(follow_symlinks=False):
                     structure[entry.name] = None
                 # Silently ignore other types like block devices, sockets etc.
-                # Or add specific handling if needed:
-                # else:
-                #     structure[f"{entry.name} (type: unknown)"] = None
 
             except OSError as e:
                 log.warning(f"Could not access metadata for {entry.path}: {e}")

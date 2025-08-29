@@ -85,7 +85,7 @@ class TestCacheLimits:
         assert cache.current_memory_size <= cache.max_memory_size
         # Some older items may be evicted
         remaining_items = sum(
-            1 for url in ["url1", "url2", "url3"] if cache.get(url) is not None
+            bool(cache.get(url) is not None) for url in ["url1", "url2", "url3"]
         )
         assert remaining_items <= 3  # Some eviction should have occurred
 

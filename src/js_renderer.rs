@@ -71,10 +71,10 @@ fn enhanced_html(html: &str) -> Result<String, RendererError> {
     Ok(html.to_string())
 }
 
-    #[cfg(test)]
-    mod tests {
-        use super::*;
-        use tokio_test;
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tokio_test;
 
     #[test]
     fn test_enhanced_html() {
@@ -105,4 +105,4 @@ fn enhanced_html(html: &str) -> Result<String, RendererError> {
             assert!(result.unwrap().contains("Inline Test"));
         });
     }
-    }
+}

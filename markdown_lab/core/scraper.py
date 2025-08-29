@@ -8,18 +8,13 @@ using simplified Converter architecture internally
 import argparse
 import contextlib
 import logging
-import re
 import time
 from pathlib import Path
 from typing import List, Optional, Tuple
 
-import requests
-
 from markdown_lab.core.config import MarkdownLabConfig, get_config
 from markdown_lab.core.converter import Converter
 from markdown_lab.core.errors import (
-    NetworkError,
-    handle_request_exception,
     retry_with_backoff,
 )
 from markdown_lab.utils.chunk_utils import ContentChunker
@@ -82,21 +77,18 @@ class MarkdownScraper:
 
     def _check_psutil_availability(self) -> bool:
         """Check if psutil is available for performance monitoring."""
-        try:
-            import psutil
+        import importlib.util
 
-            return True
-        except ImportError:
-            return False
+        return importlib.util.find_spec("psutil") is not None
 
-    def scrape_website(self, url: str, skip_cache: bool = False) -> str:
+    def scrape_website(self, url: str, use_cache: bool = True) -> str:
         """fetch html content from url"""
         # Delegate to the new Converter's HTTP client
-        return self.converter.client.get(url, skip_cache=skip_cache)
+        return self.converter.client.get(url, use_cache=use_cache)
 
-    def _check_cache(self, url: str, skip_cache: bool) -> Optional[str]:
+    def _check_cache(self, url: str, use_cache: bool) -> Optional[str]:
         """Check if content is available in cache."""
-        if self.cache_enabled and not skip_cache and self.request_cache is not None:
+        if self.cache_enabled and use_cache and self.request_cache is not None:
             cached_content = self.request_cache.get(url)
             if cached_content is not None:
                 logger.info(f"Using cached content for {url}")
@@ -403,7 +395,7 @@ class MarkdownScraper:
 
         # Scrape and convert the page
         logger.info(f"Scraping URL {index + 1}/{total}: {url}")
-        html_content = self.scrape_website(url, skip_cache=False)
+        html_content = self.scrape_website(url, use_cache=True)
 
         # Convert based on output format using the helper method
         content, markdown_content = self._convert_content(
@@ -608,6 +600,66 @@ class MarkdownScraper:
         return successfully_scraped
 
 
+def _parse_args_and_set_params(args_list, **defaults):
+    """Parse command line arguments and return parameter dictionary."""
+    if args_list is not None:
+        parser = _create_argument_parser()
+        args = parser.parse_args(args_list)
+
+        return {
+            "url": args.url,
+            "output_file": args.output,
+            "output_format": args.format,
+            "save_chunks": args.save_chunks,
+            "chunk_dir": args.chunk_dir,
+            "chunk_format": args.chunk_format,
+            "chunk_size": args.chunk_size,
+            "chunk_overlap": args.chunk_overlap,
+            "requests_per_second": args.requests_per_second,
+            "use_sitemap": args.use_sitemap,
+            "min_priority": args.min_priority,
+            "include_patterns": args.include,
+            "exclude_patterns": args.exclude,
+            "limit": args.limit,
+            "cache_enabled": args.cache_enabled,
+            "cache_max_age": args.cache_max_age,
+            "use_cache": not getattr(args, "skip_cache", False),
+            "links_file": args.links_file,
+            "parallel": args.parallel,
+            "max_workers": args.max_workers,
+        }
+    return defaults
+
+
+def _create_scraper_config(**params):
+    """Create MarkdownLabConfig from parameters."""
+    return MarkdownLabConfig(
+        requests_per_second=params.get("requests_per_second", 1.0),
+        chunk_size=params.get("chunk_size", 1000),
+        chunk_overlap=params.get("chunk_overlap", 200),
+        cache_enabled=params.get("cache_enabled", True),
+        timeout=30,  # Default timeout
+        max_retries=3,  # Default retries
+    )
+
+
+def _determine_processing_mode(params):
+    """Determine which processing mode to use based on parameters."""
+    url = params.get("url")
+    use_sitemap = params.get("use_sitemap", False)
+    links_file = params.get("links_file")
+
+    if url and not use_sitemap and not links_file:
+        return "single_url"
+    if use_sitemap and url:
+        return "sitemap"
+    if links_file:
+        return "links_file"
+    raise ValueError(
+        "Must specify either a URL (with optional --use-sitemap) or --links-file"
+    )
+
+
 def main(
     args_list=None,
     url: str = None,
@@ -626,7 +678,7 @@ def main(
     limit: Optional[int] = None,
     cache_enabled: bool = True,
     cache_max_age: int = 3600,
-    skip_cache: bool = False,
+    use_cache: bool = True,
     links_file: Optional[str] = None,
     parallel: bool = False,
     max_workers: int = 4,
@@ -636,145 +688,85 @@ def main(
 
     Depending on the provided arguments, this function scrapes a single URL, a list of URLs from a file, or multiple URLs discovered via sitemap, then converts and saves the content in the specified format. Supports chunking for RAG workflows, caching, parallel processing, and advanced filtering options.
     """
-    if args_list is not None:
-        # Parse command line arguments
-        parser = _create_argument_parser()
-        args = parser.parse_args(args_list)
+    # Parse arguments and set parameters
+    defaults = {
+        "url": url,
+        "output_file": output_file,
+        "output_format": output_format,
+        "save_chunks": save_chunks,
+        "chunk_dir": chunk_dir,
+        "chunk_format": chunk_format,
+        "chunk_size": chunk_size,
+        "chunk_overlap": chunk_overlap,
+        "requests_per_second": requests_per_second,
+        "use_sitemap": use_sitemap,
+        "min_priority": min_priority,
+        "include_patterns": include_patterns,
+        "exclude_patterns": exclude_patterns,
+        "limit": limit,
+        "cache_enabled": cache_enabled,
+        "cache_max_age": cache_max_age,
+        "use_cache": use_cache,
+        "links_file": links_file,
+        "parallel": parallel,
+        "max_workers": max_workers,
+    }
+    params = _parse_args_and_set_params(args_list, **defaults)
 
-        # Set parameters from args
-        url = args.url
-        output_file = args.output
-        output_format = args.format
-        save_chunks = args.save_chunks
-        chunk_dir = args.chunk_dir
-        chunk_format = args.chunk_format
-        chunk_size = args.chunk_size
-        chunk_overlap = args.chunk_overlap
-        requests_per_second = args.requests_per_second
-        use_sitemap = args.use_sitemap
-        min_priority = args.min_priority
-        include_patterns = args.include
-        exclude_patterns = args.exclude
-        limit = args.limit
-        cache_enabled = args.cache_enabled
-        cache_max_age = args.cache_max_age
-        skip_cache = args.skip_cache
-        links_file = args.links_file
-        parallel = args.parallel
-        max_workers = args.max_workers
-
-    # Setup
-    validated_format = _validate_output_format(output_format)
+    # Setup and validation
+    validated_format = _validate_output_format(params["output_format"])
     _check_rust_availability()
 
-    # Create configuration from parameters
-    config = MarkdownLabConfig(
-        requests_per_second=requests_per_second,
-        chunk_size=chunk_size,
-        chunk_overlap=chunk_overlap,
-        cache_enabled=cache_enabled,
-        cache_ttl=cache_max_age,
-    )
+    # Create configuration and scraper
+    config = _create_scraper_config(**params)
+    scraper = MarkdownScraper(config=config)
 
-    scraper = MarkdownScraper(config)
+    # Determine processing mode and execute
+    mode = _determine_processing_mode(params)
 
-    try:
-        if links_file or Path("links.txt").exists():
-            # Use provided links_file or default to links.txt if it exists
-            links_file_path = links_file or "links.txt"
-            _process_links_file_mode(
-                scraper=scraper,
-                links_file=links_file_path,
-                output_file=output_file,
-                output_format=validated_format,
-                save_chunks=save_chunks,
-                chunk_dir=chunk_dir,
-                chunk_format=chunk_format,
-                parallel=parallel,
-                max_workers=max_workers,
-            )
-        elif use_sitemap:
-            _process_sitemap_mode(
-                scraper=scraper,
-                url=url,
-                output_file=output_file,
-                output_format=validated_format,
-                save_chunks=save_chunks,
-                chunk_dir=chunk_dir,
-                chunk_format=chunk_format,
-                min_priority=min_priority,
-                include_patterns=include_patterns,
-                exclude_patterns=exclude_patterns,
-                limit=limit,
-            )
-        else:
-            _process_single_url_mode(
-                scraper=scraper,
-                url=url,
-                output_file=output_file,
-                output_format=validated_format,
-                save_chunks=save_chunks,
-                chunk_dir=chunk_dir,
-                chunk_format=chunk_format,
-                skip_cache=skip_cache,
-            )
-
-        logger.info(
-            f"Process completed successfully. Output saved in {validated_format} format."
+    if mode == "single_url":
+        _process_single_url_mode(
+            scraper=scraper,
+            url=params["url"],
+            output_file=params["output_file"],
+            output_format=validated_format,
+            save_chunks=params["save_chunks"],
+            chunk_dir=params["chunk_dir"],
+            chunk_format=params["chunk_format"],
+            use_cache=params["use_cache"],
         )
-    except Exception as e:
-        logger.error(f"An error occurred during the process: {e}", exc_info=True)
-        raise
+    elif mode == "sitemap":
+        _process_sitemap_mode(
+            scraper=scraper,
+            base_url=params["url"],
+            output_dir=params["output_file"],
+            output_format=validated_format,
+            min_priority=params["min_priority"],
+            include_patterns=params["include_patterns"],
+            exclude_patterns=params["exclude_patterns"],
+            limit=params["limit"],
+            save_chunks=params["save_chunks"],
+            chunk_dir=params["chunk_dir"],
+            chunk_format=params["chunk_format"],
+            use_cache=params["use_cache"],
+        )
+    elif mode == "links_file":
+        _process_links_file_mode(
+            scraper=scraper,
+            links_file=params["links_file"],
+            output_dir=params["output_file"],
+            output_format=validated_format,
+            save_chunks=params["save_chunks"],
+            chunk_dir=params["chunk_dir"],
+            chunk_format=params["chunk_format"],
+            parallel=params["parallel"],
+            max_workers=params["max_workers"],
+            use_cache=params["use_cache"],
+        )
 
-
-def _create_argument_parser():
-    """
-    Creates and configures the argument parser for the command-line interface.
-
-    Returns:
-        An argparse.ArgumentParser instance with all supported CLI options for scraping, output formatting, chunking, sitemap usage, caching, and parallel processing.
-    """
-    parser = argparse.ArgumentParser(
-        description="Scrape a website and convert it to Markdown, JSON, or XML with RAG chunking support."
+    logger.info(
+        f"Process completed successfully. Output saved in {validated_format} format."
     )
-    parser.add_argument("url", type=str, help="The URL to scrape")
-    parser.add_argument(
-        "-o",
-        "--output",
-        type=str,
-        default="output.md",
-        help="The output file name (extension will be set based on format)",
-    )
-    parser.add_argument(
-        "-f",
-        "--format",
-        type=str,
-        choices=["markdown", "json", "xml"],
-        default="markdown",
-        help="Output format (markdown, json, or xml)",
-    )
-    parser.add_argument(
-        "--save-chunks", action="store_true", help="Save content chunks for RAG"
-    )
-    parser.add_argument(
-        "--chunk-dir",
-        type=str,
-        default="chunks",
-        help="Directory to save content chunks",
-    )
-    parser.add_argument(
-        "--chunk-format",
-        type=str,
-        choices=["json", "jsonl"],
-        default="jsonl",
-        help="Format to save chunks",
-    )
-    parser.add_argument(
-        "--chunk-size", type=int, default=1000, help="Maximum chunk size in characters"
-    )
-    parser.add_argument(
-        "--chunk-overlap",
-        type=int,
         default=200,
         help="Overlap between chunks in characters",
     )
@@ -913,7 +905,7 @@ def _process_single_url_mode(
     save_chunks: bool,
     chunk_dir: str,
     chunk_format: str,
-    skip_cache: bool,
+    use_cache: bool,
 ) -> None:
     """
     Scrapes a single URL, converts its content to the specified format, and saves the result.
@@ -921,7 +913,7 @@ def _process_single_url_mode(
     If chunking is enabled, also creates and saves content chunks in the specified directory and format.
     """
     # Scrape the URL
-    html_content = scraper.scrape_website(url, skip_cache=skip_cache)
+    html_content = scraper.scrape_website(url, use_cache=use_cache)
 
     # Convert the content
     content, markdown_content = scraper._convert_content(

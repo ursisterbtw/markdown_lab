@@ -7,12 +7,11 @@ removing it or wiring it into `CachedHttpClient` before reuse.
 
 import asyncio
 import gzip
-import json
 import logging
 import time
 from hashlib import md5
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any, Dict, Optional, Tuple
 
 try:
     import aiofiles
@@ -127,7 +126,6 @@ class AsyncCacheManager:
         try:
             if not AIOFILES_AVAILABLE or aiofiles is None:
                 import asyncio
-                import functools
 
                 def sync_read():
                     if self.enable_compression and cache_path.suffix == ".gz":

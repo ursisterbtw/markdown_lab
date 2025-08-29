@@ -30,12 +30,12 @@ def _python_html_to_markdown(html: str, base_url: str = "") -> str:
         r"<(script|style)[^>]*>.*?</\1>", "", html, flags=re.DOTALL | re.IGNORECASE
     )
 
-    # extract title and convert to main header
-    title_match = re.search(r"<title[^>]*>(.*?)</title>", html, flags=re.IGNORECASE)
-    title = ""
-    if title_match:
+    if title_match := re.search(
+        r"<title[^>]*>(.*?)</title>", html, flags=re.IGNORECASE
+    ):
         title = f"# {title_match.group(1).strip()}\n\n"
-
+    else:
+        title = ""
     # remove title tag after extracting content
     html = re.sub(r"<title[^>]*>.*?</title>", "", html, flags=re.IGNORECASE)
 
@@ -97,8 +97,9 @@ class OutputFormat(str, Enum):
 
 
 # try to import the rust extension (namespaced by maturin)
+# Note: Avoid circular import by not importing from markdown_lab package
 try:
-    from markdown_lab import markdown_lab_rs as _rust_module
+    import markdown_lab_rs as _rust_module
 
     _rs_chunk_markdown = _rust_module.chunk_markdown
     _rs_convert_html_to_format = _rust_module.convert_html_to_format

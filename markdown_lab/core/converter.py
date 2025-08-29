@@ -159,7 +159,7 @@ class Converter:
 
             logger.info(f"Content saved to {output_file}")
 
-        except (IOError, OSError, PermissionError) as e:
+        except (IOError, OSError) as e:
             logger.error(f"Failed to save content to {output_file}: {e}")
             raise
 

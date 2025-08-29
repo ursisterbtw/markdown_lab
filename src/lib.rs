@@ -13,8 +13,8 @@ pub mod markdown_converter;
 /// shared tokio runtime for js rendering with bounded thread pool
 static SHARED_RUNTIME: Lazy<tokio::runtime::Runtime> = Lazy::new(|| {
     tokio::runtime::Builder::new_multi_thread()
-        .worker_threads(4)  // Limit worker threads
-        .max_blocking_threads(16)  // Limit blocking threads
+        .worker_threads(4) // Limit worker threads
+        .max_blocking_threads(16) // Limit blocking threads
         .thread_name("markdown-lab-tokio")
         .enable_all()
         .build()
