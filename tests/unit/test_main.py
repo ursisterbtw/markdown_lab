@@ -6,45 +6,52 @@ import pytest
 import requests
 
 from markdown_lab.core.cache import RequestCache
+from markdown_lab.core.config import MarkdownLabConfig
 from markdown_lab.core.scraper import MarkdownScraper
 
 
 @pytest.fixture
 def scraper():
-    return MarkdownScraper(cache_enabled=False)
+    config = MarkdownLabConfig(cache_enabled=False)
+    return MarkdownScraper(config=config)
 
 
-@patch("markdown_lab.core.scraper.requests.Session.get")
-def test_scrape_website_success(mock_get, scraper):
+@patch("markdown_lab.core.client.requests.Session.request")
+def test_scrape_website_success(mock_request, scraper):
     mock_response = MagicMock()
     mock_response.status_code = 200
     mock_response.text = "<html><head><title>Test</title></head><body></body></html>"
     mock_response.elapsed.total_seconds.return_value = 0.1
-    mock_get.return_value = mock_response
+    mock_response.raise_for_status.return_value = None
+    mock_request.return_value = mock_response
 
     result = scraper.scrape_website("http://example.com")
     assert result == "<html><head><title>Test</title></head><body></body></html>"
 
 
-@patch("markdown_lab.core.scraper.requests.Session.get")
-def test_scrape_website_http_error(mock_get, scraper):
+@patch("markdown_lab.core.client.requests.Session.request")
+def test_scrape_website_http_error(mock_request, scraper):
     mock_response = MagicMock()
     mock_response.raise_for_status.side_effect = requests.exceptions.HTTPError(
         "404 Not Found"
     )
-    mock_get.return_value = mock_response
+    mock_request.return_value = mock_response
 
-    with pytest.raises(requests.exceptions.HTTPError):
+    from markdown_lab.core.errors import NetworkError
+
+    with pytest.raises(NetworkError):
         scraper.scrape_website("http://example.com")
 
 
-@patch("markdown_lab.core.scraper.requests.Session.get")
-def test_scrape_website_general_error(mock_get, scraper):
-    mock_get.side_effect = Exception("Connection error")
+@patch("markdown_lab.core.client.requests.Session.request")
+def test_scrape_website_general_error(mock_request, scraper):
+    mock_request.side_effect = requests.exceptions.ConnectionError("Connection error")
 
-    with pytest.raises(Exception) as exc_info:
+    from markdown_lab.core.errors import NetworkError
+
+    with pytest.raises(NetworkError) as exc_info:
         scraper.scrape_website("http://example.com")
-    assert str(exc_info.value) == "Connection error"
+    assert "CONNECTION_FAILED" in str(exc_info.value)
 
 
 def test_convert_to_markdown(scraper):
@@ -78,7 +85,7 @@ def test_convert_to_markdown(scraper):
     assert "Item 2" in result
 
 
-@patch("markdown_lab.core.scraper.requests.Session.get")
+@patch("markdown_lab.core.client.requests.Session.get")
 def test_format_conversion(mock_get, scraper):
     """
     Tests conversion of HTML content to JSON and XML formats using both Rust and Python implementations.
@@ -130,7 +137,9 @@ def test_format_conversion(mock_get, scraper):
         )
 
         # Convert to markdown first
-        markdown_content = scraper.convert_to_markdown(mock_response.text)
+        markdown_content = scraper.convert_html_to_format(
+            mock_response.text, "http://example.com", "markdown"
+        )
 
         # Then convert to JSON
         document = parse_markdown_to_document(markdown_content, "http://example.com")
@@ -158,7 +167,8 @@ def test_save_markdown(mock_open):
     mock_file = MagicMock()
     mock_open.return_value.__enter__.return_value = mock_file
 
-    scraper = MarkdownScraper()
+    config = MarkdownLabConfig()
+    scraper = MarkdownScraper(config=config)
     markdown_content = "# Test Markdown"
     output_file = "test_output.md"
 
@@ -195,8 +205,8 @@ def test_request_cache():
         assert (Path(temp_dir) / key).exists()
 
 
-@patch("markdown_lab.core.scraper.requests.Session.get")
-def test_scrape_website_with_cache(mock_get):
+@patch("markdown_lab.core.client.requests.Session.request")
+def test_scrape_website_with_cache(mock_request):
     with tempfile.TemporaryDirectory() as temp_dir:
         # Setup mock response
         mock_response = MagicMock()
@@ -205,10 +215,12 @@ def test_scrape_website_with_cache(mock_get):
             "<html><head><title>Cached Test</title></head><body></body></html>"
         )
         mock_response.elapsed.total_seconds.return_value = 0.1
-        mock_get.return_value = mock_response
+        mock_response.raise_for_status.return_value = None
+        mock_request.return_value = mock_response
 
         # Create scraper with cache enabled
-        scraper = MarkdownScraper(cache_enabled=True)
+        config = MarkdownLabConfig(cache_enabled=True)
+        scraper = MarkdownScraper(config=config)
         scraper.request_cache.cache_dir = Path(temp_dir)  # Override cache directory
 
         url = "http://example.com/cached"
@@ -219,7 +231,7 @@ def test_scrape_website_with_cache(mock_get):
             result1
             == "<html><head><title>Cached Test</title></head><body></body></html>"
         )
-        assert mock_get.call_count == 1
+        assert mock_request.call_count == 1
 
         # Second request should use the cache
         result2 = scraper.scrape_website(url)
@@ -228,12 +240,12 @@ def test_scrape_website_with_cache(mock_get):
             == "<html><head><title>Cached Test</title></head><body></body></html>"
         )
         # The mock should not have been called again
-        assert mock_get.call_count == 1
+        assert mock_request.call_count == 1
 
-        # Request with skip_cache should hit the network again
-        result3 = scraper.scrape_website(url, skip_cache=True)
+        # Request with use_cache=False should hit the network again
+        result3 = scraper.scrape_website(url, use_cache=False)
         assert (
             result3
             == "<html><head><title>Cached Test</title></head><body></body></html>"
         )
-        assert mock_get.call_count == 2
+        assert mock_request.call_count == 2

@@ -11,7 +11,7 @@ from typing import List, Optional, Tuple
 
 from markdown_lab.core.client import CachedHttpClient
 from markdown_lab.core.config import MarkdownLabConfig, get_config
-from markdown_lab.core.errors import ConversionError
+from markdown_lab.core.errors import ConversionError, NetworkError
 from markdown_lab.core.rust_backend import get_rust_backend
 from markdown_lab.formats import JsonFormatter, MarkdownFormatter, XmlFormatter
 from markdown_lab.utils.chunk_utils import create_semantic_chunks
@@ -34,7 +34,6 @@ class Converter:
         self.config = config or get_config()
         self.client = CachedHttpClient(self.config)
 
-        # Initialize format-specific handlers
         format_config = {
             "include_metadata": self.config.include_metadata,
             "indent": 2,
@@ -46,7 +45,6 @@ class Converter:
             "xml": XmlFormatter(format_config),
         }
 
-        # Initialize Rust backend
         self.rust_backend = get_rust_backend(
             fallback_enabled=self.config.fallback_to_python
         )
@@ -56,13 +54,11 @@ class Converter:
     ) -> Tuple[str, str]:
         """convert content from url to specified format"""
         try:
-            # Fetch HTML content
             html_content = self.client.get(url, skip_cache=skip_cache)
 
-            # Convert to target format
             return self.convert_html(html_content, url, output_format)
 
-        except Exception as e:
+        except (NetworkError, ValueError, TypeError, AttributeError) as e:
             raise ConversionError(
                 f"Failed to convert URL {url}",
                 source_format="html",
@@ -89,12 +85,10 @@ class Converter:
             ConversionError: If conversion fails
         """
         try:
-            # Get raw converted content from Rust backend
             raw_content = self.rust_backend.convert_html_to_format(
                 html_content, base_url, output_format
             )
 
-            # Also get markdown version for chunking if needed
             markdown_content = (
                 self.rust_backend.convert_html_to_format(
                     html_content, base_url, "markdown"
@@ -115,7 +109,7 @@ class Converter:
 
             return converted_content, markdown_content
 
-        except Exception as e:
+        except (ValueError, TypeError, AttributeError, RuntimeError) as e:
             raise ConversionError(
                 "Rust conversion failed",
                 source_format="html",
@@ -141,7 +135,7 @@ class Converter:
                 source_url=source_url,
                 config=self.config,
             )
-        except Exception as e:
+        except (ValueError, TypeError, AttributeError) as e:
             logger.error(f"Failed to create chunks: {e}")
             return []
 
@@ -165,7 +159,7 @@ class Converter:
 
             logger.info(f"Content saved to {output_file}")
 
-        except Exception as e:
+        except (IOError, OSError) as e:
             logger.error(f"Failed to save content to {output_file}: {e}")
             raise
 
@@ -200,7 +194,6 @@ class Converter:
         Returns:
             List of successfully processed URLs
         """
-        # Discover URLs from sitemap using config
         sitemap_parser = SitemapParser(config=self.config)
 
         logger.info(f"Discovering URLs from sitemap for {base_url}")
@@ -218,7 +211,6 @@ class Converter:
 
         logger.info(f"Found {len(filtered_urls)} URLs to process")
 
-        # Prepare directories
         output_path = Path(output_dir)
         output_path.mkdir(parents=True, exist_ok=True)
 
@@ -227,7 +219,6 @@ class Converter:
             chunk_directory = chunk_dir or str(output_path / "chunks")
             Path(chunk_directory).mkdir(parents=True, exist_ok=True)
 
-        # Process URLs
         successfully_processed = []
         for i, url_info in enumerate(filtered_urls):
             url = url_info.loc
@@ -243,7 +234,7 @@ class Converter:
                     chunk_format,
                 )
                 successfully_processed.append(url)
-            except Exception as e:
+            except (ConversionError, NetworkError, IOError) as e:
                 logger.error(f"Error processing URL {url}: {e}")
                 continue
 
@@ -284,7 +275,6 @@ class Converter:
             chunk_directory = chunk_dir or str(output_path / "chunks")
             Path(chunk_directory).mkdir(parents=True, exist_ok=True)
 
-        # Process URLs
         successfully_processed = []
         for i, url in enumerate(urls):
             try:
@@ -299,7 +289,7 @@ class Converter:
                     chunk_format,
                 )
                 successfully_processed.append(url)
-            except Exception as e:
+            except (ConversionError, NetworkError, IOError) as e:
                 logger.error(f"Error processing URL {url}: {e}")
                 continue
 

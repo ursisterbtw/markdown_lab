@@ -125,6 +125,44 @@ pub fn clean_html(html: &str) -> Result<String, ParserError> {
     }
 }
 
+/// Clean a parsed HTML document by removing unwanted elements
+///
+/// This function works directly with the parsed DOM to remove unwanted elements
+/// like scripts, styles, and other unwanted content.
+///
+/// # Examples
+///
+/// ```
+/// use markdown_lab_rs::html_parser::clean_parsed_html;
+/// use scraper::Html;
+/// let document = Html::parse_document(r#"<html><body><script>bad()</script><main>Good</main></body></html>"#);
+/// let cleaned = clean_parsed_html(&document).unwrap();
+/// assert!(cleaned.root_element().html().contains("Good"));
+/// assert!(!cleaned.root_element().html().contains("<script>"));
+/// ```
+pub fn clean_parsed_html(document: &Html) -> Result<Html, ParserError> {
+    // Use cached selector for better performance
+    if let Some(unwanted_selector) = SELECTOR_CACHE.get("unwanted_elements") {
+        // Collect elements to remove first (to avoid modification during iteration)
+        let elements_to_remove: Vec<String> = document
+            .select(unwanted_selector)
+            .map(|element| element.html())
+            .collect();
+
+        // Remove elements by replacing their HTML in the root element
+        let mut cleaned_html = document.root_element().html();
+        for element_html in elements_to_remove {
+            cleaned_html = cleaned_html.replace(&element_html, "");
+        }
+
+        // Parse the cleaned HTML back into a document
+        Ok(Html::parse_document(&cleaned_html))
+    } else {
+        // Fallback: return original document if selector cache failed
+        Ok(document.clone())
+    }
+}
+
 /// More efficient version that works directly with the DOM structure
 /// cleans HTML content by removing unwanted elements
 ///

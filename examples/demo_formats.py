@@ -7,7 +7,6 @@ from pathlib import Path
 
 from markdown_lab.markdown_lab_rs import convert_html_to_format
 
-# HTML sample for conversion testing
 SAMPLE_HTML = """
 <html>
 <head>
@@ -55,7 +54,6 @@ def main():
     output_dir = Path("examples/demo_output")
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    # Convert to all three formats
     formats = ["markdown", "json", "xml"]
 
     for format_name in formats:

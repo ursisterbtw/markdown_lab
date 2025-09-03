@@ -5,15 +5,24 @@ use pyo3::prelude::*;
 mod tests;
 
 pub mod chunker;
+pub mod cleanup;
 pub mod html_parser;
 pub mod js_renderer;
 pub mod markdown_converter;
 
-/// shared tokio runtime for js rendering
+/// shared tokio runtime for js rendering with bounded thread pool
 static SHARED_RUNTIME: Lazy<tokio::runtime::Runtime> = Lazy::new(|| {
-    tokio::runtime::Runtime::new()
+    tokio::runtime::Builder::new_multi_thread()
+        .worker_threads(4) // Limit worker threads
+        .max_blocking_threads(16) // Limit blocking threads
+        .thread_name("markdown-lab-tokio")
+        .enable_all()
+        .build()
         .expect("Failed to create shared Tokio runtime for JavaScript rendering")
 });
+
+/// Global resource manager for cleanup
+static RESOURCE_MANAGER: Lazy<cleanup::ResourceManager> = Lazy::new(cleanup::ResourceManager::new);
 
 /// Python-friendly enumeration of output formats
 #[pyclass]
@@ -61,6 +70,7 @@ fn markdown_lab_rs(py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(extract_main_content, py)?)?;
     m.add_function(wrap_pyfunction!(extract_links, py)?)?;
     m.add_function(wrap_pyfunction!(resolve_url, py)?)?;
+    m.add_function(wrap_pyfunction!(cleanup_resources, py)?)?;
 
     Ok(())
 }
@@ -144,4 +154,11 @@ fn extract_links(html: &str, base_url: &str) -> PyResult<Vec<String>> {
 fn resolve_url(base_url: &str, relative_url: &str) -> PyResult<String> {
     html_parser::resolve_url(base_url, relative_url)
         .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))
+}
+
+/// Cleanup shared resources (runtime, thread pools, etc.)
+#[pyfunction]
+fn cleanup_resources() -> PyResult<()> {
+    RESOURCE_MANAGER.shutdown();
+    Ok(())
 }

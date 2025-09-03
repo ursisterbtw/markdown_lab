@@ -15,6 +15,13 @@ pub enum RendererError {
 /// Renders a JavaScript-enabled page and returns the HTML content.
 /// Uses headless Chrome/Chromium via WebDriver protocol.
 pub async fn render_page(url: &str, _wait_time: u64) -> Result<String, RendererError> {
+    // Offline test mode: allow inline HTML via special scheme when feature is enabled
+    #[cfg(feature = "offline_tests")]
+    {
+        if let Some(rest) = url.strip_prefix("inline://") {
+            return enhanced_html(rest);
+        }
+    }
     #[cfg(feature = "real_rendering")]
     {
         let options = LaunchOptionsBuilder::default()
@@ -77,12 +84,25 @@ mod tests {
         assert!(result.unwrap().contains("Test"));
     }
 
+    // Default network test is ignored to keep unit tests hermetic
     #[test]
-    fn test_render_page_no_js() {
+    #[ignore]
+    fn test_render_page_network_ignored_by_default() {
         tokio_test::block_on(async {
             let result = render_page("https://example.com", 1000).await;
             assert!(result.is_ok());
-            assert!(result.unwrap().contains("Example Domain"));
+        });
+    }
+
+    // Offline, hermetic test enabled via cargo feature: offline_tests
+    #[cfg(feature = "offline_tests")]
+    #[test]
+    fn test_render_page_offline_feature() {
+        tokio_test::block_on(async {
+            let inline = "inline://<html><body>Inline Test</body></html>";
+            let result = render_page(inline, 0).await;
+            assert!(result.is_ok());
+            assert!(result.unwrap().contains("Inline Test"));
         });
     }
 }

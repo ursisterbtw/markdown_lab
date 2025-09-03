@@ -10,6 +10,7 @@ This module provides a full-screen terminal interface with:
 - Keyboard shortcuts and mouse support
 """
 
+import logging
 import threading
 import time
 
@@ -124,7 +125,9 @@ class ConversionWorker:
                 from markdown_lab.utils.chunk_utils import ContentChunker
 
                 chunker = ContentChunker(
-                    config.get("chunk_size", 1000), config.get("chunk_overlap", 200)
+                    config=markdown_config,
+                    chunk_size=config.get("chunk_size", 1000),
+                    chunk_overlap=config.get("chunk_overlap", 200),
                 )
                 chunker.save_chunks(
                     chunks,
@@ -807,6 +810,9 @@ class HelpScreen(Screen):
 
 def main():
     """Main entry point for TUI."""
+    logging.basicConfig(
+        level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+    )
     app = MarkdownLabTUI()
     app.run()
 

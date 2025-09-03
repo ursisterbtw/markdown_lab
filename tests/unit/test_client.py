@@ -87,9 +87,7 @@ class TestHttpClient:
         mock_request.return_value = mock_response
         result = http_client.head("https://example.com")
         assert result is not None
-        mock_request.assert_called_once_with(
-            "HEAD", "https://example.com", timeout=30, return_response=True
-        )
+        mock_request.assert_called_once_with("HEAD", "https://example.com", timeout=30)
 
     @patch("requests.Session.request")
     def test_get_many_urls(self, mock_request, http_client, mock_response):

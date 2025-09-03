@@ -10,6 +10,7 @@ Modern command-line interface with:
 - Comprehensive help system
 """
 
+import logging
 import sys
 import time
 from enum import Enum
@@ -35,7 +36,6 @@ from rich.table import Table
 from markdown_lab.core.config import (
     MarkdownLabConfig,
     create_config_from_cli_args,
-    get_cli_defaults,
     get_config,
 )
 from markdown_lab.core.converter import Converter
@@ -798,6 +798,10 @@ def main(
 def cli_main():
     """entry point for the CLI application"""
     try:
+        logging.basicConfig(
+            level=logging.INFO,
+            format="%(asctime)s - %(levelname)s - %(message)s",
+        )
         app()
     except KeyboardInterrupt:
         console.print("\n❌ Operation cancelled by user", style="bold red")

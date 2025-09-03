@@ -7,7 +7,16 @@ unified configuration system with validation and defaults
 import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Union
+
+# Optional YAML support
+try:
+    import yaml
+
+    HAS_YAML = True
+except ImportError:
+    yaml = None
+    HAS_YAML = False
 
 
 @dataclass
@@ -25,6 +34,11 @@ class MarkdownLabConfig:
     user_agent: str = (
         "MarkdownLab/1.0 (Python; +https://github.com/ursisterbtw/markdown_lab)"
     )
+
+    # Connection pool configuration
+    max_pool_connections: int = 10  # Maximum number of connection pools
+    max_pool_size: int = 20  # Maximum connections per pool
+    pool_block: bool = False  # Whether to block when pool is full
 
     # Processing configuration
     chunk_size: int = 1000
@@ -93,6 +107,15 @@ class MarkdownLabConfig:
                 "default_output_format must be 'markdown', 'json', or 'xml'"
             )
 
+        if self.max_pool_connections <= 0:
+            raise ValueError("max_pool_connections must be positive")
+
+        if self.max_pool_size <= 0:
+            raise ValueError("max_pool_size must be positive")
+
+        if self.max_pool_size < self.max_pool_connections:
+            raise ValueError("max_pool_size must be >= max_pool_connections")
+
     def _apply_environment_overrides(self) -> None:
         """
         Overrides configuration attributes with values from corresponding environment variables.
@@ -141,12 +164,12 @@ class MarkdownLabConfig:
         return cls(**config_dict)
 
     @classmethod
-    def from_file(cls, config_path: str) -> "MarkdownLabConfig":
+    def from_file(cls, config_path: Union[str, Path]) -> "MarkdownLabConfig":
         """
         Loads a MarkdownLabConfig instance from a JSON or YAML configuration file.
 
         Args:
-            config_path: Path to the configuration file.
+            config_path: Path to the configuration file (string or Path object).
 
         Returns:
             A MarkdownLabConfig instance populated with values from the file.
@@ -167,15 +190,11 @@ class MarkdownLabConfig:
             with open(config_path, "r") as f:
                 config_dict = json.load(f)
         elif config_path.suffix.lower() in {".yml", ".yaml"}:
-            try:
-                import yaml
+            if not HAS_YAML or yaml is None:
+                raise ImportError("PyYAML is required to load YAML configuration files")
 
-                with open(config_path, "r") as f:
-                    config_dict = yaml.safe_load(f)
-            except ImportError as e:
-                raise ImportError(
-                    "PyYAML is required to load YAML configuration files"
-                ) from e
+            with open(config_path, "r") as f:
+                config_dict = yaml.safe_load(f)
         else:
             raise ValueError(
                 f"Unsupported configuration file format: {config_path.suffix}"
@@ -194,7 +213,7 @@ class MarkdownLabConfig:
 
         return asdict(self)
 
-    def save_to_file(self, config_path: str) -> None:
+    def save_to_file(self, config_path: Union[str, Path]) -> None:
         """
         Saves the configuration to a JSON or YAML file.
 
@@ -205,19 +224,19 @@ class MarkdownLabConfig:
             ImportError: If saving as YAML and PyYAML is not installed.
             ValueError: If the file extension is not supported.
         """
-        config_path = Path(config_path)
+        config_path_obj = Path(config_path)
         config_dict = self.to_dict()
 
-        if config_path.suffix.lower() == ".json":
+        if config_path_obj.suffix.lower() == ".json":
             import json
 
-            with open(config_path, "w") as f:
+            with open(config_path_obj, "w") as f:
                 json.dump(config_dict, f, indent=2)
-        elif config_path.suffix.lower() in {".yml", ".yaml"}:
+        elif config_path_obj.suffix.lower() in {".yml", ".yaml"}:
             try:
                 import yaml
 
-                with open(config_path, "w") as f:
+                with open(config_path_obj, "w") as f:
                     yaml.dump(config_dict, f, default_flow_style=False)
             except ImportError as e:
                 raise ImportError(
@@ -225,7 +244,7 @@ class MarkdownLabConfig:
                 ) from e
         else:
             raise ValueError(
-                f"Unsupported configuration file format: {config_path.suffix}"
+                f"Unsupported configuration file format: {config_path_obj.suffix}"
             )
 
     def update(self, **kwargs) -> "MarkdownLabConfig":
@@ -275,7 +294,7 @@ def load_config_from_env() -> MarkdownLabConfig:
 
 
 # CLI argument configuration helpers
-def create_config_from_cli_args(**kwargs) -> MarkdownLabConfig:
+def create_config_from_cli_args(**kwargs: Any) -> MarkdownLabConfig:
     """
     Create configuration from CLI arguments, filtering out None values.
 

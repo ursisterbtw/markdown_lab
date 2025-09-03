@@ -3,6 +3,8 @@ use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use url::Url;
 
+use crate::html_parser;
+
 #[derive(Error, Debug)]
 pub enum MarkdownError {
     #[error("Selector error: {0}")]
@@ -72,13 +74,21 @@ pub struct CodeBlock {
 
 /// Parse HTML into our document structure
 pub fn parse_html_to_document(html: &str, base_url_str: &str) -> Result<Document, MarkdownError> {
+    // Parse HTML first to decode entities
     let document_html = Html::parse_document(html);
     let base_url = Url::parse(base_url_str)?;
 
-    let title = extract_document_title(&document_html)?;
+    // Get the HTML after parsing (with decoded entities) and clean it
+    let parsed_html = document_html.root_element().html();
+    let cleaned_html = html_parser::clean_html(&parsed_html)
+        .map_err(|e| MarkdownError::Other(format!("HTML cleaning failed: {}", e)))?;
+
+    let cleaned_document = Html::parse_document(&cleaned_html);
+
+    let title = extract_document_title(&cleaned_document)?;
     let mut document = create_document_structure(&title, base_url_str);
 
-    populate_document_content(&mut document, &document_html, &base_url)?;
+    populate_document_content(&mut document, &cleaned_document, &base_url)?;
 
     Ok(document)
 }
@@ -151,6 +161,7 @@ fn process_paragraphs(document: &mut Document, document_html: &Html) -> Result<(
         Selector::parse("p").map_err(|e| MarkdownError::SelectorError(e.to_string()))?;
     for element in document_html.select(&p_selector) {
         let text = element.text().collect::<String>().trim().to_string();
+        // Assume HTML cleaning has removed script content; just check for non-empty text
         if !text.is_empty() {
             document.paragraphs.push(text);
         }

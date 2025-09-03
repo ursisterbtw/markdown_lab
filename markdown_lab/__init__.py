@@ -24,17 +24,5 @@ __all__ = [
     # CLI/TUI components (optional imports)
 ]
 
-# Optional CLI/TUI imports
-try:
-    from markdown_lab.cli import app as cli_app
-
-    __all__.append("cli_app")
-except ImportError:
-    pass
-
-try:
-    from markdown_lab.tui import MarkdownLabTUI
-
-    __all__.append("MarkdownLabTUI")
-except ImportError:
-    pass
+# Optional CLI/TUI imports are handled dynamically at runtime
+# to avoid import errors when optional dependencies are not available

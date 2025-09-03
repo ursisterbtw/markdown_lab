@@ -112,9 +112,6 @@ def scan_directory(
                 elif entry.is_file(follow_symlinks=False):
                     structure[entry.name] = None
                 # Silently ignore other types like block devices, sockets etc.
-                # Or add specific handling if needed:
-                # else:
-                #     structure[f"{entry.name} (type: unknown)"] = None
 
             except OSError as e:
                 log.warning(f"Could not access metadata for {entry.path}: {e}")
@@ -343,6 +340,7 @@ def run_dot(dot_file: Path, svg_file: Path) -> bool:
             text=True,
             check=False,  # Don't raise exception on non-zero exit code immediately
             encoding="utf-8",
+            timeout=60,
         )
         if result.returncode != 0:
             log.error(f"'dot' command failed with exit code {result.returncode}")

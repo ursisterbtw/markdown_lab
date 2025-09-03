@@ -42,6 +42,7 @@ This is a test paragraph.
     assert any("## Section 2" in chunk for chunk in chunks)
 
 
+@pytest.mark.integration
 def test_render_js_page():
     url = "https://httpbin.org/html"  # More reliable test endpoint
     try:

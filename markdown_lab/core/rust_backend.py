@@ -69,10 +69,10 @@ class RustBackend:
             )
 
         try:
-            # Unified conversion using convert_html_to_format for all formats
-            return self._rust_module.convert_html_to_format(
-                html, base_url, output_format
-            )
+            # Always pass a normalized string to the underlying module
+            normalized = (output_format or "markdown").lower()
+            # Use the convert_html_to_format entrypoint
+            return self._rust_module.convert_html_to_format(html, base_url, normalized)
         except Exception as e:
             raise RustIntegrationError(
                 f"Rust conversion failed: {str(e)}",
@@ -194,7 +194,8 @@ def get_rust_backend(fallback_enabled: bool = False) -> RustBackend:
     global _rust_backend
     if _rust_backend is None:
         _rust_backend = RustBackend(fallback_enabled=fallback_enabled)
-    return _rust_backend
+    # _rust_backend is guaranteed to be non-None after initialization
+    return _rust_backend  # type: ignore
 
 
 def reset_rust_backend() -> None:

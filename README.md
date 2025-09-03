@@ -5,7 +5,7 @@
 Markdown Lab combines Python and Rust components to scrape websites and convert HTML content to markdown, JSON, or XML formats. It supports sitemap parsing, semantic chunking for RAG
 (Retrieval-Augmented Generation), and includes performance optimizations through Rust integration.
 
-Key features include HTML-to-markdown/JSON/XML conversion with support for various elements (headers, links, images, lists, code blocks), intelligent content chunking that preserves document structure, and systematic content discovery
+Key features include HTML-to-markdown/JSON/XML conversion with support for various elements (headers, links, images, lists, code blocks), content chunking that preserves document structure, and systematic content discovery
 through sitemap parsing. The hybrid architecture uses Python for high-level operations and Rust for performance-critical tasks.
 
 Check out [deepwiki](https://deepwiki.com/ursisterbtw/markdown_lab/) for a detailed breakdown of the repository.
@@ -182,15 +182,31 @@ markdown_content = scraper.convert_to_markdown(html_content, "https://example.co
 scraper.save_content(markdown_content, "output.md")
 
 # Using JSON or XML format with the Rust implementation
-from markdown_lab.markdown_lab_rs import convert_html, OutputFormat
+from markdown_lab import markdown_lab_rs
 
 html_content = scraper.scrape_website("https://example.com")
-# Convert to JSON
-json_content = convert_html(html_content, "https://example.com", OutputFormat.JSON)
+
+# Convert to Markdown (legacy helper)
+markdown_content = markdown_lab_rs.convert_html_to_markdown(
+    html_content, "https://example.com"
+)
+scraper.save_content(markdown_content, "output.md")
+
+# Convert to JSON or XML using string format names
+json_content = markdown_lab_rs.convert_html_to_format(
+    html_content, "https://example.com", "json"
+)
 scraper.save_content(json_content, "output.json")
-# Convert to XML
-xml_content = convert_html(html_content, "https://example.com", OutputFormat.XML)
+
+xml_content = markdown_lab_rs.convert_html_to_format(
+    html_content, "https://example.com", "xml"
+)
 scraper.save_content(xml_content, "output.xml")
+
+# Note: An OutputFormat enum is exposed for convenience:
+# from markdown_lab import markdown_lab_rs
+# fmt = markdown_lab_rs.OutputFormat.from_str("json")  # returns an enum value
+# The current Python bindings accept string names ("markdown"|"json"|"xml").
 ```
 
 #### With Sitemap Discovery
@@ -253,7 +269,7 @@ parser.export_urls_to_file(urls, "sitemap_urls.txt")
 
 ## Sitemap Integration Features
 
-The library intelligently discovers and parses XML sitemaps to scrape exactly what you need:
+The library discovers and parses XML sitemaps to scrape exactly what you need:
 
 - **Automatic Discovery**: Finds sitemaps through robots.txt or common locations
 - **Sitemap Index Support**: Handles multi-level sitemap index files
@@ -264,11 +280,11 @@ The library intelligently discovers and parses XML sitemaps to scrape exactly wh
 
 ## RAG Chunking Capabilities
 
-The library implements intelligent chunking designed specifically for RAG (Retrieval-Augmented Generation) systems:
+The library implements chunking designed specifically for RAG (Retrieval-Augmented Generation) systems:
 
 - **Semantic Chunking**: Preserves the semantic structure of documents by chunking based on headers
-- **Content-Aware**: Large sections are split into overlapping chunks for better context preservation
-- **Metadata-Rich**: Each chunk contains detailed metadata for better retrieval
+- **Content-aware**: Large sections are split into overlapping chunks for better context preservation
+- **Metadata-rich**: Each chunk contains detailed metadata for better retrieval
 - **Multiple Formats**: Save chunks as individual JSON files or as a single JSONL file
 - **Customizable**: Control chunk size and overlap to balance between precision and context
 
@@ -296,7 +312,10 @@ just full-cycle           # Complete build + lint + test
 
 ```bash
 # All tests
-pytest
+pytest -m "not integration"  # unit tests
+
+# Run integration tests (Rust-backed path)
+pytest -m integration
 
 # Rust tests
 cargo test
@@ -415,6 +434,14 @@ cargo build --release --features real_rendering
 ```
 
 See `docs/JS_RENDERING.md` for more details.
+
+### Rust-Python module naming
+
+The PyO3 extension is built and imported as `markdown_lab.markdown_lab_rs` (namespaced module).
+
+- In Python, import via `from markdown_lab import markdown_lab_rs`.
+- The internal wrapper `markdown_lab/markdown_lab_rs.py` calls functions on this module and provides Python fallbacks.
+- Do not import a top-level `markdown_lab_rs` package; it will fail to resolve.
 
 ## Performance Considerations
 
