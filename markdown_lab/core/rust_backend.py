@@ -12,8 +12,6 @@ from markdown_lab.core.errors import RustIntegrationError
 
 logger = logging.getLogger(__name__)
 
-from markdown_lab.types import OutputFormat
-
 
 class RustBackend:
     """Simplified interface to Rust functions."""

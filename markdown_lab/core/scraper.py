@@ -767,6 +767,46 @@ def main(
     logger.info(
         f"Process completed successfully. Output saved in {validated_format} format."
     )
+
+
+def _create_argument_parser() -> argparse.ArgumentParser:
+    """Create and configure the argument parser for CLI usage."""
+    parser = argparse.ArgumentParser(
+        description="Convert web content to Markdown, JSON, or XML formats with optional chunking for RAG applications"
+    )
+    parser.add_argument(
+        "url_or_file", help="URL to convert or links file (use mode flags to specify)"
+    )
+    parser.add_argument(
+        "-o",
+        "--output",
+        dest="output_file",
+        help="Output file path or directory for batch processing",
+    )
+    parser.add_argument(
+        "--format", default="markdown", help="Output format: markdown, json, or xml"
+    )
+    parser.add_argument(
+        "--save-chunks", action="store_true", help="Create and save semantic chunks"
+    )
+    parser.add_argument(
+        "--chunk-dir", help="Directory to save chunks (defaults to <output>/chunks/)"
+    )
+    parser.add_argument(
+        "--chunk-format",
+        choices=["json", "jsonl"],
+        default="jsonl",
+        help="Format for chunk files",
+    )
+    parser.add_argument(
+        "--chunk-size",
+        type=int,
+        default=1000,
+        help="Maximum size of each chunk in characters",
+    )
+    parser.add_argument(
+        "--chunk-overlap",
+        type=int,
         default=200,
         help="Overlap between chunks in characters",
     )

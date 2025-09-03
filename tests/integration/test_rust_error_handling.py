@@ -1,7 +1,15 @@
+from unittest.mock import Mock, patch
+
 import pytest
 
 from markdown_lab.core.config import MarkdownLabConfig
 from markdown_lab.core.converter import Converter
+from markdown_lab.core.errors import RustIntegrationError
+from markdown_lab.core.rust_backend import (
+    RustBackend,
+    get_rust_backend,
+    reset_rust_backend,
+)
 from markdown_lab.markdown_lab_rs import (
     OutputFormat as RustOutputFormat,  # type: ignore
 )
@@ -49,17 +57,6 @@ These tests verify that error handling works correctly across the boundary
 between Python and Rust code, including fallback mechanisms and proper
 exception propagation.
 """
-
-from unittest.mock import Mock, patch
-
-import pytest
-
-from markdown_lab.core.errors import RustIntegrationError
-from markdown_lab.core.rust_backend import (
-    RustBackend,
-    get_rust_backend,
-    reset_rust_backend,
-)
 
 
 class TestRustBackendInitialization:
