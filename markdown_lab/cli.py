@@ -91,7 +91,7 @@ def print_banner():
     """display the application banner"""
     banner = """
 ╔══════════════════════════════════════════════════════════════╗
-║                       Markdown Lab                          ║
+║                       Markdown Lab                           ║
 ║              HTML to Markdown Converter                      ║
 ║                                                              ║
 ║  Convert web content to Markdown, JSON, or XML               ║
