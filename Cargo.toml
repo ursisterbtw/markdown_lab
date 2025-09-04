@@ -9,7 +9,7 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 pyo3 = { version = "0.24.1", features = ["extension-module"] }
-scraper = "0.18.1"
+scraper = "0.24.0"
 url = "2.5.7"
 thiserror = "1.0.57"
 tokio = { version = "1.47.1", features = ["full"] }
