@@ -169,3 +169,24 @@ class TestCachedHttpClient:
             assert len(w) == 1
             assert issubclass(w[0].category, DeprecationWarning)
             assert "skip_cache" in str(w[0].message)
+
+
+def test_retry_attempts_on_failure(monkeypatch):
+    """Ensure HttpClient retries the configured number of times with failures."""
+    from requests import exceptions as req_exc
+
+    client = HttpClient(MarkdownLabConfig(max_retries=2))  # total attempts = 3
+
+    call_counter = {"count": 0}
+
+    def fail_request(*args, **kwargs):  # noqa: ANN001, ANN003
+        call_counter["count"] += 1
+        raise req_exc.ConnectionError("boom")
+
+    monkeypatch.setattr(client.session, "request", fail_request)
+
+    with pytest.raises(Exception):
+        client.get("https://example.com")
+
+    # Expect initial try + 2 retries = 3 attempts
+    assert call_counter["count"] == 3

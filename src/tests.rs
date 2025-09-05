@@ -78,6 +78,22 @@ mod markdown_converter_tests {
         assert!(markdown.contains("fn main()"));
         assert!(markdown.contains("```"));
     }
+
+    #[test]
+    fn test_skip_unresolvable_links() {
+        // Links like javascript: and invalid schemes should be skipped
+        let html = "<div>
+            <a href=\"javascript:void(0)\">Skip JS</a>
+            <a href=\"::::bad::::\">Skip Bad</a>
+            <a href=\"/ok\">OK</a>
+        </div>";
+        let base_url = "https://example.com";
+        let markdown = convert_to_markdown(html, base_url).unwrap();
+
+        assert!(!markdown.contains("Skip JS"));
+        assert!(!markdown.contains("::::bad::::"));
+        assert!(markdown.contains("[OK](https://example.com/ok)"));
+    }
 }
 
 #[cfg(test)]

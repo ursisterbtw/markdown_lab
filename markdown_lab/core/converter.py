@@ -54,7 +54,9 @@ class Converter:
     ) -> Tuple[str, str]:
         """convert content from url to specified format"""
         try:
-            html_content = self.client.get(url, skip_cache=skip_cache)
+            # Prefer the non-deprecated 'use_cache' flag. If skip_cache is True, disable cache.
+            use_cache = not bool(skip_cache)
+            html_content = self.client.get(url, use_cache=use_cache)
 
             return self.convert_html(html_content, url, output_format)
 

@@ -37,10 +37,8 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y valgrind
       
-      - name: Install uv
-        run: |
-          curl -LsSf https://astral.sh/uv/install.sh | sh
-          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v3
       
       - name: Install dependencies
         run: |
@@ -86,8 +84,8 @@ jobs:
           
           # Run a subset of tests
           exit_code = pytest.main([
-              'tests/unit/test_converter.py',
               'tests/unit/test_client.py',
+              'tests/unit/test_main.py',
               '-v', '--tb=short'
           ])
           

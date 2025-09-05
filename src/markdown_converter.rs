@@ -181,11 +181,9 @@ fn process_links(
         if let Some(href) = element.value().attr("href") {
             let text = element.text().collect::<String>().trim().to_string();
             if !text.is_empty() {
-                let absolute_url = resolve_url_against_base(base_url, href);
-                document.links.push(Link {
-                    text,
-                    url: absolute_url,
-                });
+                if let Some(absolute_url) = resolve_url_against_base(base_url, href) {
+                    document.links.push(Link { text, url: absolute_url });
+                }
             }
         }
     }
@@ -203,11 +201,9 @@ fn process_images(
     for element in document_html.select(&img_selector) {
         if let Some(src) = element.value().attr("src") {
             let alt = element.value().attr("alt").unwrap_or("image").to_string();
-            let absolute_url = resolve_url_against_base(base_url, src);
-            document.images.push(Image {
-                alt,
-                src: absolute_url,
-            });
+            if let Some(absolute_url) = resolve_url_against_base(base_url, src) {
+                document.images.push(Image { alt, src: absolute_url });
+            }
         }
     }
     Ok(())
@@ -277,11 +273,26 @@ fn process_blockquotes(document: &mut Document, document_html: &Html) -> Result<
 }
 
 /// Helper function to resolve URLs against a base URL
-fn resolve_url_against_base(base_url: &Url, href: &str) -> String {
-    base_url
-        .join(href)
-        .unwrap_or_else(|_| Url::parse(href).unwrap_or(base_url.clone()))
-        .to_string()
+fn resolve_url_against_base(base_url: &Url, href: &str) -> Option<String> {
+    let href_trimmed = href.trim();
+    if href_trimmed.is_empty()
+        || href_trimmed.starts_with('#')
+        || href_trimmed.to_lowercase().starts_with("javascript:")
+        || href_trimmed.to_lowercase().starts_with("data:")
+        || href_trimmed.contains(' ')
+        || href_trimmed.starts_with(':')
+        || href_trimmed.contains(":::")
+    {
+        return None;
+    }
+
+    if let Ok(u) = base_url.join(href_trimmed) {
+        return Some(u.to_string());
+    }
+    if let Ok(u) = url::Url::parse(href_trimmed) {
+        return Some(u.to_string());
+    }
+    None
 }
 
 /// Helper function to extract list items

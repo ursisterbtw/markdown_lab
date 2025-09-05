@@ -180,16 +180,19 @@ class HttpClient:
 
                 return response if return_response else response.text
 
-            except (requests_exceptions.RequestException, OSError, ValueError) as e:
-                last_exception = e
-                network_error = handle_request_exception(e, url, attempt)
-            except (KeyError, AttributeError, TypeError, RuntimeError) as e:
-                # catch specific unexpected errors
-                logger.error(f"Unexpected error type {type(e).__name__} for {url}: {e}")
+            except (
+                requests_exceptions.RequestException,
+                OSError,
+                ValueError,
+                KeyError,
+                AttributeError,
+                TypeError,
+                RuntimeError,
+            ) as e:
+                # Normalize all exception types to a NetworkError and apply consistent backoff
                 last_exception = e
                 network_error = handle_request_exception(e, url, attempt)
 
-                # Log the attempt
                 if attempt < self.config.max_retries:
                     wait_time = 2**attempt  # Exponential backoff
                     logger.warning(
