@@ -43,13 +43,11 @@ jobs:
       - name: Install dependencies
         run: |
           uv sync --dev
-          source .venv/bin/activate
-          pip install maturin memory_profiler
+          uv add --dev maturin memory_profiler
       
       - name: Build Rust extension
         run: |
-          source .venv/bin/activate
-          maturin develop --release
+          uv run maturin develop --release
       
       - name: Run Rust memory checks with Valgrind
         run: |
@@ -71,7 +69,6 @@ jobs:
       
       - name: Python memory profiling
         run: |
-          source .venv/bin/activate
           
           # Create memory profiling script
           cat > profile_memory.py << 'EOF'
@@ -112,17 +109,15 @@ jobs:
           sys.exit(exit_code)
           EOF
           
-          python profile_memory.py
+          uv run python profile_memory.py
       
       - name: Check for memory leaks in Python
         run: |
-          source .venv/bin/activate
-          
           # Run Python tests under valgrind (if available)
           valgrind --leak-check=full \
                    --suppressions=/usr/share/doc/python3.12/valgrind-python.supp \
                    --log-file=valgrind-python.log \
-                   python -m pytest tests/unit/test_edge_cases.py -v || true
+                   uv run python -m pytest tests/unit/test_edge_cases.py -v || true
           
           # Check for Python memory leaks
           if [ -f valgrind-python.log ]; then

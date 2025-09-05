@@ -54,9 +54,8 @@ jobs:
       
       - name: Install dependencies
         run: |
-          uv sync --dev --locked
-          uv run python -m pip install maturin
-          uv run python -m pip install pytest-cov
+          uv sync --dev
+          uv add --dev maturin pytest-cov
       
       - name: Rust quick checks
         run: |

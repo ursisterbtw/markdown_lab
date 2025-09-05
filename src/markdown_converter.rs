@@ -180,10 +180,13 @@ fn process_links(
     for element in document_html.select(&a_selector) {
         if let Some(href) = element.value().attr("href") {
             let text = element.text().collect::<String>().trim().to_string();
-            if !text.is_empty() {
-                if let Some(absolute_url) = resolve_url_against_base(base_url, href) {
-                    document.links.push(Link { text, url: absolute_url });
-                }
+            if !text.is_empty()
+                && let Some(absolute_url) = resolve_url_against_base(base_url, href)
+            {
+                document.links.push(Link {
+                    text,
+                    url: absolute_url,
+                });
             }
         }
     }
@@ -202,7 +205,10 @@ fn process_images(
         if let Some(src) = element.value().attr("src") {
             let alt = element.value().attr("alt").unwrap_or("image").to_string();
             if let Some(absolute_url) = resolve_url_against_base(base_url, src) {
-                document.images.push(Image { alt, src: absolute_url });
+                document.images.push(Image {
+                    alt,
+                    src: absolute_url,
+                });
             }
         }
     }
