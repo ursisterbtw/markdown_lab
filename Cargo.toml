@@ -28,7 +28,7 @@ real_rendering = ["headless_chrome"]
 offline_tests = []
 
 [dev-dependencies]
-criterion = { version = "0.5.1", features = ["html_reports"] }
+criterion = { version = "0.7.0", features = ["html_reports"] }
 tokio = { version = "1.47.1", features = ["full", "test-util"] }
 
 [[bench]]
