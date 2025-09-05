@@ -1,35 +1,41 @@
 # Repository Guidelines
 
-## Project Structure & Modules
-- `markdown_lab/`: Python package (CLI, TUI, core, utils). Key entry points: `__main__.py`, `cli.py`, `tui.py`.
-- `src/`: Rust crate exposing Python bindings via PyO3 (`lib.rs`, converters, chunking, parsers).
-- `tests/`: `unit/`, `integration/`, and `rust/` (binding + Rust tests).
+## Project Structure & Module Organization
+- `markdown_lab/`: Python package (CLI, TUI, core, utils). Entry points: `__main__.py`, `cli.py`, `tui.py`.
+- `src/`: Rust crate exposing Python bindings with PyO3 (`lib.rs`, converters, chunking, parsers).
+- `tests/`: Python `unit/`, `integration/`, and `rust/` (bindings + Rust tests).
 - `benches/`: Criterion benchmarks. `examples/` and `docs/` contain demos and assets.
+- Keep modules small, cohesive, and public APIs typed and documented.
 
-## Build, Test, and Dev Commands
-- Setup: `just setup` (creates venv, installs deps, builds Rust via maturin).
+## Build, Test, and Development Commands
+- Setup: `just setup` — create `.venv`, install deps, build Rust via maturin.
 - Build: `just build-dev` (debug), `just build-release` (optimized), `just build-js` (enable `real_rendering`).
-- Test: `just test` (all), `just test-python`, `just test-rust`, `just test-integration`, `just test-coverage` (>=80%).
-- Lint/Type: `just lint` (ruff+black+isort+clippy+fmt), `just typecheck` (mypy).
+- Tests: `just test` (all), `just test-python`, `just test-rust`, `just test-integration`, `just test-coverage` (≥80%).
+- Lint/Type: `just lint` (ruff, black, isort, clippy, fmt), `just typecheck` (mypy).
 - Bench: `just bench`, `just bench-html`, `just bench-chunk`.
-- Raw equivalents: `uv sync && source .venv/bin/activate && maturin develop`, `pytest`, `cargo test`.
+- Raw dev equivalents: `uv sync && source .venv/bin/activate && maturin develop`, `pytest`, `cargo test`.
 
-## Coding Style & Naming
-- Indentation: 4 spaces (`.editorconfig`), UTF-8, final newline.
-- Python: Python 3.12, `black` (88 cols), `isort` (profile=black), `ruff` (E,F,I,N,W,B,…), `mypy` strict; PEP8 names (modules/files `snake_case.py`; classes `CamelCase`; funcs/vars `snake_case`).
-- Rust: `cargo fmt` and `clippy -D warnings`; types `CamelCase`, funcs/vars/modules `snake_case`, constants `SCREAMING_SNAKE_CASE`.
-- Keep public APIs typed and documented; prefer small modules and cohesive functions.
+## Coding Style & Naming Conventions
+- Indentation: 4 spaces; UTF‑8; final newline. Python 3.12 required.
+- Python: `black` (88 cols), `isort` (profile=black), `ruff` (E,F,I,N,W,B,…), `mypy --strict`.
+- Rust: `cargo fmt` and `clippy -D warnings`.
+- Naming: modules/files `snake_case.py`; classes `CamelCase`; funcs/vars `snake_case`; consts `SCREAMING_SNAKE_CASE`.
 
 ## Testing Guidelines
-- Python: `pytest` with markers: `unit`, `integration`, `slow`, `benchmark`. Place tests under `tests/unit/` and `tests/integration/`; name files `test_*.py`.
-- Rust: `cargo test`; unit tests co-located with modules or in `tests/` if added.
-- Coverage: run `just test-coverage`; keep threshold ≥ 80%. Add focused tests for new logic and bug regressions.
+- Python: `pytest` with markers `unit`, `integration`, `slow`, `benchmark`.
+- Layout: `tests/unit/test_*.py`, `tests/integration/test_*.py`. Prefer focused tests.
+- Run subsets, e.g., `pytest -m unit` or `pytest -k name`.
+- Rust: `cargo test` for crate and binding tests under `tests/`.
+- Coverage: enforce ≥80% via `just test-coverage` for PRs.
 
 ## Commit & Pull Request Guidelines
-- Commits: follow Conventional Commits: `feat:`, `fix:`, `docs:`, `test:`, `refactor:`, optional scopes (e.g., `feat(cli): ...`). Use imperative, concise subjects.
-- PRs: include summary, rationale, linked issues (`Fixes #123`), test coverage notes, and relevant screenshots/CLI output for UX changes (CLI/TUI). Keep PRs small and focused.
+- Commits: Conventional Commits, e.g., `feat(cli): add render flag`, `fix(rust): guard null ptr`.
+- PRs: clear summary, rationale, and linked issues (e.g., `Fixes #123`).
+- Include test notes, coverage impact, and screenshots/CLI output for UX changes (CLI/TUI).
+- Keep PRs small and focused; update docs when behavior changes.
 
 ## Security & Configuration Tips
-- Use `uv sync` and `.venv` from repo root; Python ≥ 3.12 required.
-- For JS rendering, build with `--features real_rendering` and ensure headless Chrome availability.
-- Never commit secrets; config/state belongs outside VCS. Run `just security-audit` before release work.
+- Use `uv sync` from repo root and the local `.venv`.
+- For JS rendering, build with `--features real_rendering` and ensure headless Chrome.
+- Never commit secrets; keep config/state out of VCS. Run `just security-audit` before releases.
+

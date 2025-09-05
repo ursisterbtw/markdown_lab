@@ -6,58 +6,68 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Building & Testing
 ```bash
+# Setup development environment (installs uv and builds Rust)
+just setup
+
 # Quick development build with Rust bindings
-just build-dev
+just build
 # or directly:
-source .venv/bin/activate && maturin develop
+uv run maturin develop
 
 # Run all tests (Rust + Python + integration)
 just test
 
-# Run specific test suites
-just test-python          # Python tests only
-just test-rust            # Rust tests only  
-just test-bindings        # Python binding tests
-pytest tests/rust/test_python_bindings.py -v  # Direct binding tests
-
 # Run single test
 pytest tests/unit/test_main.py::test_convert_to_markdown -v
+uv run pytest tests/rust/test_python_bindings.py -v  # Direct binding tests
 
 # Test with coverage
 just test-coverage
+
+# Run benchmarks
+just bench
 ```
 
 ### Code Quality
 ```bash
-# Run all linting and formatting
+# Run all linting and formatting (Python + Rust)
 just lint
 
-# Python linting
-ruff check . --fix
-black .
-mypy markdown_lab/
+# Python linting individually
+uv run ruff check . --fix
+uv run ruff format .
+uv run mypy markdown_lab/
 
-# Rust linting
-cargo fmt -- --check
-cargo clippy -- -D warnings
+# Rust linting individually
+cargo fmt && cargo clippy -- -D warnings
 
 # Type checking
 just typecheck
+
+# Clean build artifacts
+just clean
 ```
 
-### CLI Development
+### CLI Development & Testing
 ```bash
-# Modern CLI (Typer-based)
-mlab convert "https://example.com" --output article.md
+# Modern CLI (Typer-based) - Available commands:
+mlab convert "https://example.com" --output article.md --interactive
+mlab sitemap "https://example.com" --output docs/ --parallel
 mlab batch links.txt --parallel --max-workers 8
-mlab-tui  # Launch TUI
+mlab status  # Show system status
+mlab tui     # Launch interactive TUI
+mlab config --show  # Show configuration
 
-# Legacy CLI (argparse-based) 
+# Legacy CLI (argparse-based)
 MARKDOWN_LAB_LEGACY=1 python -m markdown_lab "https://example.com"
 mlab-legacy "https://example.com"
 
-# Test format conversion
-python examples/demo_formats.py
+# Examples and demos
+just demo  # Run format conversion examples
+uv run python examples/demo_formats.py
+
+# Update dependencies
+just update
 ```
 
 ## High-Level Architecture
@@ -99,11 +109,12 @@ Format selection happens at the Rust level for performance, with Python providin
 
 ### CLI Architecture
 
-Two CLI systems coexist:
-1. **Modern CLI (`cli.py`)**: Typer-based with Rich output, progress bars, and TUI support
-2. **Legacy CLI (`scraper.py:main`)**: Argparse-based for backwards compatibility
+Three interface layers provide different user experiences:
+1. **Modern CLI (`cli.py`)**: Typer-based with Rich output, progress bars, interactive modes, and comprehensive commands (`convert`, `sitemap`, `batch`, `status`, `config`, `tui`)
+2. **TUI (`tui.py`)**: Full-screen terminal interface using Textual for interactive website conversion with real-time progress and logs
+3. **Legacy CLI (`scraper.py:main`)**: Argparse-based interface maintained for backwards compatibility
 
-The modern CLI is the default, with `MARKDOWN_LAB_LEGACY=1` environment variable enabling legacy mode.
+The modern CLI is the default, with `MARKDOWN_LAB_LEGACY=1` environment variable enabling legacy mode. The TUI can be launched via `mlab tui` command.
 
 ### Testing Strategy
 
@@ -121,9 +132,12 @@ The modern CLI is the default, with `MARKDOWN_LAB_LEGACY=1` environment variable
 
 ## Development Notes
 
-- Always run `maturin develop` after modifying Rust code
+- Always run `uv run maturin develop` or `just build` after modifying Rust code
 - The project supports Python 3.12+ only
-- Use `uv` for dependency management (faster than pip)
+- Use `uv` for dependency management (faster than pip) - all commands should be prefixed with `uv run`
 - JavaScript rendering available with `--features real_rendering` (requires headless Chrome)
 - Centralized configuration in `MarkdownLabConfig` class - avoid scattered config parameters
 - Legacy `MarkdownScraper` class wraps new `Converter` for backwards compatibility
+- Use `just setup` for initial development environment setup
+- The TUI requires `textual` dependency; modern CLI requires `typer` and `rich`
+- Build profiles: `--release` for optimized builds, `--features real_rendering` for JS support

@@ -184,9 +184,8 @@ class MarkdownScraper:
         Raises:
             NetworkError: If the URL cannot be retrieved after all retries.
         """
-        return retry_with_backoff(
-            self._make_single_request, self.max_retries, 2, url, url
-        )
+        # retry_with_backoff(func, max_retries, url, backoff_base=2, *args)
+        return retry_with_backoff(self._make_single_request, self.max_retries, url, 2)
 
     def save_content(self, content: str, output_file: str) -> None:
         """
