@@ -3,7 +3,7 @@ JSON format handler for markdown_lab.
 """
 
 import json
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from markdown_lab.formats.base import BaseFormatter
 
@@ -11,7 +11,7 @@ from markdown_lab.formats.base import BaseFormatter
 class JsonFormatter(BaseFormatter):
     """Formatter for JSON output."""
 
-    def format(self, content: str, metadata: Dict[str, Any] = None) -> str:
+    def format(self, content: str, metadata: Optional[Dict[str, Any]] = None) -> str:
         """
         Format content as JSON.
 
@@ -44,7 +44,7 @@ class JsonFormatter(BaseFormatter):
 
         except json.JSONDecodeError as e:
             # If content is not valid JSON, wrap it
-            wrapped_content = {
+            wrapped_content: Dict[str, Any] = {
                 "content": content,
                 "error": f"Invalid JSON from converter: {str(e)}",
             }

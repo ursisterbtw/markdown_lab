@@ -3,7 +3,7 @@ XML format handler for markdown_lab.
 """
 
 import xml.etree.ElementTree as ET
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 from xml.dom import minidom
 
 from markdown_lab.formats.base import BaseFormatter
@@ -12,7 +12,7 @@ from markdown_lab.formats.base import BaseFormatter
 class XmlFormatter(BaseFormatter):
     """Formatter for XML output."""
 
-    def format(self, content: str, metadata: Dict[str, Any] = None) -> str:
+    def format(self, content: str, metadata: Optional[Dict[str, Any]] = None) -> str:
         """
         Format content as XML.
 

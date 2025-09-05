@@ -2,7 +2,7 @@
 Markdown format handler for markdown_lab.
 """
 
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from markdown_lab.formats.base import BaseFormatter
 
@@ -10,7 +10,7 @@ from markdown_lab.formats.base import BaseFormatter
 class MarkdownFormatter(BaseFormatter):
     """Formatter for Markdown output."""
 
-    def format(self, content: str, metadata: Dict[str, Any] = None) -> str:
+    def format(self, content: str, metadata: Optional[Dict[str, Any]] = None) -> str:
         """
         Format content as Markdown.
 

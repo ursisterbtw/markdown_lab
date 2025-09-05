@@ -3,13 +3,13 @@ Base formatter class for all output formats.
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 
 class BaseFormatter(ABC):
     """Abstract base class for format-specific converters."""
 
-    def __init__(self, config: Dict[str, Any] = None):
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
         """
         Initialize formatter with configuration.
 
@@ -19,7 +19,7 @@ class BaseFormatter(ABC):
         self.config = config or {}
 
     @abstractmethod
-    def format(self, content: str, metadata: Dict[str, Any] = None) -> str:
+    def format(self, content: str, metadata: Optional[Dict[str, Any]] = None) -> str:
         """
         Format content according to the specific output format.
 

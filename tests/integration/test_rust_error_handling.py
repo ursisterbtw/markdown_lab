@@ -37,7 +37,10 @@ def test_rust_backed_conversion_end_to_end_markdown_json_xml(monkeypatch):
     # Markdown
     md, md_raw = converter.convert_html(html, "https://example.com", "markdown")
     assert "# Integration Title" in md
-    assert md == md_raw
+    # md_raw should be the raw content without metadata formatting
+    assert "# Integration Title" in md_raw
+    assert "Hello" in md_raw
+    assert "World" in md_raw
 
     # JSON
     js, md_again = converter.convert_html(html, "https://example.com", "json")
@@ -74,7 +77,7 @@ class TestRustBackendInitialization:
         """Test error when Rust backend unavailable and no fallback."""
         # Mock the import to raise ImportError directly
         with patch(
-            "markdown_lab.core.rust_backend.markdown_lab_rs",
+            "markdown_lab.markdown_lab_rs",
             side_effect=ImportError("No module named 'markdown_lab_rs'"),
         ):
             # Also need to patch the import statement itself

@@ -184,7 +184,6 @@ class MarkdownScraper:
         Raises:
             NetworkError: If the URL cannot be retrieved after all retries.
         """
-        # retry_with_backoff(func, max_retries, url, backoff_base=2, *args)
         return retry_with_backoff(self._make_single_request, self.max_retries, url, 2)
 
     def save_content(self, content: str, output_file: str) -> None:
@@ -661,8 +660,8 @@ def _determine_processing_mode(params):
 
 def main(
     args_list=None,
-    url: str = None,
-    output_file: str = None,
+    url: Optional[str] = None,
+    output_file: Optional[str] = None,
     output_format: str = "markdown",
     save_chunks: bool = True,
     chunk_dir: str = "chunks",
@@ -737,8 +736,8 @@ def main(
     elif mode == "sitemap":
         _process_sitemap_mode(
             scraper=scraper,
-            base_url=params["url"],
-            output_dir=params["output_file"],
+            url=params["url"],
+            output_file=params["output_file"],
             output_format=validated_format,
             min_priority=params["min_priority"],
             include_patterns=params["include_patterns"],
@@ -747,20 +746,16 @@ def main(
             save_chunks=params["save_chunks"],
             chunk_dir=params["chunk_dir"],
             chunk_format=params["chunk_format"],
-            use_cache=params["use_cache"],
         )
     elif mode == "links_file":
         _process_links_file_mode(
             scraper=scraper,
             links_file=params["links_file"],
-            output_dir=params["output_file"],
+            output_file=params["output_file"],
             output_format=validated_format,
             save_chunks=params["save_chunks"],
             chunk_dir=params["chunk_dir"],
             chunk_format=params["chunk_format"],
-            parallel=params["parallel"],
-            max_workers=params["max_workers"],
-            use_cache=params["use_cache"],
         )
 
     logger.info(
@@ -1059,6 +1054,6 @@ if __name__ == "__main__":
         limit=args.limit,
         cache_enabled=args.cache_enabled,
         cache_max_age=args.cache_max_age,
-        skip_cache=args.skip_cache,
+        use_cache=not getattr(args, "skip_cache", False),
         links_file=args.links_file,
     )

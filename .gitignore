@@ -151,9 +151,10 @@ venv.bak/
 .dmypy.json
 dmypy.json
 
-# Type checking cache
+# Type checking and linting cache
 .pyre/
 .pytype/
+.ruff_cache/
 
 # PyCharm
 #  JetBrains specific template is maintained in a separate JetBrains.gitignore that can
@@ -163,20 +164,8 @@ dmypy.json
 #.idea/
 
 
-# Added by cargo
-
+# Rust
 /target
 
-
-# Added by cargo
-#
-# already existing elements were commented out
-
-#/target
-
-
-# Added by cargo
-#
-# already existing elements were commented out
-
-#/target
+# VS Code
+.vscode/settings.local.json
