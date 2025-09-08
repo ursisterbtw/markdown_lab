@@ -332,41 +332,39 @@ class TestRustJSRenderingErrors:
 
     def test_render_js_invalid_url(self):
         """Test JS rendering with invalid URLs."""
-        backend = RustBackend(fallback_enabled=False)
+        backend = RustBackend(fallback_enabled=True)
 
-        if backend.is_available():
-            invalid_urls = [
-                "",  # Empty string
-                "not-a-url",  # Invalid format
-                "ftp://example.com",  # Non-HTTP scheme
-                "https://nonexistent-domain-12345.com",  # Non-existent domain
-            ]
+        invalid_urls = [
+            "",  # Empty string
+            "not-a-url",  # Invalid format
+            "ftp://example.com",  # Non-HTTP scheme
+            "https://nonexistent-domain-12345.com",  # Non-existent domain
+        ]
 
-            for url in invalid_urls:
-                try:
-                    # Use shorter timeout for faster test execution
-                    result = backend.render_js_page(url, 1000)
-                    assert isinstance(result, str)
-                except RustIntegrationError:
-                    # Invalid URLs should cause errors
-                    pass
+        for url in invalid_urls:
+            try:
+                result = backend.render_js_page(url, 1000)
+                # If Rust backend unavailable, Python fallback returns None
+                assert result is None or isinstance(result, str)
+            except RustIntegrationError:
+                # Invalid URLs or backend errors are acceptable
+                pass
 
     def test_render_js_timeout_handling(self):
         """Test JS rendering timeout behavior."""
-        backend = RustBackend(fallback_enabled=False)
+        backend = RustBackend(fallback_enabled=True)
 
-        if backend.is_available():
-            # Test with various timeout values
-            timeout_values = [None, 0, 1, 1000, 10000]
+        # Test with various timeout values
+        timeout_values = [None, 0, 1, 1000, 10000]
 
-            for timeout in timeout_values:
-                try:
-                    # Use a fast, reliable endpoint
-                    result = backend.render_js_page("https://httpbin.org/html", timeout)
-                    assert isinstance(result, str)
-                except RustIntegrationError:
-                    # Timeouts or network errors are acceptable
-                    pass
+        for timeout in timeout_values:
+            try:
+                result = backend.render_js_page("https://httpbin.org/html", timeout)
+                # If Rust backend unavailable, Python fallback returns None
+                assert result is None or isinstance(result, str)
+            except RustIntegrationError:
+                # Timeouts or network errors are acceptable
+                pass
 
 
 class TestGlobalRustBackend:

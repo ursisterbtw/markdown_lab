@@ -62,5 +62,6 @@ def test_error_handling():
     with pytest.raises(TypeError):
         markdown_lab_rs.chunk_markdown(None, 500, 50)
 
+    # render_js_page returns Optional[str] under Python fallback; invalid arg should raise
     with pytest.raises(TypeError):
-        markdown_lab_rs.render_js_page(None)
+        markdown_lab_rs.render_js_page(None)  # type: ignore[arg-type]

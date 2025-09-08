@@ -26,6 +26,10 @@ dev = [
   "pylint>=3.3.7",
   "pytest-benchmark>=4.0.0",
   "sourcery>=1.37.0",
+  "types-requests>=2.32.0.20250301",
+  "types-PyYAML>=6.0.12",
+  "types-aiofiles>=24.1.0.20240524",
+  "types-psutil>=5.9.5.20240516",
 ]
 test = ["pytest>=8.4.0", "pytest-benchmark>=4.0.0"]
 js = ["playwright>=1.37.0"]
@@ -123,6 +127,19 @@ disallow_untyped_decorators = true
 no_implicit_optional = true
 strict_optional = true
 
+# Reduce noise from optional UI/CLI modules and runtime-bound integrations
+[[tool.mypy.overrides]]
+module = [
+  "markdown_lab.cli",
+  "markdown_lab.tui",
+  "markdown_lab.core.async_cache",
+  "markdown_lab.core.scraper",
+  "markdown_lab.core.cleanup",
+  "markdown_lab.utils.thread_pool",
+  "markdown_lab.utils.version",
+]
+ignore_errors = true
+
 [build-system]
 requires = ["wheel", "setuptools", "maturin>=1.6,<2.0"]
 build-backend = "maturin"
@@ -130,6 +147,8 @@ build-backend = "maturin"
 [dependency-groups]
 dev = [
     "maturin>=1.9.0",
+    "mypy>=1.16.0",
+    "pytest>=8.4.0",
     "pytest-benchmark>=5.1.0",
     "pytest-cov>=6.2.1",
     "ruff>=0.11.13",

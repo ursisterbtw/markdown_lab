@@ -7,7 +7,7 @@ import os
 import sys
 
 
-def main():
+def main() -> None:
     """Main entry point that routes to appropriate interface."""
     # Check if running in legacy mode
     if os.environ.get("MARKDOWN_LAB_LEGACY", "").lower() in ("1", "true", "yes"):

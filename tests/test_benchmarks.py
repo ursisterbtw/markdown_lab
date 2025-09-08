@@ -4,6 +4,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+pytest.importorskip("pytest_benchmark")
+
 from markdown_lab.core.cache import RequestCache
 from markdown_lab.core.config import MarkdownLabConfig
 from markdown_lab.core.scraper import MarkdownScraper
@@ -11,11 +13,15 @@ from markdown_lab.core.scraper import MarkdownScraper
 
 @pytest.mark.benchmark(group="scrape_website")
 def test_scrape_website_benchmark(benchmark):
+    """Benchmark the performance of scraping a website."""
     scraper = MarkdownScraper()
     url = "http://example.com"
     benchmark(scraper.scrape_website, url)
 
 
+@pytest.mark.skipif(
+    "pytest_benchmark" not in globals(), reason="pytest-benchmark plugin not installed"
+)
 @pytest.mark.benchmark(group="convert_to_markdown")
 def test_convert_to_markdown_benchmark(benchmark):
     scraper = MarkdownScraper()
@@ -27,6 +33,9 @@ def test_convert_to_markdown_benchmark(benchmark):
     )
 
 
+@pytest.mark.skipif(
+    "pytest_benchmark" not in globals(), reason="pytest-benchmark plugin not installed"
+)
 @pytest.mark.benchmark(group="save_markdown")
 def test_save_markdown_benchmark(benchmark, tmp_path):
     scraper = MarkdownScraper()
@@ -35,6 +44,9 @@ def test_save_markdown_benchmark(benchmark, tmp_path):
     benchmark(scraper.save_markdown, markdown_content, str(output_file))
 
 
+@pytest.mark.skipif(
+    "pytest_benchmark" not in globals(), reason="pytest-benchmark plugin not installed"
+)
 @pytest.mark.benchmark(group="create_chunks")
 def test_create_chunks_benchmark(benchmark):
     scraper = MarkdownScraper()
@@ -43,6 +55,9 @@ def test_create_chunks_benchmark(benchmark):
     benchmark(scraper.create_chunks, markdown_content, url)
 
 
+@pytest.mark.skipif(
+    "pytest_benchmark" not in globals(), reason="pytest-benchmark plugin not installed"
+)
 @pytest.mark.benchmark(group="save_chunks")
 def test_save_chunks_benchmark(benchmark, tmp_path):
     scraper = MarkdownScraper()
@@ -53,6 +68,9 @@ def test_save_chunks_benchmark(benchmark, tmp_path):
     benchmark(scraper.save_chunks, chunks, str(output_dir))
 
 
+@pytest.mark.skipif(
+    "pytest_benchmark" not in globals(), reason="pytest-benchmark plugin not installed"
+)
 @pytest.mark.benchmark(group="caching")
 def test_benchmark_scrape_with_cache_enabled(benchmark):
     """
@@ -89,6 +107,9 @@ def test_benchmark_scrape_with_cache_enabled(benchmark):
             benchmark(scrape)
 
 
+@pytest.mark.skipif(
+    "pytest_benchmark" not in globals(), reason="pytest-benchmark plugin not installed"
+)
 @pytest.mark.benchmark(group="caching")
 def test_benchmark_scrape_with_cache_disabled(benchmark):
     """
@@ -116,6 +137,9 @@ def test_benchmark_scrape_with_cache_disabled(benchmark):
         benchmark(scrape)
 
 
+@pytest.mark.skipif(
+    "pytest_benchmark" not in globals(), reason="pytest-benchmark plugin not installed"
+)
 @pytest.mark.benchmark(group="caching")
 def test_benchmark_cache_set(benchmark):
     """Benchmark the cache set operation."""
@@ -132,6 +156,9 @@ def test_benchmark_cache_set(benchmark):
         benchmark(cache_set)
 
 
+@pytest.mark.skipif(
+    "pytest_benchmark" not in globals(), reason="pytest-benchmark plugin not installed"
+)
 @pytest.mark.benchmark(group="caching")
 def test_benchmark_cache_get(benchmark):
     """Benchmark the cache get operation."""

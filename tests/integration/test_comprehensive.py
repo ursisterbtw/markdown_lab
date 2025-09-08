@@ -13,7 +13,7 @@ import pytest
 
 from markdown_lab.core.config import MarkdownLabConfig
 from markdown_lab.core.converter import Converter
-from markdown_lab.core.errors import NetworkError, ParsingError, ConversionError
+from markdown_lab.core.errors import ConversionError, NetworkError, ParsingError
 
 
 @pytest.mark.integration
@@ -89,7 +89,7 @@ class TestComprehensiveConversion:
         assert "emphasis" in markdown
         assert "- List item 1" in markdown
         assert "- List item 2" in markdown
-        assert "```" in markdown  # Code block
+        assert "```" in markdown  # Code block (fallback now supports <pre><code>)
         assert "> This is a blockquote" in markdown
         # Link should be present (URL may have trailing slash)
         assert "[link](https://example.com" in markdown
@@ -260,9 +260,14 @@ def test_cli_integration():
             timeout=10,
         )
         assert result.returncode == 0
-        assert (
-            "markdown" in result.stdout.lower() and "converter" in result.stdout.lower()
-        )
+        # Accept either modern Typer help or legacy argparse help
+        help_text = result.stdout
+        assert ("Usage:" in help_text) or ("usage:" in help_text)
+        if "Commands" in help_text:
+            assert "convert" in help_text
+        else:
+            # Legacy CLI
+            assert "--format" in help_text or "--use-sitemap" in help_text
     except (subprocess.TimeoutExpired, FileNotFoundError):
         # CLI might not be properly set up in test environment
         pytest.skip("CLI not available in test environment")
