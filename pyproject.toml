@@ -96,24 +96,24 @@ line-length = 88
 select = ["E", "F", "I", "N", "W", "B", "C4", "SIM", "T20", "RET", "ERA", "PL"]
 ignore = [
     "E203", "E501",
-    "PLC0415",  # Allow imports outside top-level for conditional imports
-    "PLR0913",  # Allow many arguments for CLI functions  
-    "PLW0603",  # Allow global statements for CLI state
-    "PLR2004",  # Allow magic values in tests and CLI
-    "PLR0911",  # Allow many return statements in complex functions
-    "PLR0912",  # Allow many branches in complex functions
-    "PLR0915",  # Allow many statements in complex functions
-    "SIM102",   # Allow nested if statements for clarity
-    "SIM117",   # Allow nested with statements for clarity
-    "SIM118",   # Allow .keys() for explicit dictionary key iteration
+    "PLC0415",  # allow imports outside top-level for conditional imports
+    "PLR0913",  # allow many arguments for CLI functions  
+    "PLW0603",  # allow global statements for CLI state
+    "PLR2004",  # allow magic values in tests and CLI
+    "PLR0911",  # allow many return statements in complex functions
+    "PLR0912",  # allow many branches in complex functions
+    "PLR0915",  # allow many statements in complex functions
+    "SIM102",   # allow nested if statements for clarity
+    "SIM117",   # allow nested with statements for clarity
+    "SIM118",   # allow .keys() for explicit dictionary key iteration
 ]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**/*" = [
-  "F401",       # Allow unused imports in tests
-  "ERA001",     # Allow commented-out code in tests
-  "SIM105",     # Allow try-except-pass patterns in tests
-  "B017",       # Allow general exception assertions in tests
+  "F401",       # allow unused imports in tests
+  "ERA001",     # allow commented-out code in tests
+  "SIM105",     # allow try-except-pass patterns in tests
+  "B017",       # allow general exception assertions in tests
 ]
 
 [tool.mypy]
@@ -127,7 +127,7 @@ disallow_untyped_decorators = true
 no_implicit_optional = true
 strict_optional = true
 
-# Reduce noise from optional UI/CLI modules and runtime-bound integrations
+# reduce noise from optional UI/CLI modules and runtime-bound integrations
 [[tool.mypy.overrides]]
 module = [
   "markdown_lab.cli",
@@ -156,4 +156,4 @@ dev = [
 
 [tool.maturin]
 features = ["pyo3/extension-module"]
-module-name = "markdown_lab.markdown_lab_rs" # Adjust if your Rust module name is different in lib.rs
+module-name = "markdown_lab.markdown_lab_rs" # adjust if your Rust module name is different in lib.rs

@@ -18,16 +18,16 @@ pub enum ParserError {
     Other(String),
 }
 
-// Cache commonly used selectors for better performance
+// cache commonly used selectors for better performance
 static SELECTOR_CACHE: Lazy<HashMap<&'static str, Selector>> = Lazy::new(|| {
     let mut cache = HashMap::new();
 
-    // Content container selectors
+    // content container selectors
     if let Ok(selector) = Selector::parse("main, article, #content, .content") {
         cache.insert("main_content", selector);
     }
 
-    // Unwanted element selectors (combined for efficiency)
+    // unwanted element selectors (combined for efficiency)
     if let Ok(selector) = Selector::parse(
         "script, style, iframe, noscript, .advertisement, .ad, .banner, \
          #cookie-notice, header, footer, nav, .sidebar, .menu, .comments, \
@@ -36,12 +36,12 @@ static SELECTOR_CACHE: Lazy<HashMap<&'static str, Selector>> = Lazy::new(|| {
         cache.insert("unwanted_elements", selector);
     }
 
-    // Link selector
+    // link selector
     if let Ok(selector) = Selector::parse("a[href]") {
         cache.insert("links", selector);
     }
 
-    // Individual content selectors for fallback
+    // individual content selectors for fallback
     let selectors_to_cache = [
         ("main", "main"),
         ("article", "article"),
@@ -63,14 +63,14 @@ static SELECTOR_CACHE: Lazy<HashMap<&'static str, Selector>> = Lazy::new(|| {
 pub fn extract_main_content(html: &str) -> Result<Html, ParserError> {
     let document = Html::parse_document(html);
 
-    // First try the combined selector for efficiency
+    // first try the combined selector for efficiency
     if let Some(selector) = SELECTOR_CACHE.get("main_content")
         && let Some(element) = document.select(selector).next()
     {
         return Ok(Html::parse_fragment(&element.html()));
     }
 
-    // Fallback to individual selectors in order of preference
+    // fallback to individual selectors in order of preference
     let fallback_selectors = ["main", "article", "content_id", "content_class", "body"];
 
     for selector_key in fallback_selectors {
@@ -81,13 +81,13 @@ pub fn extract_main_content(html: &str) -> Result<Html, ParserError> {
         }
     }
 
-    // Final fallback: return the whole document
+    // final fallback: return the whole document
     Ok(document)
 }
 
 /// remove unwanted elements using cached selectors
 ///
-/// Unwanted elements such as scripts, ads, banners, and navigation are identified using a cached selector and removed from the HTML. If the selector cache is unavailable, returns the original HTML.
+/// unwanted elements such as scripts, ads, banners, and navigation are identified using a cached selector and removed from the HTML. If the selector cache is unavailable, returns the original HTML.
 ///
 /// # Returns
 /// A cleaned HTML string with unwanted elements removed.
@@ -104,15 +104,15 @@ pub fn extract_main_content(html: &str) -> Result<Html, ParserError> {
 pub fn clean_html(html: &str) -> Result<String, ParserError> {
     let document = Html::parse_document(html);
 
-    // Use cached selector for better performance
+    // use cached selector for better performance
     if let Some(unwanted_selector) = SELECTOR_CACHE.get("unwanted_elements") {
-        // Collect elements to remove first (to avoid modification during iteration)
+        // collect elements to remove first (to avoid modification during iteration)
         let elements_to_remove: Vec<String> = document
             .select(unwanted_selector)
             .map(|element| element.html())
             .collect();
 
-        // Remove elements by replacing their HTML
+        // remove elements by replacing their HTML
         let mut cleaned_html = document.root_element().html();
         for element_html in elements_to_remove {
             cleaned_html = cleaned_html.replace(&element_html, "");
@@ -120,14 +120,14 @@ pub fn clean_html(html: &str) -> Result<String, ParserError> {
 
         Ok(cleaned_html)
     } else {
-        // Fallback: return original HTML if selector cache failed
+        // fallback: return original HTML if selector cache failed
         Ok(html.to_string())
     }
 }
 
-/// Clean a parsed HTML document by removing unwanted elements
+/// clean a parsed HTML document by removing unwanted elements
 ///
-/// This function works directly with the parsed DOM to remove unwanted elements
+/// this function works directly with the parsed DOM to remove unwanted elements
 /// like scripts, styles, and other unwanted content.
 ///
 /// # Examples
@@ -141,21 +141,21 @@ pub fn clean_html(html: &str) -> Result<String, ParserError> {
 /// assert!(!cleaned.root_element().html().contains("<script>"));
 /// ```
 pub fn clean_parsed_html(document: &Html) -> Result<Html, ParserError> {
-    // Use cached selector for better performance
+    // use cached selector for better performance
     if let Some(unwanted_selector) = SELECTOR_CACHE.get("unwanted_elements") {
-        // Collect elements to remove first (to avoid modification during iteration)
+        // collect elements to remove first (to avoid modification during iteration)
         let elements_to_remove: Vec<String> = document
             .select(unwanted_selector)
             .map(|element| element.html())
             .collect();
 
-        // Remove elements by replacing their HTML in the root element
+        // remove elements by replacing their HTML in the root element
         let mut cleaned_html = document.root_element().html();
         for element_html in elements_to_remove {
             cleaned_html = cleaned_html.replace(&element_html, "");
         }
 
-        // Parse the cleaned HTML back into a document
+        // parse the cleaned HTML back into a document
         Ok(Html::parse_document(&cleaned_html))
     } else {
         // Fallback: return original document if selector cache failed
@@ -215,7 +215,7 @@ pub fn extract_links(html: &str, base_url: &str) -> Result<Vec<String>, ParserEr
     let document = Html::parse_document(html);
     let base_url = url::Url::parse(base_url).map_err(|e| ParserError::UrlError(e.to_string()))?;
 
-    // Use cached selector for better performance
+    // use cached selector for better performance
     let selector = SELECTOR_CACHE.get("links").ok_or_else(|| {
         ParserError::SelectorError("Links selector not found in cache".to_string())
     })?;

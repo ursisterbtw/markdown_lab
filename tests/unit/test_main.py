@@ -69,8 +69,8 @@ def test_convert_to_markdown(scraper):
     <ul><li>Item 1</li><li>Item 2</li></ul>
     </body></html>"""
 
-    # Get the result and check that it contains the expected elements
-    # The exact format might vary, so we check for key content instead of exact matching
+    # get the result and check that it contains the expected elements
+    # the exact format might vary, so we check for key content instead of exact matching
     result = scraper.convert_html_to_format(
         html_content, "http://example.com", "markdown"
     )
@@ -78,7 +78,7 @@ def test_convert_to_markdown(scraper):
     assert "# Test" in result
     assert "Header 1" in result
     assert "Paragraph 1" in result
-    # We see that links might not be processed in our implementation, so let's skip that check
+    # we see that links might not be processed in our implementation, so let's skip that check
     # assert "[Link](http://example.com)" in result
     assert "![Test Image](" in result and "image.jpg)" in result
     assert "Item 1" in result
@@ -103,14 +103,14 @@ def test_format_conversion(mock_get, scraper):
     mock_response.elapsed.total_seconds.return_value = 0.1
     mock_get.return_value = mock_response
 
-    # Test the JSON output format using the scraper's Rust implementation
+    # test the JSON output format using the scraper's Rust implementation
     try:
-        # Convert to JSON using the scraper's unified method
+        # convert to JSON using the scraper's unified method
         json_content = scraper.convert_html_to_format(
             mock_response.text, "http://example.com", "json"
         )
 
-        # Basic validation
+        # basic validation
         assert "Format Test" in json_content
         assert "Test Heading" in json_content
         assert "Test paragraph" in json_content
@@ -122,7 +122,7 @@ def test_format_conversion(mock_get, scraper):
             mock_response.text, "http://example.com", "xml"
         )
 
-        # Basic validation
+        # basic validation
         assert "<title>Format Test</title>" in xml_content
         assert "Test Heading" in xml_content
         assert "Test paragraph" in xml_content
@@ -130,24 +130,24 @@ def test_format_conversion(mock_get, scraper):
         assert "Item B" in xml_content
 
     except ImportError:
-        # Fall back to Python implementation (import a helper)
+        # fall back to Python implementation (import a helper)
         from markdown_lab.markdown_lab_rs import (
             document_to_xml,
             parse_markdown_to_document,
         )
 
-        # Convert to markdown first
+        # convert to markdown first
         markdown_content = scraper.convert_html_to_format(
             mock_response.text, "http://example.com", "markdown"
         )
 
-        # Then convert to JSON
+        # then convert to JSON
         document = parse_markdown_to_document(markdown_content, "http://example.com")
         import json
 
         json_content = json.dumps(document, indent=2)
 
-        # Basic validation
+        # basic validation
         assert "Format Test" in json_content
         assert "Test Heading" in json_content
         assert "Item A" in json_content or "Item B" in json_content
@@ -155,7 +155,7 @@ def test_format_conversion(mock_get, scraper):
         # XML output test
         xml_content = document_to_xml(document)
 
-        # Basic validation
+        # basic validation
         assert "<title>Format Test</title>" in xml_content
         assert "Test Heading" in xml_content
         assert "Item A" in xml_content or "Item B" in xml_content
@@ -184,23 +184,23 @@ def test_save_markdown(mock_open):
 
 def test_request_cache():
     with tempfile.TemporaryDirectory() as temp_dir:
-        # Initialize cache
+        # initialize cache
         cache = RequestCache(cache_dir=temp_dir, max_age=60)
 
-        # Test cache functionality
+        # test cache functionality
         url = "http://example.com/test"
         content = "<html><body>Test content</body></html>"
 
-        # Cache should be empty initially
+        # cache should be empty initially
         assert cache.get(url) is None
 
-        # Set content in cache
+        # set content in cache
         cache.set(url, content)
 
-        # Cache should now contain content
+        # cache should now contain content
         assert cache.get(url) == content
 
-        # Check that file was created
+        # check that file was created
         key = cache._get_cache_key(url)
         assert (Path(temp_dir) / key).exists()
 
@@ -208,7 +208,7 @@ def test_request_cache():
 @patch("markdown_lab.core.client.requests.Session.request")
 def test_scrape_website_with_cache(mock_request):
     with tempfile.TemporaryDirectory() as temp_dir:
-        # Setup mock response
+        # setup mock response
         mock_response = MagicMock()
         mock_response.status_code = 200
         mock_response.text = (
@@ -218,14 +218,14 @@ def test_scrape_website_with_cache(mock_request):
         mock_response.raise_for_status.return_value = None
         mock_request.return_value = mock_response
 
-        # Create scraper with cache enabled
+        # create scraper with cache enabled
         config = MarkdownLabConfig(cache_enabled=True)
         scraper = MarkdownScraper(config=config)
-        scraper.request_cache.cache_dir = Path(temp_dir)  # Override cache directory
+        scraper.request_cache.cache_dir = Path(temp_dir)  # override cache directory
 
         url = "http://example.com/cached"
 
-        # First request should hit the network
+        # first request should hit the network
         result1 = scraper.scrape_website(url)
         assert (
             result1
@@ -233,16 +233,16 @@ def test_scrape_website_with_cache(mock_request):
         )
         assert mock_request.call_count == 1
 
-        # Second request should use the cache
+        # second request should use the cache
         result2 = scraper.scrape_website(url)
         assert (
             result2
             == "<html><head><title>Cached Test</title></head><body></body></html>"
         )
-        # The mock should not have been called again
+        # the mock should not have been called again
         assert mock_request.call_count == 1
 
-        # Request with use_cache=False should hit the network again
+        # request with use_cache=False should hit the network again
         result3 = scraper.scrape_website(url, use_cache=False)
         assert (
             result3

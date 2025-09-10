@@ -491,7 +491,7 @@ This project is licensed under the MIT License - see the [LICENSE file](LICENSE)
 
 ## Roadmap
 
-### ✅ Completed
+### [✓] Completed
 
 - [x] Add support for more HTML elements
 - [x] Implement chunking for RAG
@@ -509,7 +509,7 @@ This project is licensed under the MIT License - see the [LICENSE file](LICENSE)
 - [ ] Memory usage optimization in chunking algorithms
 - [ ] Module restructuring for better maintainability
 
-### 📋 Planned
+### [PLANNED] Planned
 
 - [ ] Add support for JavaScript-rendered pages
 - [ ] Implement custom markdown templates

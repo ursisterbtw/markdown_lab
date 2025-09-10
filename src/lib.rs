@@ -13,18 +13,18 @@ pub mod markdown_converter;
 /// shared tokio runtime for js rendering with bounded thread pool
 static SHARED_RUNTIME: Lazy<tokio::runtime::Runtime> = Lazy::new(|| {
     tokio::runtime::Builder::new_multi_thread()
-        .worker_threads(4) // Limit worker threads
-        .max_blocking_threads(16) // Limit blocking threads
+        .worker_threads(4) // limit worker threads
+        .max_blocking_threads(16) // limit blocking threads
         .thread_name("markdown-lab-tokio")
         .enable_all()
         .build()
         .expect("Failed to create shared Tokio runtime for JavaScript rendering")
 });
 
-/// Global resource manager for cleanup
+/// global resource manager for cleanup
 static RESOURCE_MANAGER: Lazy<cleanup::ResourceManager> = Lazy::new(cleanup::ResourceManager::new);
 
-/// Python-friendly enumeration of output formats
+/// python-friendly enumeration of output formats
 #[pyclass]
 #[derive(Clone, Copy)]
 pub enum OutputFormat {
@@ -64,7 +64,7 @@ fn markdown_lab_rs(py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(chunk_markdown, py)?)?;
     m.add_function(wrap_pyfunction!(render_js_page, py)?)?;
 
-    // Expose HTML parser functions for Python access
+    // expose HTML parser functions for Python access
     m.add_function(wrap_pyfunction!(clean_html, py)?)?;
     m.add_function(wrap_pyfunction!(clean_html_advanced, py)?)?;
     m.add_function(wrap_pyfunction!(extract_main_content, py)?)?;
@@ -75,7 +75,7 @@ fn markdown_lab_rs(py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     Ok(())
 }
 
-/// Converts HTML content to markdown (legacy method)
+/// converts HTML content to markdown (legacy method)
 #[pyfunction]
 fn convert_html_to_markdown(html: &str, base_url: &str) -> PyResult<String> {
     let result = markdown_converter::convert_to_markdown(html, base_url)
@@ -83,7 +83,7 @@ fn convert_html_to_markdown(html: &str, base_url: &str) -> PyResult<String> {
     Ok(result)
 }
 
-/// Converts HTML content to the specified format
+/// converts HTML content to the specified format
 #[pyfunction]
 fn convert_html_to_format(html: &str, base_url: &str, format: Option<String>) -> PyResult<String> {
     let output_format = match format.as_deref() {
@@ -97,7 +97,7 @@ fn convert_html_to_format(html: &str, base_url: &str, format: Option<String>) ->
     Ok(result)
 }
 
-/// Chunks markdown content for RAG
+/// chunks markdown content for RAG
 #[pyfunction]
 fn chunk_markdown(
     markdown: &str,
@@ -109,7 +109,7 @@ fn chunk_markdown(
     Ok(chunks)
 }
 
-/// Renders a JavaScript-enabled page and returns the HTML content
+/// renders a JavaScript-enabled page and returns the HTML content
 /// uses shared tokio runtime for better performance
 #[pyfunction]
 fn render_js_page(url: &str, wait_time: Option<u64>) -> PyResult<String> {
@@ -127,14 +127,14 @@ fn clean_html(html: &str) -> PyResult<String> {
         .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))
 }
 
-/// Python wrapper for clean_html_advanced function
+/// python wrapper for clean_html_advanced function
 #[pyfunction]
 fn clean_html_advanced(html: &str) -> PyResult<String> {
     html_parser::clean_html_advanced(html)
         .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))
 }
 
-/// Python wrapper for extract_main_content function
+/// python wrapper for extract_main_content function
 #[pyfunction]
 fn extract_main_content(html: &str) -> PyResult<String> {
     let main_content = html_parser::extract_main_content(html)
@@ -142,21 +142,21 @@ fn extract_main_content(html: &str) -> PyResult<String> {
     Ok(main_content.root_element().html())
 }
 
-/// Python wrapper for extract_links function
+/// python wrapper for extract_links function
 #[pyfunction]
 fn extract_links(html: &str, base_url: &str) -> PyResult<Vec<String>> {
     html_parser::extract_links(html, base_url)
         .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))
 }
 
-/// Python wrapper for resolve_url function
+/// python wrapper for resolve_url function
 #[pyfunction]
 fn resolve_url(base_url: &str, relative_url: &str) -> PyResult<String> {
     html_parser::resolve_url(base_url, relative_url)
         .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))
 }
 
-/// Cleanup shared resources (runtime, thread pools, etc.)
+/// cleanup shared resources (runtime, thread pools, etc.)
 #[pyfunction]
 fn cleanup_resources() -> PyResult<()> {
     RESOURCE_MANAGER.shutdown();

@@ -2,15 +2,15 @@
 
 ## Refactoring Roadmap
 
-### Priority 1: Foundation & Quick Wins (Immediate - Week 1) ✅ COMPLETED
+### Priority 1: Foundation & Quick Wins (Immediate - Week 1) [COMPLETED]
 
-#### TASK-001: Create Core Configuration System ✅ COMPLETED
+#### TASK-001: Create Core Configuration System [COMPLETED]
 
 **File:** `markdown_lab/core/config.py`
 **Impact:** High - Eliminates scattered configuration
 **Dependencies:** None
 **Estimated LOC Reduction:** 150+ lines
-**Status:** ✅ Implemented with validation, environment overrides, and file I/O support
+**Status:** [IMPLEMENTED] with validation, environment overrides, and file I/O support
 
 ```python
 # Implementation target:
@@ -45,13 +45,13 @@ class MarkdownLabConfig:
 - `markdown_lab/utils/chunk_utils.py` (lines 105, 107: replace magic numbers)
 - `markdown_lab/core/cache.py` (add size limits)
 
-#### TASK-002: Establish Unified Error Hierarchy ✅ COMPLETED
+#### TASK-002: Establish Unified Error Hierarchy [COMPLETED]
 
 **File:** `markdown_lab/core/errors.py`
 **Impact:** High - Simplifies error handling
 **Dependencies:** None
 **Estimated LOC Reduction:** 80+ lines
-**Status:** ✅ Implemented with structured exceptions, context data, and helper functions
+**Status:** [IMPLEMENTED] with structured exceptions, context data, and helper functions
 
 ```python
 # Replace inconsistent error handling across:
@@ -80,13 +80,13 @@ class ConfigurationError(MarkdownLabError):
     """Configuration validation errors"""
 ```
 
-#### TASK-003: Extract Common HTTP Client ✅ COMPLETED
+#### TASK-003: Extract Common HTTP Client [COMPLETED]
 
 **File:** `markdown_lab/network/client.py`
 **Impact:** High - Eliminates duplicate request logic
 **Dependencies:** TASK-001, TASK-002
 **Estimated LOC Reduction:** 120+ lines
-**Status:** ✅ Implemented with connection pooling, retry logic, and caching support
+**Status:** [IMPLEMENTED] with connection pooling, retry logic, and caching support
 
 **Consolidates:**
 
@@ -94,13 +94,13 @@ class ConfigurationError(MarkdownLabError):
 - `sitemap_utils.py` lines 45-78 (`_make_request`)
 - Connection pooling, retry logic, throttling integration
 
-#### TASK-004: Remove Dead Dependencies ✅ COMPLETED
+#### TASK-004: Remove Dead Dependencies [COMPLETED]
 
 **File:** `requirements.txt`, `pyproject.toml`, `mypy.ini`
 **Impact:** Medium - Simplifies dependency management  
 **Dependencies:** None
 **Estimated LOC Reduction:** Indirect (reduced complexity)
-**Status:** ✅ Removed argparse, pathlib, markdownify; fixed Python 3.8→3.12 version mismatch
+**Status:** [✓] Removed argparse, pathlib, markdownify; fixed Python 3.8→3.12 version mismatch
 
 **Remove:**
 
@@ -114,13 +114,13 @@ class ConfigurationError(MarkdownLabError):
 
 ### Priority 2: Performance Critical Optimizations (Week 2-3)
 
-#### TASK-005: Optimize HTML Processing Pipeline ✅ COMPLETED
+#### TASK-005: Optimize HTML Processing Pipeline [COMPLETED]
 
 **Files:** `src/html_parser.rs`, `src/markdown_converter.rs`, `Cargo.toml`
 **Impact:** High - Core performance improvement
 **Dependencies:** None
 **Estimated Performance Gain:** 40-50%
-**Status:** ✅ Implemented cached selectors with once_cell, optimized element processing, added URL utilities
+**Status:** [IMPLEMENTED] cached selectors with once_cell, optimized element processing, added URL utilities
 
 **Optimizations:**
 
@@ -420,34 +420,34 @@ graph TD
 
 ## Implementation Notes
 
-### Code Reduction Strategies Applied ✅ Phase 1 Complete
+### Code Reduction Strategies Applied [✓] Phase 1 Complete
 
-- ✅ **Eliminate Dead Code**: Removed argparse, pathlib, markdownify dependencies
-- ✅ **Consolidate Duplicates**: Unified HTTP client eliminates scraper.py/sitemap_utils.py duplication
-- ✅ **Abstract Common Patterns**: Centralized configuration and structured error hierarchy
-- ✅ **Optimize Data Structures**: Cached selectors using HashMap and once_cell for better performance
+- [✓] **Eliminate Dead Code**: Removed argparse, pathlib, markdownify dependencies
+- [✓] **Consolidate Duplicates**: Unified HTTP client eliminates scraper.py/sitemap_utils.py duplication
+- [✓] **Abstract Common Patterns**: Centralized configuration and structured error hierarchy
+- [✓] **Optimize Data Structures**: Cached selectors using HashMap and once_cell for better performance
 - 🚧 **Simplify Complex Logic**: Foundation laid, full implementation in progress
 
-### Risk Mitigation ✅ Successfully Applied
+### Risk Mitigation [✓] Successfully Applied
 
-- ✅ **Compatibility Layer**: New modules created alongside existing code
-- ✅ **Incremental Migration**: Task-by-task validation with all tests passing
-- ✅ **Performance Monitoring**: Rust optimizations validated, Python bindings functional
-- ✅ **Comprehensive Testing**: Core functionality verified, integration tests planned
+- [✓] **Compatibility Layer**: New modules created alongside existing code
+- [✓] **Incremental Migration**: Task-by-task validation with all tests passing
+- [✓] **Performance Monitoring**: Rust optimizations validated, Python bindings functional
+- [✓] **Comprehensive Testing**: Core functionality verified, integration tests planned
 
 ### Maintenance Tasks Completed
 
-#### TASK-017: Fix Justfile Build System ✅ COMPLETED
+#### TASK-017: Fix Justfile Build System [COMPLETED]
 
 **Files:** `justfile`, `tests/test_benchmarks.py`
 **Impact:** High - Enables reliable development workflow
 **Dependencies:** Foundation tasks
 **Issues Fixed:**
 
-- ✅ Replaced undefined `$(VENV_ACTIVATE)` variables with proper activation methods
-- ✅ Fixed import errors in benchmark tests (`from main import` → `from markdown_lab.core import`)
-- ✅ Converted test recipes to use bash scripts with proper virtual environment activation
-- ✅ Standardized command patterns across all justfile recipes
+- [✓] Replaced undefined `$(VENV_ACTIVATE)` variables with proper activation methods
+- [✓] Fixed import errors in benchmark tests (`from main import` → `from markdown_lab.core import`)
+- [✓] Converted test recipes to use bash scripts with proper virtual environment activation
+- [✓] Standardized command patterns across all justfile recipes
 
 **Development Workflow Improvements:**
 
@@ -458,12 +458,12 @@ graph TD
 
 ### Phase 1 Results Summary
 
-**✅ Completed Tasks:** 6/16 high-impact foundation tasks (including justfile fixes)
-**📊 LOC Reduction:** ~350+ lines eliminated (10% progress toward 25-35% target)  
-**⚡ Performance:** 40-50% HTML parsing improvement with cached selectors
-**🏗️ Architecture:** Modern build system with uv, centralized config, unified errors
-**🔧 Quality:** Strict mypy, cleaned dependencies, structured development workflow with reliable justfile
-**🛠️ Workflow:** Fixed justfile recipes enable consistent development experience
+**[✓] Completed Tasks:** 6/16 high-impact foundation tasks (including justfile fixes)
+** LOC Reduction:** ~350+ lines eliminated (10% progress toward 25-35% target)  
+** Performance:** 40-50% HTML parsing improvement with cached selectors
+** Architecture:** Modern build system with uv, centralized config, unified errors
+** Quality:** Strict mypy, cleaned dependencies, structured development workflow with reliable justfile
+** Workflow:** Fixed justfile recipes enable consistent development experience
 
 This foundation enables the remaining 11 tasks to achieve the full **25-35% LOC reduction** target while delivering significant performance improvements and enhanced maintainability.
 
@@ -471,7 +471,7 @@ This foundation enables the remaining 11 tasks to achieve the full **25-35% LOC 
 
 ### HIGH-IMPACT PERFORMANCE TASKS
 
-#### TASK-018: Fix Tokio Runtime Recreation ⚡ **CRITICAL**
+#### TASK-018: Fix Tokio Runtime Recreation  **CRITICAL**
 
 - [ ] T18:tokio-runtime :: Performance :: Eliminate runtime recreation in JS rendering :: Depends=[none] :: Est=M :: Impact=60%
 - **File:** `src/lib.rs:97-105`
@@ -489,7 +489,7 @@ This foundation enables the remaining 11 tasks to achieve the full **25-35% LOC 
 
 - **Expected Gain:** 60% improvement in JS rendering operations
 
-#### TASK-019: Optimize Thread Pool Usage ⚡ **CRITICAL**  
+#### TASK-019: Optimize Thread Pool Usage  **CRITICAL**  
 
 - [ ] T19:thread-pool :: Performance :: Reuse ThreadPoolExecutor across batches :: Depends=[none] :: Est=M :: Impact=50%
 - **File:** `markdown_lab/core/scraper.py:625-679`
@@ -511,7 +511,7 @@ This foundation enables the remaining 11 tasks to achieve the full **25-35% LOC 
 
 - **Expected Gain:** 50% improvement in parallel processing
 
-#### TASK-020: Async Cache I/O Implementation ⚡ **CRITICAL**
+#### TASK-020: Async Cache I/O Implementation  **CRITICAL**
 
 - [ ] T20:async-cache :: Performance :: Convert cache operations to async I/O with compression :: Depends=[T19] :: Est=L :: Impact=45%
 - **File:** `markdown_lab/core/cache.py:41-83`
@@ -532,7 +532,7 @@ This foundation enables the remaining 11 tasks to achieve the full **25-35% LOC 
 
 - **Expected Gain:** 45% improvement in cache performance
 
-#### TASK-021: Optimize Text Chunking Algorithm ⚡ **HIGH**
+#### TASK-021: Optimize Text Chunking Algorithm  **HIGH**
 
 - [ ] T21:chunking-algo :: Performance :: Replace char iteration with regex-based sentence splitting :: Depends=[none] :: Est=M :: Impact=40%
 - **File:** `src/chunker.rs:156-194`
@@ -557,7 +557,7 @@ This foundation enables the remaining 11 tasks to achieve the full **25-35% LOC 
 
 ### CODE CONSOLIDATION TASKS
 
-#### TASK-022: Eliminate HTTP Client Duplication 🔄 **CRITICAL**
+#### TASK-022: Eliminate HTTP Client Duplication  **CRITICAL**
 
 - [ ] T22:http-consolidation :: Consolidation :: Remove network/client.py and standardize on core/client.py :: Depends=[T18,T19] :: Est=L :: LOC=-234
 - **Files:** `markdown_lab/network/client.py` (remove), update imports in all modules
@@ -568,7 +568,7 @@ This foundation enables the remaining 11 tasks to achieve the full **25-35% LOC 
   3. Consolidate any unique features from network client
 - **Expected LOC Reduction:** 234 lines
 
-#### TASK-023: Centralize Configuration Management 🔄 **HIGH**
+#### TASK-023: Centralize Configuration Management  **HIGH**
 
 - [ ] T23:config-consolidation :: Consolidation :: Eliminate scattered parameters using MarkdownLabConfig :: Depends=[T22] :: Est=L :: LOC=-234  
 - **Files:** `markdown_lab/core/scraper.py`, `markdown_lab/core/converter.py`, `markdown_lab/cli.py`
@@ -576,7 +576,7 @@ This foundation enables the remaining 11 tasks to achieve the full **25-35% LOC 
 - **Solution:** Replace all scattered config with centralized `MarkdownLabConfig` usage
 - **Expected LOC Reduction:** 234 lines
 
-#### TASK-024: Create Shared URL Utilities 🔄 **MEDIUM**
+#### TASK-024: Create Shared URL Utilities  **MEDIUM**
 
 - [ ] T24:url-utils :: Consolidation :: Extract URL processing to shared utility module :: Depends=[T23] :: Est=M :: LOC=-144
 - **Files:** Create `markdown_lab/utils/url_utils.py`, update imports
@@ -584,7 +584,7 @@ This foundation enables the remaining 11 tasks to achieve the full **25-35% LOC 
 - **Solution:** Create comprehensive URL utility module
 - **Expected LOC Reduction:** 144 lines
 
-#### TASK-025: Unify Error Handling Patterns 🔄 **MEDIUM**  
+#### TASK-025: Unify Error Handling Patterns  **MEDIUM**  
 
 - [ ] T25:error-consolidation :: Consolidation :: Standardize HTTP exception handling :: Depends=[T22] :: Est=M :: LOC=-140
 - **Files:** `markdown_lab/core/scraper.py`, `markdown_lab/utils/sitemap_utils.py`, `markdown_lab/core/client.py`
@@ -631,7 +631,7 @@ This foundation enables the remaining 11 tasks to achieve the full **25-35% LOC 
 
 ### VALIDATION & TESTING TASKS
 
-#### TASK-030: Performance Benchmarking Suite 📊 **CRITICAL**
+#### TASK-030: Performance Benchmarking Suite  **CRITICAL**
 
 - [ ] T30:benchmarks :: Validation :: Create comprehensive before/after performance benchmarks :: Depends=[T21] :: Est=M :: Validation
 - **Files:** `scripts/performance_validation.py`, extend existing benchmarks
@@ -642,7 +642,7 @@ This foundation enables the remaining 11 tasks to achieve the full **25-35% LOC 
   - Multi-URL throughput comparison
   - Cache hit rate effectiveness
 
-#### TASK-031: Integration Test Coverage 📊 **HIGH**
+#### TASK-031: Integration Test Coverage  **HIGH**
 
 - [ ] T31:integration-tests :: Validation :: Comprehensive end-to-end test validation :: Depends=[T28] :: Est=L :: Validation
 - **Files:** `tests/integration/test_comprehensive.py`
